@@ -1,0 +1,42 @@
+<header class="header">
+  <div class="header-left">
+    <h1>Módulo de Usuarios</h1>
+    <div class="breadcrumb"><a routerLink="/dashboard">Dashboard</a> <i class="fas fa-chevron-right"></i> <span>Usuarios</span></div>
+  </div>
+</header>
+
+<div class="page-padding">
+  <div class="content-header">
+    <h2 class="content-title">Gestión de Usuarios</h2>
+    <button class="btn"><i class="fas fa-plus"></i> Crear Usuario</button>
+  </div>
+
+  <div *ngIf="loading">Cargando...</div>
+  <div *ngIf="!loading && error" style="color:#b91c1c; font-weight:600">{{ error }}</div>
+
+  <div class="table-wrap" *ngIf="!loading && !error">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Creado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of users">
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td><span [ngClass]="roleClass(u.role)">{{ u.role }}</span></td>
+          <td>
+            <span class="status-badge" [ngClass]="{'status-disponible': u.active, 'status-prestado': !u.active}">
+              {{ u.active ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>{{ u.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+        </tr>
+        <tr *ngIf="users.length === 0">
+          <td colspan="5" style="text-align:center; padding:18px; color:#64748b">No hay usuarios para mostrar.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

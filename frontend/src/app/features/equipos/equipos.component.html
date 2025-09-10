@@ -1,0 +1,93 @@
+<header class="header">
+  <div class="header-left">
+    <h1>Módulo de Equipos</h1>
+    <div class="breadcrumb"><a routerLink="/dashboard">Dashboard</a> <i class="fas fa-chevron-right"></i> <span>Equipos</span></div>
+  </div>
+</header>
+
+<div class="page-padding">
+  <div class="content-header">
+    <h2 class="content-title">Gestión de Equipos</h2>
+    <button class="btn"><i class="fas fa-plus"></i> Agregar Equipo</button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-row">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input class="search-input" [(ngModel)]="search" placeholder="Buscar por nombre o código..." />
+    </div>
+    <select class="filter-select" [(ngModel)]="status">
+      <option value="">Todos los estados</option>
+      <option value="available">Disponible</option>
+      <option value="loaned">Prestado</option>
+      <option value="maintenance">Mantenimiento</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="type">
+      <option value="">Todos los tipos</option>
+      <option value="laptop">Laptop</option>
+      <option value="projector">Proyector</option>
+      <option value="tablet">Tablet</option>
+    </select>
+    <button class="btn btn-secondary" (click)="load()"><i class="fas fa-filter"></i> Filtrar</button>
+    <button class="btn" style="background:#475569" (click)="clearFilters()"><i class="fas fa-eraser"></i> Limpiar</button>
+  </div>
+
+  <!-- Estados de carga -->
+  <div *ngIf="loading">Cargando...</div>
+  <div *ngIf="!loading && error" style="color:#b91c1c; font-weight:600">{{ error }}</div>
+
+  <!-- Tabla -->
+  <div class="table-wrap" *ngIf="!loading && !error">
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Estado</th>
+          <th>QR</th>
+          <th style="width:210px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let eq of equipos">
+          <td>{{ eq.code }}</td>
+          <td>{{ eq.name }}</td>
+          <td>{{ eq.type }}</td>
+          <td>
+            <span class="status-badge"
+              [ngClass]="{
+                'status-disponible': eq.status === 'available',
+                'status-prestado':   eq.status === 'loaned',
+                'status-mantto':     eq.status === 'maintenance'
+              }">
+              {{ eq.status === 'available'    ? 'Disponible'
+               : eq.status === 'loaned'       ? 'Prestado'
+               : eq.status === 'maintenance'  ? 'Mantenimiento'
+               : eq.status }}
+            </span>
+          </td>
+          <td>
+            <button class="action-btn" (click)="verQR(eq)"><i class="fas fa-qrcode"></i> Ver QR</button>
+          </td>
+          <td class="actions-cell">
+            <button class="action-btn btn-edit"><i class="fas fa-edit"></i> Editar</button>
+            <button class="action-btn btn-delete" (click)="eliminar(eq)"><i class="fas fa-trash"></i> Eliminar</button>
+          </td>
+        </tr>
+        <tr *ngIf="equipos.length === 0">
+          <td colspan="6" style="text-align:center; padding:18px; color:#64748b">No hay equipos para mostrar.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Preview QR -->
+  <div *ngIf="qrUrl" style="margin-top:16px; background:#fff; border-radius:12px; box-shadow:0 8px 25px rgba(0,0,0,.06); padding:16px; display:inline-block">
+    <img [src]="qrUrl" alt="QR" style="width:180px; height:180px; object-fit:contain" />
+    <div style="margin-top:8px; text-align:center">
+      <button class="btn" (click)="qrUrl = null"><i class="fas fa-times"></i> Cerrar</button>
+    </div>
+  </div>
+</div>

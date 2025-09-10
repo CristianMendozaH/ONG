@@ -1,0 +1,86 @@
+<header class="header">
+  <div class="header-left">
+    <h1>Módulo de Préstamos</h1>
+    <div class="breadcrumb"><a routerLink="/dashboard">Dashboard</a> <i class="fas fa-chevron-right"></i> <span>Préstamos</span></div>
+  </div>
+</header>
+
+<div class="page-padding">
+  <!-- Formulario crear préstamo -->
+  <div class="table-wrap" style="margin-bottom:18px; padding:16px">
+    <h3 style="margin-top:0">Nuevo Préstamo</h3>
+    <form [formGroup]="form" (ngSubmit)="crearPrestamo()" class="loan-form">
+      <div class="form-row">
+        <label>Equipo</label>
+        <select formControlName="equipmentId" class="filter-select" style="width:100%">
+          <option value="">— Selecciona un equipo —</option>
+          <option *ngFor="let e of equipos" [value]="e.id">{{ e.code }} — {{ e.name }}</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Solicitante</label>
+        <input class="search-input" formControlName="borrowerName" placeholder="Nombre de quien lo lleva" />
+      </div>
+      <div class="form-row">
+        <label>Fecha de devolución</label>
+        <input class="search-input" type="date" formControlName="dueDate" />
+      </div>
+      <div>
+        <button class="btn" [disabled]="form.invalid"><i class="fas fa-save"></i> Crear Préstamo</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabla de préstamos -->
+  <div *ngIf="loading">Cargando...</div>
+  <div *ngIf="!loading && error" style="color:#b91c1c; font-weight:600">{{ error }}</div>
+
+  <div class="table-wrap" *ngIf="!loading && !error">
+    <table>
+      <thead>
+        <tr>
+          <th>Equipo</th>
+          <th>Solicitante</th>
+          <th>Fecha Préstamo</th>
+          <th>Devolución</th>
+          <th>Estado</th>
+          <th>Atraso/Multa</th>
+          <th style="width:230px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of prestamos">
+          <td>
+            <div style="font-weight:600">{{ p.equipment?.name || p.equipmentId }}</div>
+            <div style="font-size:.85rem; color:#64748b">{{ p.equipment?.code }}</div>
+          </td>
+          <td>{{ p.borrowerName }}</td>
+          <td>{{ p.loanDate   | date:'dd/MM/yyyy' }}</td>
+          <td>{{ p.dueDate    | date:'dd/MM/yyyy' }}</td>
+          <td><span [ngClass]="estadoClase(p)">{{ p.status }}</span></td>
+          <td>
+            <div *ngIf="p.overdueDays">Días: {{ p.overdueDays }}</div>
+            <div *ngIf="p.totalFine">Multa: {{ p.totalFine | number:'1.2-2' }}</div>
+          </td>
+          <td class="actions-cell">
+            <button class="action-btn" (click)="verQR(p)"><i class="fas fa-qrcode"></i> QR</button>
+            <button class="action-btn btn-edit" [disabled]="p.status==='devuelto'" (click)="devolver(p)">
+              <i class="fas fa-undo"></i> Devolver
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="prestamos.length === 0">
+          <td colspan="7" style="text-align:center; padding:18px; color:#64748b">No hay préstamos registrados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Preview de QR -->
+  <div *ngIf="qrUrl" style="margin-top:16px; background:#fff; border-radius:12px; box-shadow:0 8px 25px rgba(0,0,0,.06); padding:16px; display:inline-block">
+    <img [src]="qrUrl" alt="QR" style="width:180px; height:180px; object-fit:contain" />
+    <div style="margin-top:8px; text-align:center">
+      <button class="btn" (click)="qrUrl = null"><i class="fas fa-times"></i> Cerrar</button>
+    </div>
+  </div>
+</div>

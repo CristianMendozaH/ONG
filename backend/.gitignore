@@ -1,0 +1,81 @@
+# ==========================
+# Node / paquetes
+# ==========================
+node_modules/
+# Archivos de debug de gestores de paquetes
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================
+# Compilados / builds
+# ==========================
+dist/
+build/
+.tmp/
+temp/
+# Caché de TypeScript
+*.tsbuildinfo
+
+# ==========================
+# Logs / PIDs
+# ==========================
+logs/
+*.log
+*.log.*
+pids/
+*.pid
+*.pid.lock
+
+# ==========================
+# Entornos
+# (mantén un .env.example con las claves vacías)
+# ==========================
+.env
+.env.*
+!.env.example
+
+# ==========================
+# Tests / cobertura
+# ==========================
+coverage/
+.nyc_output/
+jest-results.json
+test-report.xml
+.tap
+
+# ==========================
+# Archivos del sistema / IDE
+# ==========================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ==========================
+# Base de datos / herramientas
+# ==========================
+sequelize.log
+*.sqlite
+*.sqlite3
+*.db
+pg_dump*.sql
+
+# ==========================
+# Archivos generados en runtime
+# (ajusta rutas si usas otra carpeta)
+# ==========================
+uploads/
+public/uploads/
+storage/
+qr/
+tmp/
+
+# ==========================
+# Docker / despliegue (opcional)
+# ==========================
+.docker/
+docker-data/

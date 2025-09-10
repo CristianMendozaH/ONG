@@ -1,0 +1,30 @@
+/* estilos específicos del dashboard (placeholder) */
+.kpi-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:16px; margin-bottom:18px; }
+.kpi-card {
+  background:#fff; border-radius:16px; box-shadow:0 8px 25px rgba(0,0,0,.06);
+  padding:18px;
+}
+.kpi-header { display:flex; justify-content:space-between; align-items:center; }
+.kpi-value { font-size:1.8rem; font-weight:700; }
+.kpi-label { color:#64748b; }
+
+.kpi-icon { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; color:#fff; font-size:1.1rem; }
+.kpi-green .kpi-icon { background:#10b981; }
+.kpi-blue  .kpi-icon { background:#3b82f6; }
+.kpi-red   .kpi-icon { background:#ef4444; }
+.kpi-amber .kpi-icon { background:#f59e0b; }
+
+.activity-card { background:#fff; border-radius:16px; box-shadow:0 8px 25px rgba(0,0,0,.06); padding:18px; }
+.activity-title { font-weight:600; margin-bottom:12px; }
+.activity-list { display:flex; flex-direction:column; gap:12px; }
+.activity-item { display:flex; gap:12px; align-items:center; }
+.activity-icon {
+  width:36px; height:36px; border-radius:10px; display:grid; place-items:center; color:#fff;
+}
+.activity-prestamo { background:#3b82f6; }
+.activity-devolucion { background:#10b981; }
+.activity-text { font-weight:500; }
+.activity-time { font-size:.85rem; color:#64748b; }
+
+@media (max-width: 1024px){ .kpi-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 640px){ .kpi-grid { grid-template-columns: 1fr; } }

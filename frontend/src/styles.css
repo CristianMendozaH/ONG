@@ -1,0 +1,87 @@
+/* Fuente y base */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, sans-serif;
+  background: #f5f7fb;
+  color: #33475b;
+}
+
+/* Header común (título + breadcrumb) */
+.header {
+  background: #fff;
+  padding: 20px 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.07);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header .header-left h1 { font-size: 1.6rem; font-weight: 600; margin: 0 0 4px; }
+.header .header-left p { margin: 0; color: #667085; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; color: #667085; font-size: .9rem; }
+.breadcrumb a { color: #114495; text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+
+/* Botones y chips genéricos */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #114495; color:#fff; border:none; border-radius:10px;
+  padding: 10px 14px; font-weight: 600; cursor: pointer;
+}
+.btn:disabled { opacity:.7; cursor:not-allowed; }
+.btn-secondary { background: #0ea5e9; }
+.btn-danger { background: #e11d48; }
+.btn i { width: 16px; }
+
+/* Contenedores comunes */
+.content-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; }
+.content-title { margin:0; font-size:1.25rem; font-weight:600; }
+
+/* Badges (estado/rol) */
+.status-badge, .role-badge {
+  display:inline-block; padding:6px 10px; border-radius:999px; font-size:.8rem; font-weight:600;
+}
+.status-disponible { background:#ecfdf5; color:#047857; }
+.status-prestado   { background:#eff6ff; color:#1d4ed8; }
+.status-atrasado   { background:#fef2f2; color:#b91c1c; }
+.status-mantto     { background:#fffbeb; color:#b45309; }
+
+.role-admin  { background:#eef2ff; color:#4338ca; }
+.role-tech   { background:#eff6ff; color:#1d4ed8; }
+.role-user   { background:#f0f9ff; color:#0369a1; }
+
+/* Tablas */
+.table-wrap { background:#fff; border-radius:14px; box-shadow:0 8px 25px rgba(0,0,0,.06); overflow:hidden; }
+table { width:100%; border-collapse:collapse; }
+thead th {
+  background:#f8fafc; text-align:left; padding:14px 16px; font-weight:600; color:#475569;
+  border-bottom:1px solid #e2e8f0;
+}
+tbody td { padding:14px 16px; border-bottom:1px solid #f1f5f9; }
+tbody tr:hover { background:#f8fafc; }
+
+/* Buscador y filtros */
+.filters-row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:14px; }
+.search-box { position:relative; min-width:260px; flex:1 1 260px; }
+.search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#64748b; }
+.search-input {
+  width:100%; padding:10px 12px 10px 32px; border:1px solid #e2e8f0; border-radius:10px; outline:none;
+  background:#fff;
+}
+.search-input:focus { border-color:#114495; box-shadow:0 0 0 3px rgba(17,68,149,.1); }
+.filter-select {
+  padding:10px 12px; border:1px solid #e2e8f0; border-radius:10px; background:#fff; color:#334155;
+}
+
+/* Acciones en tabla */
+.actions-cell { display:flex; gap:8px; }
+.action-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#eff6ff; color:#1d4ed8; border:none; border-radius:10px; padding:8px 10px; font-weight:600; cursor:pointer;
+}
+.action-btn.btn-edit { background:#ecfeff; color:#0284c7; }
+.action-btn.btn-delete { background:#fef2f2; color:#b91c1c; }
+
+/* Espaciados de página */
+.page-padding { padding: 22px 26px; }

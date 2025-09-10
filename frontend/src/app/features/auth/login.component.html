@@ -1,0 +1,19 @@
+<div class="login-bg">
+  <form class="login-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="logo"><i class="fas fa-laptop"></i></div>
+    <h1>Sistema de Gestión</h1>
+    <p class="subtitle">Inicia sesión para continuar</p>
+
+    <div class="group">
+      <label>Email</label>
+      <input type="email" formControlName="email" placeholder="correo@amigossc.org" />
+    </div>
+    <div class="group">
+      <label>Contraseña</label>
+      <input type="password" formControlName="password" placeholder="••••••••" />
+    </div>
+
+    <button class="btn" [disabled]="loading">Ingresar</button>
+    <div class="error" *ngIf="error">{{ error }}</div>
+  </form>
+</div>

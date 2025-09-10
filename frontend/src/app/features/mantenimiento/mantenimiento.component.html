@@ -1,0 +1,80 @@
+<header class="header">
+  <div class="header-left">
+    <h1>Mantenimiento</h1>
+    <div class="breadcrumb"><a routerLink="/dashboard">Dashboard</a> <i class="fas fa-chevron-right"></i> <span>Mantenimiento</span></div>
+  </div>
+</header>
+
+<div class="page-padding">
+  <!-- Formulario -->
+  <div class="table-wrap" style="margin-bottom:18px; padding:16px">
+    <h3 style="margin-top:0">Programar mantenimiento</h3>
+    <form [formGroup]="form" (ngSubmit)="crear()" class="loan-form">
+      <div class="form-row">
+        <label>Equipo</label>
+        <select formControlName="equipmentId" class="filter-select" style="width:100%">
+          <option value="">— Selecciona un equipo —</option>
+          <option *ngFor="let e of equipos" [value]="e.id">{{ e.code }} — {{ e.name }}</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Tipo</label>
+        <select formControlName="type" class="filter-select">
+          <option value="preventivo">Preventivo</option>
+          <option value="correctivo">Correctivo</option>
+          <option value="predictivo">Predictivo</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Fecha Programada</label>
+        <input type="date" formControlName="scheduledDate" class="search-input" />
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label>Notas</label>
+        <input formControlName="notes" class="search-input" placeholder="Observaciones (opcional)" />
+      </div>
+      <div>
+        <button class="btn" [disabled]="form.invalid"><i class="fas fa-save"></i> Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Lista -->
+  <div *ngIf="loading">Cargando...</div>
+  <div *ngIf="!loading && error" style="color:#b91c1c; font-weight:600">{{ error }}</div>
+
+  <div class="table-wrap" *ngIf="!loading && !error">
+    <table>
+      <thead>
+        <tr>
+          <th>Equipo</th>
+          <th>Tipo</th>
+          <th>Programado</th>
+          <th>Realizado</th>
+          <th>Estado</th>
+          <th style="width:160px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of mantenimientos">
+          <td>
+            <div style="font-weight:600">{{ m.equipment?.name || m.equipmentId }}</div>
+            <div style="font-size:.85rem; color:#64748b">{{ m.equipment?.code }}</div>
+          </td>
+          <td>{{ m.type }}</td>
+          <td>{{ m.scheduledDate | date:'dd/MM/yyyy' }}</td>
+          <td>{{ m.performedDate  ? (m.performedDate | date:'dd/MM/yyyy') : '-' }}</td>
+          <td><span [ngClass]="estadoClase(m)">{{ m.status }}</span></td>
+          <td class="actions-cell">
+            <button class="action-btn btn-edit" [disabled]="m.status==='completado'" (click)="completar(m)">
+              <i class="fas fa-check"></i> Completar
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="mantenimientos.length === 0">
+          <td colspan="6" style="text-align:center; padding:18px; color:#64748b">No hay mantenimientos.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

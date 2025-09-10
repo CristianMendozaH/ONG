@@ -1,0 +1,80 @@
+// src/styles/_variables.scss
+
+// Colores principales del sistema (basados en tus prototipos)
+$primary-color: #114495;
+$secondary-color: #EE9D08;
+$success-color: #2ECC71;
+$danger-color: #E6331B;
+$warning-color: #FFED00;
+$dark-color: #33475b;
+$light-color: #f8f9fa;
+
+// Colores de estado
+$disponible-color: #2ECC71;
+$prestado-color: #114495;
+$atrasado-color: #E6331B;
+$mantenimiento-color: #FFED00;
+$danado-color: #E6331B;
+
+// Colores de prioridad
+$priority-alta: #E6331B;
+$priority-media: #EE9D08;
+$priority-baja: #2ECC71;
+
+// Grises
+$gray-100: #f8f9fa;
+$gray-200: #e9ecef;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #6c757d;
+$gray-700: #495057;
+$gray-800: #343a40;
+$gray-900: #212529;
+
+// Espaciado
+$spacing-xs: 0.25rem;   // 4px
+$spacing-sm: 0.5rem;    // 8px
+$spacing-md: 1rem;      // 16px
+$spacing-lg: 1.5rem;    // 24px
+$spacing-xl: 2rem;      // 32px
+$spacing-xxl: 3rem;     // 48px
+
+// Borders
+$border-radius: 8px;
+$border-radius-lg: 12px;
+$border-radius-sm: 6px;
+$border-width: 1px;
+$border-color: #ddd;
+
+// Sombras
+$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.15);
+
+// Sidebar
+$sidebar-width: 280px;
+$sidebar-bg: $primary-color;
+
+// Transiciones
+$transition-base: all 0.3s ease;
+$transition-fast: all 0.15s ease;
+
+// Fuentes
+$font-family-base: 'Poppins', sans-serif;
+$font-size-base: 0.9rem;
+$font-size-sm: 0.8rem;
+$font-size-lg: 1.1rem;
+$font-size-xl: 1.2rem;
+$font-size-xxl: 1.5rem;
+
+// Z-index
+$z-modal: 2000;
+$z-sidebar: 1000;
+$z-header: 999;
+$z-dropdown: 998;
+
+// Breakpoints
+$mobile: 768px;
+$tablet: 992px;
+$desktop: 1200px;

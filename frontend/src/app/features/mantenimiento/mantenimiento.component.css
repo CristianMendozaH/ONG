@@ -1,0 +1,7 @@
+/* reutiliza loan-form del módulo de préstamos */
+.loan-form { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; align-items:end; }
+.form-row { display:flex; flex-direction:column; gap:6px; }
+.form-row label { font-size:.9rem; color:#334155; }
+@media (max-width: 900px){
+  .loan-form { grid-template-columns: 1fr; }
+}
