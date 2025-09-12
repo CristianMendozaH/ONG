@@ -1,71 +1,204 @@
+<!-- src/app/features/dashboard/dashboard.component.html -->
+
+<!-- Header -->
 <header class="header">
   <div class="header-left">
-    <h1>¡Buen día!</h1>
+    <h1>¡Buen día, {{ userStore.userName() }}!</h1>
     <p>Aquí tienes un resumen de la actividad de hoy</p>
+  </div>
+  <div class="header-right">
+    <div class="notification-bell">
+      <i class="fas fa-bell"></i>
+      <span class="notification-badge">3</span>
+    </div>
+    <div class="user-profile">
+      <div class="user-avatar">{{ userStore.userName().charAt(0) }}</div>
+      <div class="user-info">
+        <h4>{{ userStore.userName() }}</h4>
+        <p>{{ userStore.isAdmin() ? 'Administrador' : userStore.isTech() ? 'Técnico' : 'Usuario' }}</p>
+      </div>
+    </div>
   </div>
 </header>
 
-<div class="page-padding">
-  <!-- Tarjetas KPI -->
-  <div class="kpi-grid">
-    <div class="kpi-card kpi-green">
-      <div class="kpi-header">
-        <div>
-          <div class="kpi-value">24</div>
-          <div class="kpi-label">Equipos Disponibles</div>
-        </div>
-        <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
-      </div>
-    </div>
-
-    <div class="kpi-card kpi-blue">
-      <div class="kpi-header">
-        <div>
-          <div class="kpi-value">18</div>
-          <div class="kpi-label">Equipos Prestados</div>
-        </div>
-        <div class="kpi-icon"><i class="fas fa-share-alt"></i></div>
-      </div>
-    </div>
-
-    <div class="kpi-card kpi-red">
-      <div class="kpi-header">
-        <div>
-          <div class="kpi-value">3</div>
-          <div class="kpi-label">Devoluciones Atrasadas</div>
-        </div>
-        <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
-      </div>
-    </div>
-
-    <div class="kpi-card kpi-amber">
-      <div class="kpi-header">
-        <div>
-          <div class="kpi-value">5</div>
-          <div class="kpi-label">En Mantenimiento</div>
-        </div>
-        <div class="kpi-icon"><i class="fas fa-wrench"></i></div>
-      </div>
+<!-- Dashboard Content -->
+<div class="dashboard-content">
+  <!-- Loading state -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Cargando datos...</p>
     </div>
   </div>
 
-  <!-- Actividad reciente -->
-  <div class="activity-card">
-    <div class="activity-title">Actividad Reciente</div>
-    <div class="activity-list">
-      <div class="activity-item">
-        <div class="activity-icon activity-prestamo"><i class="fas fa-arrow-up"></i></div>
-        <div class="activity-info">
-          <div class="activity-text">Laptop Dell prestada a María</div>
-          <div class="activity-time">Hace 15 min</div>
+  <!-- Content when loaded -->
+  <div *ngIf="!loading">
+    <!-- KPI Cards -->
+    <div class="kpi-grid" *ngIf="kpis">
+      <div class="kpi-card disponibles">
+        <div class="kpi-header">
+          <div class="kpi-content">
+            <div class="kpi-value">{{ kpis.disponibles }}</div>
+            <div class="kpi-label">Equipos Disponibles</div>
+            <div class="kpi-trend trend-up">
+              <i class="fas fa-arrow-up"></i>
+              <span>+3 esta semana</span>
+            </div>
+          </div>
+          <div class="kpi-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
         </div>
       </div>
-      <div class="activity-item">
-        <div class="activity-icon activity-devolucion"><i class="fas fa-arrow-down"></i></div>
-        <div class="activity-info">
-          <div class="activity-text">Proyector devuelto por Juan</div>
-          <div class="activity-time">Hace 1 hora</div>
+
+      <div class="kpi-card prestados">
+        <div class="kpi-header">
+          <div class="kpi-content">
+            <div class="kpi-value">{{ kpis.prestados }}</div>
+            <div class="kpi-label">Equipos Prestados</div>
+            <div class="kpi-trend">
+              <i class="fas fa-minus"></i>
+              <span>Sin cambios</span>
+            </div>
+          </div>
+          <div class="kpi-icon">
+            <i class="fas fa-share-alt"></i>
+          </div>
         </div>
+      </div>
+
+      <div class="kpi-card atrasados">
+        <div class="kpi-header">
+          <div class="kpi-content">
+            <div class="kpi-value">{{ kpis.atrasos }}</div>
+            <div class="kpi-label">Devoluciones Atrasadas</div>
+            <div class="kpi-trend trend-down">
+              <i class="fas fa-arrow-down"></i>
+              <span>-1 desde ayer</span>
+            </div>
+          </div>
+          <div class="kpi-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-card mantenimiento">
+        <div class="kpi-header">
+          <div class="kpi-content">
+            <div class="kpi-value">{{ enMantenimiento }}</div>
+            <div class="kpi-label">En Mantenimiento</div>
+            <div class="kpi-trend">
+              <i class="fas fa-tools"></i>
+              <span>2 programados</span>
+            </div>
+          </div>
+          <div class="kpi-icon">
+            <i class="fas fa-wrench"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Préstamos vs Devoluciones</h3>
+          <p class="chart-subtitle">Actividad de los últimos 7 días</p>
+        </div>
+        <div class="chart-container">
+          <canvas #barChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Estado de Equipos</h3>
+          <p class="chart-subtitle">Distribución actual</p>
+        </div>
+        <div class="chart-container">
+          <canvas #doughnutChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-section">
+      <div class="activity-header">
+        <h3 class="chart-title">Actividad Reciente</h3>
+        <a routerLink="/prestamos" class="view-all-link">Ver todo</a>
+      </div>
+
+      <div class="activity-list" *ngIf="recentActivity.length > 0; else noActivity">
+        <div class="activity-item" *ngFor="let item of recentActivity">
+          <div class="activity-icon" [ngClass]="item.iconClass">
+            <i class="fas" [ngClass]="item.icon"></i>
+          </div>
+          <div class="activity-info">
+            <div class="activity-title">{{ item.title }}</div>
+            <div class="activity-time">{{ getRelativeTime(item.updatedAt) }}</div>
+          </div>
+          <div class="activity-status">
+            <app-status-badge
+              type="status"
+              [value]="$any(item.status)">
+            </app-status-badge>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noActivity>
+        <div class="empty-state">
+          <i class="fas fa-clipboard-list"></i>
+          <p>No hay actividad reciente</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions-section">
+      <h3 class="section-title">Acciones Rápidas</h3>
+      <div class="quick-actions-grid">
+        <a routerLink="/prestamos" class="quick-action-card">
+          <div class="quick-action-icon prestamo">
+            <i class="fas fa-plus"></i>
+          </div>
+          <div class="quick-action-content">
+            <h4>Nuevo Préstamo</h4>
+            <p>Registrar préstamo de equipo</p>
+          </div>
+        </a>
+
+        <a routerLink="/prestamos" class="quick-action-card">
+          <div class="quick-action-icon devolucion">
+            <i class="fas fa-undo"></i>
+          </div>
+          <div class="quick-action-content">
+            <h4>Procesar Devolución</h4>
+            <p>Registrar devolución de equipo</p>
+          </div>
+        </a>
+
+        <a routerLink="/mantenimiento" class="quick-action-card">
+          <div class="quick-action-icon mantenimiento">
+            <i class="fas fa-wrench"></i>
+          </div>
+          <div class="quick-action-content">
+            <h4>Programar Mantenimiento</h4>
+            <p>Agendar mantenimiento preventivo</p>
+          </div>
+        </a>
+
+        <a routerLink="/equipos" class="quick-action-card">
+          <div class="quick-action-icon equipo">
+            <i class="fas fa-laptop"></i>
+          </div>
+          <div class="quick-action-content">
+            <h4>Gestionar Equipos</h4>
+            <p>Ver y administrar inventario</p>
+          </div>
+        </a>
       </div>
     </div>
   </div>

@@ -1,0 +1,111 @@
+// src/app/shared/components/status-badge/status-badge.component.scss
+
+.badge {
+  display: inline-block;
+  text-align: center;
+  font-weight: 500;
+  border-radius: 20px;
+  min-width: 80px;
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 4px 12px;
+  font-size: 0.8rem;
+
+  &.status-disponible {
+    background: #d4edda;
+    color: #2ECC71;
+  }
+
+  &.status-prestado {
+    background: #cce5ff;
+    color: #114495;
+  }
+
+  &.status-atrasado {
+    background: #f8d7da;
+    color: #E6331B;
+  }
+
+  &.status-mantenimiento {
+    background: #fff3cd;
+    color: #b45309;
+  }
+
+  &.status-danado {
+    background: #f8d7da;
+    color: #E6331B;
+  }
+
+  &.status-devuelto {
+    background: #d4edda;
+    color: #2ECC71;
+  }
+
+  &.status-programado {
+    background: #cce5ff;
+    color: #114495;
+  }
+
+  &.status-en-proceso {
+    background: #fff3cd;
+    color: #EE9D08;
+  }
+
+  &.status-completado {
+    background: #d4edda;
+    color: #2ECC71;
+  }
+
+  &.status-cancelado {
+    background: #f8d7da;
+    color: #E6331B;
+  }
+}
+
+/* Priority Badges */
+.priority-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  min-width: 50px;
+
+  &.priority-alta {
+    background: #ffe6e6;
+    color: #E6331B;
+  }
+
+  &.priority-media {
+    background: #fff8e1;
+    color: #EE9D08;
+  }
+
+  &.priority-baja {
+    background: #e8f5e8;
+    color: #2ECC71;
+  }
+}
+
+/* Role Badges */
+.role-badge {
+  padding: 4px 12px;
+  font-size: 0.8rem;
+
+  &.role-admin {
+    background: #ffe6e6;
+    color: #E6331B;
+  }
+
+  &.role-tech {
+    background: #e8f5e8;
+    color: #2ECC71;
+  }
+
+  &.role-user {
+    background: #cce5ff;
+    color: #114495;
+  }
+}

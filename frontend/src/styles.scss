@@ -1,1 +1,616 @@
 /* You can add global styles to this file, and also import other style files */
+// src/styles.scss
+
+// Importar Google Fonts PRIMERO
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+// Importar variables
+@import 'styles/variables';
+
+
+/* styles.scss (GLOBAL) */
+:root {
+  --primary-color: #114495;
+  --secondary-color: #EE9D08;
+  --success-color: #2ECC71;
+  --warning-color: #FFED00;
+  --danger-color: #E6331B;
+  --info-color: #3498DB;
+  --light-gray: #F8F9FA;
+  --medium-gray: #E9ECEF;
+  --dark-gray: #6C757D;
+  --text-primary: #33475B;
+  --text-secondary: #666;
+  --border-color: #E1E5E9;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.12);
+  --border-radius: 8px;
+  --border-radius-lg: 12px;
+}
+
+/* Reset y base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Aplica Poppins por defecto, SIN romper Font Awesome */
+html, body {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Evitar que Poppins con !important afecte a los íconos */
+*:not(.fa):not(.fas):not(.fa-solid):not(.fa-regular):not(.fa-brands),
+*:not(.fa):not(.fas):not(.fa-solid):not(.fa-regular):not(.fa-brands)::before,
+*:not(.fa):not(.fas):not(.fa-solid):not(.fa-regular):not(.fa-brands)::after {
+  font-family: 'Poppins', sans-serif !important;
+}
+
+/* Refuerza las fuentes/pesos correctos de Font Awesome v6 */
+.fa, .fas, .fa-solid, .fa-regular {
+  font-family: "Font Awesome 6 Free" !important;
+}
+.fa-brands {
+  font-family: "Font Awesome 6 Brands" !important;
+}
+.fa-solid { font-weight: 900 !important; }
+.fa-regular { font-weight: 400 !important; }
+
+
+body {
+  font-family: 'Poppins', sans-serif !important;
+  background: $light-color;
+  color: $dark-color;
+  line-height: 1.6;
+}
+/* Header común para todas las páginas */
+.header {
+  background: white;
+  padding: 20px 30px;
+  box-shadow: $shadow-sm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+
+  .header-left {
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: $dark-color;
+      margin-bottom: 5px;
+      font-family: 'Poppins', sans-serif !important;
+    }
+
+    p {
+      color: #666;
+      font-size: 0.9rem;
+      margin: 0;
+      font-family: 'Poppins', sans-serif !important;
+    }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #666;
+
+  a {
+    color: $primary-color;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+/* Contenido de páginas */
+.page-content {
+  padding: $spacing-xl;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xl;
+
+  .content-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $dark-color;
+    margin: 0;
+    font-family: 'Poppins', sans-serif !important;
+  }
+}
+
+/* Botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: $border-radius;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 500;
+  cursor: pointer;
+  transition: $transition-base;
+  text-decoration: none;
+  font-size: $font-size-base;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  &.btn-primary {
+    background: $primary-color;
+    color: white;
+    box-shadow: 0 4px 12px rgba(17, 68, 149, 0.3);
+
+    &:hover {
+      background: darken($primary-color, 10%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(17, 68, 149, 0.4);
+    }
+  }
+
+  &.btn-secondary {
+    background: $secondary-color;
+    color: white;
+    box-shadow: 0 4px 12px rgba(238, 157, 8, 0.3);
+
+    &:hover {
+      background: darken($secondary-color, 10%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(238, 157, 8, 0.4);
+    }
+  }
+
+  &.btn-success {
+    background: $success-color;
+    color: white;
+
+    &:hover {
+      background: darken($success-color, 10%);
+    }
+  }
+
+  &.btn-danger {
+    background: $danger-color;
+    color: white;
+
+    &:hover {
+      background: darken($danger-color, 10%);
+    }
+  }
+
+  &.btn-outline {
+    background: transparent;
+    border: 1px solid $primary-color;
+    color: $primary-color;
+
+    &:hover {
+      background: $primary-color;
+      color: white;
+    }
+  }
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+  min-width: 80px;
+  display: inline-block;
+  font-family: 'Poppins', sans-serif !important;
+
+  &.status-disponible {
+    background: #d4edda;
+    color: $disponible-color;
+  }
+
+  &.status-prestado {
+    background: #cce5ff;
+    color: $prestado-color;
+  }
+
+  &.status-atrasado {
+    background: #f8d7da;
+    color: $atrasado-color;
+  }
+
+  &.status-mantenimiento {
+    background: #fff3cd;
+    color: #b45309;
+  }
+
+  &.status-danado {
+    background: #f8d7da;
+    color: $danado-color;
+  }
+
+  &.status-devuelto {
+    background: #d4edda;
+    color: $success-color;
+  }
+
+  &.status-programado {
+    background: #cce5ff;
+    color: $primary-color;
+  }
+
+  &.status-en-proceso {
+    background: #fff3cd;
+    color: $secondary-color;
+  }
+
+  &.status-completado {
+    background: #d4edda;
+    color: $success-color;
+  }
+
+  &.status-cancelado {
+    background: #f8d7da;
+    color: $danger-color;
+  }
+}
+
+/* Priority Badges */
+.priority-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-family: 'Poppins', sans-serif !important;
+
+  &.priority-alta {
+    background: #ffe6e6;
+    color: $priority-alta;
+  }
+
+  &.priority-media {
+    background: #fff8e1;
+    color: $priority-media;
+  }
+
+  &.priority-baja {
+    background: #e8f5e8;
+    color: $priority-baja;
+  }
+}
+
+/* Role Badges */
+.role-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+  min-width: 80px;
+  display: inline-block;
+  font-family: 'Poppins', sans-serif !important;
+
+  &.role-admin {
+    background: #ffe6e6;
+    color: $danger-color;
+  }
+
+  &.role-tech {
+    background: #e8f5e8;
+    color: $success-color;
+  }
+
+  &.role-user {
+    background: #cce5ff;
+    color: $primary-color;
+  }
+}
+
+/* Tablas */
+.table-container {
+  background: white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-md;
+  overflow: hidden;
+
+  .table-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .table-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: $dark-color;
+      font-family: 'Poppins', sans-serif !important;
+    }
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background: #e3f2fd;
+
+    th {
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: $primary-color;
+      border-bottom: 2px solid $primary-color;
+      font-size: 0.9rem;
+      font-family: 'Poppins', sans-serif !important;
+    }
+  }
+
+  tbody {
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.9rem;
+      font-family: 'Poppins', sans-serif !important;
+    }
+
+    tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+
+    tr:hover {
+      background: #e8f4fd;
+    }
+  }
+}
+
+/* Formularios */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-weight: 500;
+  color: $dark-color;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: $border-radius;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.9rem;
+  transition: $transition-base;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba(17, 68, 149, 0.1);
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Buscadores y filtros */
+.filters-section {
+  background: white;
+  padding: 20px;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-sm;
+  margin-bottom: 20px;
+}
+
+.filters-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 250px;
+  position: relative;
+
+  i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+  }
+
+  .search-input {
+    padding-left: 40px;
+  }
+}
+
+.filter-select {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: $border-radius;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+}
+
+/* Acciones en tablas */
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: $transition-base;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Poppins', sans-serif !important;
+
+  &.btn-view {
+    background: #6c757d;
+    color: white;
+
+    &:hover {
+      background: #5a6268;
+    }
+  }
+
+  &.btn-edit {
+    background: $secondary-color;
+    color: white;
+
+    &:hover {
+      background: darken($secondary-color, 10%);
+    }
+  }
+
+  &.btn-delete {
+    background: $danger-color;
+    color: white;
+
+    &:hover {
+      background: darken($danger-color, 10%);
+    }
+  }
+
+  &.btn-return {
+    background: $secondary-color;
+    color: white;
+
+    &:hover {
+      background: darken($secondary-color, 10%);
+    }
+  }
+
+  &.btn-complete {
+    background: $success-color;
+    color: white;
+
+    &:hover {
+      background: darken($success-color, 10%);
+    }
+  }
+}
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-md;
+  padding: 25px;
+  transition: $transition-base;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+}
+
+/* Grid layouts */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+/* Responsive */
+@media (max-width: $mobile) {
+  .page-content {
+    padding: $spacing-lg;
+  }
+
+  .content-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .filters-row {
+    flex-direction: column;
+  }
+
+  .search-box {
+    min-width: 100%;
+  }
+
+  .table {
+    font-size: 0.8rem;
+
+    th,
+    td {
+      padding: 8px;
+    }
+  }
+
+  .actions-cell {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Utilities */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: $spacing-sm; }
+.mb-2 { margin-bottom: $spacing-md; }
+.mb-3 { margin-bottom: $spacing-lg; }
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: $spacing-sm; }
+.mt-2 { margin-top: $spacing-md; }
+.mt-3 { margin-top: $spacing-lg; }

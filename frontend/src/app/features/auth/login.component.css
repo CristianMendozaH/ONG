@@ -10,4 +10,23 @@ input { width:100%; padding:12px 14px; border:1px solid #d8dee6; border-radius:8
 input:focus { border-color:#114495; box-shadow:0 0 0 3px rgba(17,68,149,.1); }
 .btn { width:100%; margin-top:12px; background:#114495; color:#fff; border:none; padding:12px 14px; border-radius:8px; cursor:pointer; font-weight:600; }
 .btn:disabled { opacity:.7; cursor:not-allowed; }
+.btn { text-align:center; }
 .error { margin-top:10px; color:#E6331B; font-size:.9rem; text-align:center; }
+
+
+.btn {
+  width:100%;
+  margin-top:12px;
+  background:#114495;
+  color:#fff;
+  border:none;
+  padding:12px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+
+  display:flex;               /* ← */
+  align-items:center;         /* ← centra vertical */
+  justify-content:center;     /* ← centra horizontal */
+  /* gap:8px;  si luego agregas un ícono */
+}
