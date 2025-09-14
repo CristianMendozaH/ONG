@@ -1,0 +1,633 @@
+// Variables
+$primary-color: #114495;
+$secondary-color: #EE9D08;
+$success-color: #2ECC71;
+$danger-color: #E6331B;
+$warning-color: #EE9D08;
+$info-color: #17a2b8;
+$light-gray: #f8f9fa;
+$border-color: #f0f0f0;
+$text-color: #33475b;
+$text-muted: #666;
+
+// Header styles
+.header {
+  background: white;
+  padding: 20px 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .header-left h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: $text-color;
+    margin-bottom: 5px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: $text-muted;
+
+    a {
+      color: $primary-color;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+// Content styles
+.users-content {
+  padding: 30px;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+
+  .content-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $text-color;
+  }
+
+  .btn-create-user {
+    background: $primary-color;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(17, 68, 149, 0.3);
+
+    &:hover {
+      background: darken($primary-color, 10%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(17, 68, 149, 0.4);
+    }
+  }
+}
+
+// Loading and Error states
+.loading-state, .error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  font-size: 1.1rem;
+  color: $text-muted;
+  gap: 10px;
+
+  i {
+    font-size: 1.5rem;
+  }
+}
+
+.error-state {
+  color: $danger-color;
+  flex-direction: column;
+  gap: 15px;
+
+  .retry-btn {
+    background: $primary-color;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+}
+
+// Table styles
+.users-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+
+  .table-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid $border-color;
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 20px;
+
+    .table-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: $text-color;
+      margin: 0;
+      justify-self: start;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: $light-gray;
+      border-radius: 8px;
+      padding: 8px 15px;
+      width: 300px;
+      justify-self: end;
+
+      input {
+        border: none;
+        background: transparent;
+        outline: none;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.9rem;
+        width: 100%;
+        padding: 4px 8px;
+
+        &::placeholder {
+          color: #999;
+        }
+      }
+
+      i {
+        color: #999;
+        margin-right: 8px;
+      }
+    }
+  }
+
+  .users-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    thead {
+      background: $primary-color;
+    }
+
+    th {
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: white;
+      font-size: 0.9rem;
+    }
+
+    td {
+      padding: 15px;
+      border-bottom: 1px solid $border-color;
+      font-size: 0.9rem;
+    }
+
+    tbody tr:nth-child(even) {
+      background: $light-gray;
+    }
+
+    tbody tr:hover {
+      background: #e8f4fd;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: $text-muted;
+
+      i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+      }
+    }
+  }
+}
+
+// Badge styles
+.role-badge, .status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+  min-width: 80px;
+  display: inline-block;
+}
+
+.role-admin {
+  background: #ffe6e6;
+  color: $danger-color;
+}
+
+.role-tecnico {
+  background: #e8f5e8;
+  color: $success-color;
+}
+
+.role-administrativo {
+  background: #fff8e1;
+  color: $warning-color;
+}
+
+.role-becado {
+  background: #cce5ff;
+  color: $primary-color;
+}
+
+.status-activo {
+  background: #d4edda;
+  color: $success-color;
+}
+
+.status-inactivo {
+  background: #f8d7da;
+  color: $danger-color;
+}
+
+.password-reset-badge {
+  background: #fff3cd;
+  color: #856404;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 5px;
+}
+
+// Action buttons
+.actions-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.btn-edit {
+  background: $warning-color;
+  color: white;
+
+  &:hover {
+    background: darken($warning-color, 10%);
+  }
+}
+
+.btn-password {
+  background: #6f42c1;
+  color: white;
+
+  &:hover {
+    background: darken(#6f42c1, 10%);
+  }
+}
+
+.btn-delete {
+  background: $danger-color;
+  color: white;
+
+  &:hover {
+    background: darken($danger-color, 10%);
+  }
+}
+
+// Modal styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+
+  .modal-header {
+    padding: 25px 25px 15px;
+    border-bottom: 1px solid $border-color;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: $text-color;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #999;
+      cursor: pointer;
+      padding: 5px;
+
+      &:hover {
+        color: $text-color;
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 25px;
+  }
+
+  .modal-footer {
+    padding: 15px 25px 25px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+}
+
+// Form styles
+.form-group {
+  margin-bottom: 20px;
+
+  .form-label {
+    display: block;
+    font-weight: 500;
+    color: $text-color;
+    margin-bottom: 8px;
+  }
+
+  .form-input, .form-select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba(17, 68, 149, 0.1);
+    }
+
+    &.error {
+      border-color: $danger-color;
+      box-shadow: 0 0 0 3px rgba(230, 51, 27, 0.1);
+    }
+  }
+
+  .error-message {
+    color: $danger-color;
+    font-size: 0.8rem;
+    margin-top: 5px;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.password-input-group {
+  position: relative;
+
+  .password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: $text-muted;
+    cursor: pointer;
+    font-size: 1rem;
+
+    &:hover {
+      color: $text-color;
+    }
+  }
+}
+
+.password-generator {
+  margin-top: 10px;
+
+  .btn-generate-password {
+    background: $info-color;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &:hover {
+      background: darken($info-color, 10%);
+    }
+  }
+
+  .generated-password {
+    margin-top: 10px;
+    padding: 10px;
+    background: $light-gray;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .copy-btn {
+      background: $primary-color;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      &:hover {
+        background: darken($primary-color, 10%);
+      }
+    }
+  }
+}
+
+.password-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  input[type="checkbox"] {
+    width: auto;
+  }
+
+  label {
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+}
+
+.notification-options {
+  background: $light-gray;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+
+  .notification-title {
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: $text-color;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+// Alert styles
+.alert {
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  &.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+  }
+}
+
+// Button styles
+.btn-cancel {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: darken(#6c757d, 10%);
+  }
+}
+
+.btn-save {
+  background: $primary-color;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &:hover:not(:disabled) {
+    background: darken($primary-color, 10%);
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .users-content {
+    padding: 20px;
+  }
+
+  .content-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .table-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+
+    .search-box {
+      width: 100%;
+    }
+  }
+
+  .users-table {
+    font-size: 0.8rem;
+
+    th, td {
+      padding: 8px;
+    }
+  }
+
+  .actions-cell {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .password-options {
+    grid-template-columns: 1fr;
+  }
+
+  .modal {
+    width: 95%;
+    margin: 10px;
+  }
+}

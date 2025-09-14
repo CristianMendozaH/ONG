@@ -1,0 +1,176 @@
+<!-- Header -->
+<header class="header">
+  <div class="header-left">
+    <h1>Reportes y Analítica</h1>
+    <div class="breadcrumb">
+      <a href="#">Dashboard</a>
+      <i class="fas fa-chevron-right"></i>
+      <span>Reportes</span>
+    </div>
+  </div>
+</header>
+
+<!-- Loading State -->
+<div *ngIf="isLoading" class="loading-container">
+  <div class="spinner"></div>
+  <p>Cargando datos...</p>
+</div>
+
+<!-- Content -->
+<div class="reports-content" *ngIf="!isLoading">
+  <!-- Main Section -->
+  <div class="main-section">
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <h3 class="filters-title">
+        <i class="fas fa-filter"></i>
+        Filtros de Búsqueda
+      </h3>
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label class="filter-label">Fecha de Inicio</label>
+          <input
+            type="date"
+            class="filter-input"
+            [(ngModel)]="filtros.fechaInicio">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Fecha de Fin</label>
+          <input
+            type="date"
+            class="filter-input"
+            [(ngModel)]="filtros.fechaFin">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Tipo de Reporte</label>
+          <select class="filter-select" [(ngModel)]="filtros.tipoReporte">
+            <option
+              *ngFor="let tipo of tiposReporte"
+              [value]="tipo.value">
+              {{ tipo.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="filters-actions">
+        <button class="btn-clear" (click)="limpiarFiltros()">
+          <i class="fas fa-times"></i>
+          Limpiar
+        </button>
+        <button class="btn-filter" (click)="aplicarFiltros()">
+          <i class="fas fa-search"></i>
+          Buscar
+        </button>
+      </div>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="reports-table-container">
+      <div class="table-header">
+        <h3 class="table-title">Resultados del Reporte</h3>
+        <div class="export-buttons">
+          <button class="btn-export-pdf" (click)="exportarPDF()">
+            <i class="fas fa-file-pdf"></i>
+            Exportar PDF
+          </button>
+          <button class="btn-export-excel" (click)="exportarExcel()">
+            <i class="fas fa-file-excel"></i>
+            Exportar Excel
+          </button>
+        </div>
+      </div>
+
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Equipo</th>
+            <th>Usuario</th>
+            <th>Fecha Préstamo</th>
+            <th>Fecha Devolución</th>
+            <th>Estado</th>
+            <th>Días de Uso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let reporte of reportesFiltrados; trackBy: trackByReporte">
+            <td>{{ reporte.id }}</td>
+            <td>{{ reporte.equipo }}</td>
+            <td>{{ reporte.usuario }}</td>
+            <td>{{ reporte.fechaPrestamo }}</td>
+            <td>{{ reporte.fechaDevolucion || '-' }}</td>
+            <td>
+              <span
+                class="status-badge"
+                [class]="getEstadoClass(reporte.estado)">
+                {{ reporte.estado }}
+              </span>
+            </td>
+            <td>{{ reporte.diasUso }}</td>
+          </tr>
+
+          <!-- Empty state -->
+          <tr *ngIf="reportesFiltrados.length === 0">
+            <td colspan="7" class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <p>No se encontraron reportes con los filtros aplicados</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Charts Panel -->
+  <div class="charts-panel">
+    <!-- Statistics -->
+    <div class="chart-card">
+      <h3 class="chart-title">
+        <i class="fas fa-chart-bar"></i>
+        Estadísticas Generales
+      </h3>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number">{{ totalPrestamos }}</div>
+          <div class="stat-label">Total Préstamos</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">{{ totalDevueltos }}</div>
+          <div class="stat-label">Devueltos</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">{{ totalActivos }}</div>
+          <div class="stat-label">Activos</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">{{ totalVencidos }}</div>
+          <div class="stat-label">Vencidos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Chart -->
+    <div class="chart-card">
+      <h3 class="chart-title">
+        <i class="fas fa-chart-pie"></i>
+        Estado de Préstamos
+      </h3>
+      <div class="chart-placeholder">
+        <p>Gráfico en desarrollo</p>
+        <p>Los gráficos se implementarán una vez resueltos los problemas de Chart.js</p>
+      </div>
+    </div>
+
+    <!-- Activity Chart -->
+    <div class="chart-card">
+      <h3 class="chart-title">
+        <i class="fas fa-chart-line"></i>
+        Actividad Mensual
+      </h3>
+      <div class="chart-placeholder">
+        <p>Gráfico en desarrollo</p>
+        <p>Los gráficos se implementarán una vez resueltos los problemas de Chart.js</p>
+      </div>
+    </div>
+  </div>
+</div>

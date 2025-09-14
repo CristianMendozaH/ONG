@@ -1,0 +1,605 @@
+<!-- Header -->
+<header class="header">
+  <div class="header-left">
+    <h1>Configuración del Sistema</h1>
+    <div class="breadcrumb">
+      <a routerLink="/dashboard">Dashboard</a>
+      <i class="fas fa-chevron-right"></i>
+      <span>Configuración</span>
+    </div>
+  </div>
+</header>
+
+<!-- Content -->
+<div class="config-content">
+  <div class="content-header">
+    <h2 class="content-title">Configuración del Sistema</h2>
+    <p class="content-subtitle">
+      Personaliza y configura los parámetros del sistema según las necesidades de tu organización
+    </p>
+  </div>
+
+  <!-- Configuration Tabs -->
+  <div class="config-tabs">
+    <!-- Tabs Navigation -->
+    <div class="tabs-nav">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'general'"
+        (click)="switchTab('general')">
+        <i class="fas fa-cogs"></i> General
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'notifications'"
+        (click)="switchTab('notifications')">
+        <i class="fas fa-envelope"></i> Notificaciones
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'alerts'"
+        (click)="switchTab('alerts')">
+        <i class="fas fa-exclamation-triangle"></i> Alertas
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'appearance'"
+        (click)="switchTab('appearance')">
+        <i class="fas fa-palette"></i> Personalización
+      </button>
+    </div>
+
+    <!-- General Tab -->
+    <div id="general" class="tab-content" [class.active]="activeTab === 'general'">
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-info-circle"></i>
+          Información General
+        </h3>
+        <p class="section-description">Configura la información básica de tu sistema</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nombre del Sistema</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="config.general.systemName"
+              placeholder="Nombre del sistema">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Versión</label>
+            <input
+              type="text"
+              class="form-input"
+              [value]="config.general.version"
+              readonly>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <textarea
+            class="form-textarea"
+            [(ngModel)]="config.general.description"
+            placeholder="Descripción del sistema">
+          </textarea>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-image"></i>
+          Logo y Marca
+        </h3>
+        <p class="section-description">Personaliza el logo y la imagen de marca</p>
+
+        <div class="form-group">
+          <label class="form-label">Logo del Sistema</label>
+          <div class="file-upload">
+            <div class="file-upload-btn" (click)="fileInput.click()">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Haz clic para subir el logo o arrastra aquí</p>
+              <small>Formatos: PNG, JPG, SVG (Máx. 2MB)</small>
+            </div>
+            <input
+              #fileInput
+              type="file"
+              accept="image/*"
+              (change)="onLogoChange($event)"
+              style="display: none;">
+          </div>
+          <div class="preview-card" *ngIf="logoPreview">
+            <div class="preview-title">Vista Previa:</div>
+            <img
+              [src]="logoPreview"
+              class="logo-preview"
+              alt="Logo preview">
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-building"></i>
+          Información de la Organización
+        </h3>
+        <p class="section-description">Datos de contacto y ubicación</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Nombre de la Organización</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="config.general.orgName">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email de Contacto</label>
+            <input
+              type="email"
+              class="form-input"
+              [(ngModel)]="config.general.email">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input
+              type="tel"
+              class="form-input"
+              [(ngModel)]="config.general.phone">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sitio Web</label>
+            <input
+              type="url"
+              class="form-input"
+              [(ngModel)]="config.general.website">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Dirección</label>
+          <textarea
+            class="form-textarea"
+            rows="3"
+            [(ngModel)]="config.general.address">
+          </textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications Tab -->
+    <div id="notifications" class="tab-content" [class.active]="activeTab === 'notifications'">
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-envelope-open"></i>
+          Configuración de Email
+        </h3>
+        <p class="section-description">Configura el servidor SMTP para envío de notificaciones</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Servidor SMTP</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="config.notifications.smtpServer"
+              placeholder="smtp.servidor.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Puerto</label>
+            <input
+              type="number"
+              class="form-input"
+              [(ngModel)]="config.notifications.smtpPort"
+              placeholder="587">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Usuario SMTP</label>
+            <input
+              type="email"
+              class="form-input"
+              [(ngModel)]="config.notifications.smtpUser"
+              placeholder="usuario@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input
+              type="password"
+              class="form-input"
+              [(ngModel)]="config.notifications.smtpPassword"
+              placeholder="••••••••">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email de Respuesta</label>
+          <input
+            type="email"
+            class="form-input"
+            [(ngModel)]="config.notifications.replyEmail"
+            placeholder="noreply@sistema.com">
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-template"></i>
+          Plantillas de Email
+        </h3>
+        <p class="section-description">Personaliza los mensajes automáticos del sistema</p>
+
+        <div class="form-group">
+          <label class="form-label">Notificación de Préstamo</label>
+          <textarea
+            class="form-textarea"
+            rows="6"
+            [(ngModel)]="config.notifications.loanTemplate"
+            placeholder="Plantilla para confirmación de préstamo">
+          </textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Recordatorio de Devolución</label>
+          <textarea
+            class="form-textarea"
+            rows="6"
+            [(ngModel)]="config.notifications.reminderTemplate"
+            placeholder="Plantilla para recordatorio de devolución">
+          </textarea>
+        </div>
+
+        <div class="preview-card">
+          <div class="preview-title">Variables disponibles:</div>
+          <p>
+            <code>&#123;nombre_usuario&#125;</code>,
+            <code>&#123;nombre_equipo&#125;</code>,
+            <code>&#123;fecha_prestamo&#125;</code>,
+            <code>&#123;fecha_devolucion&#125;</code>,
+            <code>&#123;nombre_organizacion&#125;</code>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts Tab -->
+    <div id="alerts" class="tab-content" [class.active]="activeTab === 'alerts'">
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-clock"></i>
+          Parámetros de Tiempo
+        </h3>
+        <p class="section-description">Configura los límites de tiempo para préstamos y alertas</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tiempo máximo de préstamo (días)</label>
+            <input
+              type="number"
+              class="form-input"
+              [(ngModel)]="config.alerts.maxLoanDays"
+              min="1"
+              max="365">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Días para recordatorio</label>
+            <input
+              type="number"
+              class="form-input"
+              [(ngModel)]="config.alerts.reminderDays"
+              min="1"
+              max="30">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Días de gracia después de vencimiento</label>
+            <input
+              type="number"
+              class="form-input"
+              [(ngModel)]="config.alerts.graceDays"
+              min="0"
+              max="10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tiempo entre recordatorios (días)</label>
+            <input
+              type="number"
+              class="form-input"
+              [(ngModel)]="config.alerts.reminderInterval"
+              min="1"
+              max="7">
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-exclamation-circle"></i>
+          Sistema de Multas
+        </h3>
+        <p class="section-description">Configura las políticas de multas por retraso</p>
+
+        <div class="form-group">
+          <label class="form-label">Habilitar sistema de multas</label>
+          <div style="margin-top: 10px;">
+            <label class="switch">
+              <input
+                type="checkbox"
+                [(ngModel)]="config.alerts.fineEnabled">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row" *ngIf="config.alerts.fineEnabled">
+          <div class="form-group">
+            <label class="form-label">Multa por día de retraso (Q)</label>
+            <input
+              type="number"
+              class="form-input"
+              [(ngModel)]="config.alerts.dailyFine"
+              step="0.01"
+              min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Multa máxima (Q)</label>
+            <input
+              type="number"
+              class="form-input"
+              [(ngModel)]="config.alerts.maxFine"
+              step="0.01"
+              min="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-tools"></i>
+          Mantenimiento Predictivo
+        </h3>
+        <p class="section-description">Configura las alertas de mantenimiento preventivo</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Horas de uso para alerta</label>
+            <input
+              type="number"
+              class="form-input"
+              [(ngModel)]="config.alerts.maintenanceHours"
+              min="100">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Días desde último mantenimiento</label>
+            <input
+              type="number"
+              class="form-input"
+              [(ngModel)]="config.alerts.maintenanceDays"
+              min="30">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Habilitar alertas automáticas de mantenimiento</label>
+          <div style="margin-top: 10px;">
+            <label class="switch">
+              <input
+                type="checkbox"
+                [(ngModel)]="config.alerts.maintenanceAlertsEnabled">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appearance Tab -->
+    <div id="appearance" class="tab-content" [class.active]="activeTab === 'appearance'">
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-paint-brush"></i>
+          Colores del Sistema
+        </h3>
+        <p class="section-description">Personaliza los colores principales de la interfaz</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Color Primario</label>
+            <div class="color-picker-group">
+              <input
+                type="color"
+                class="color-picker"
+                [(ngModel)]="config.appearance.primaryColor"
+                (ngModelChange)="updateColorPreview()">
+              <input
+                type="text"
+                class="form-input color-code"
+                [value]="config.appearance.primaryColor"
+                readonly>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Color Secundario</label>
+            <div class="color-picker-group">
+              <input
+                type="color"
+                class="color-picker"
+                [(ngModel)]="config.appearance.secondaryColor">
+              <input
+                type="text"
+                class="form-input color-code"
+                [value]="config.appearance.secondaryColor"
+                readonly>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Color de Éxito</label>
+            <div class="color-picker-group">
+              <input
+                type="color"
+                class="color-picker"
+                [(ngModel)]="config.appearance.successColor">
+              <input
+                type="text"
+                class="form-input color-code"
+                [value]="config.appearance.successColor"
+                readonly>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Color de Peligro</label>
+            <div class="color-picker-group">
+              <input
+                type="color"
+                class="color-picker"
+                [(ngModel)]="config.appearance.dangerColor">
+              <input
+                type="text"
+                class="form-input color-code"
+                [value]="config.appearance.dangerColor"
+                readonly>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-moon"></i>
+          Tema de la Interfaz
+        </h3>
+        <p class="section-description">Selecciona el tema visual del sistema</p>
+
+        <div class="form-group">
+          <label class="form-label">Tema Predeterminado</label>
+          <select class="form-select" [(ngModel)]="config.appearance.defaultTheme">
+            <option value="light">Claro</option>
+            <option value="dark">Oscuro</option>
+            <option value="auto">Automático (según sistema)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Permitir cambio de tema por usuario</label>
+          <div style="margin-top: 10px;">
+            <label class="switch">
+              <input
+                type="checkbox"
+                [(ngModel)]="config.appearance.allowUserThemeChange">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-desktop"></i>
+          Vista Previa
+        </h3>
+        <p class="section-description">Previsualiza cómo se verá el sistema con tus configuraciones</p>
+
+        <div class="preview-card">
+          <div class="preview-title">Vista previa del sidebar:</div>
+          <div
+            class="sidebar-preview"
+            [style.background]="config.appearance.primaryColor">
+            <div class="preview-header">
+              <div class="preview-logo">
+                <i class="fas fa-laptop"></i>
+              </div>
+              <span class="preview-title">{{config.general.systemName || 'Sistema de Gestión'}}</span>
+            </div>
+            <div class="preview-menu">
+              <div class="preview-menu-item">
+                <i class="fas fa-chart-pie"></i> Dashboard
+              </div>
+              <div class="preview-menu-item">
+                <i class="fas fa-laptop"></i> Equipos
+              </div>
+              <div class="preview-menu-item">
+                <i class="fas fa-users"></i> Usuarios
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-section">
+        <h3 class="section-title">
+          <i class="fas fa-language"></i>
+          Idioma y Localización
+        </h3>
+        <p class="section-description">Configura el idioma y formato regional</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Idioma del Sistema</label>
+            <select class="form-select" [(ngModel)]="config.appearance.language">
+              <option value="es">Español</option>
+              <option value="en">English</option>
+              <option value="fr">Français</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Zona Horaria</label>
+            <select class="form-select" [(ngModel)]="config.appearance.timezone">
+              <option value="America/Guatemala">Guatemala (GMT-6)</option>
+              <option value="America/Mexico_City">México (GMT-6)</option>
+              <option value="America/New_York">Nueva York (GMT-5)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Formato de Fecha</label>
+            <select class="form-select" [(ngModel)]="config.appearance.dateFormat">
+              <option value="dd/mm/yyyy">DD/MM/YYYY</option>
+              <option value="mm/dd/yyyy">MM/DD/YYYY</option>
+              <option value="yyyy-mm-dd">YYYY-MM-DD</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Moneda</label>
+            <select class="form-select" [(ngModel)]="config.appearance.currency">
+              <option value="GTQ">Quetzal (Q)</option>
+              <option value="USD">Dólar ($)</option>
+              <option value="EUR">Euro (€)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button
+        class="btn-reset"
+        (click)="resetSettings()"
+        [disabled]="isSaving">
+        <i class="fas fa-undo"></i>
+        Restablecer
+      </button>
+      <button
+        class="btn-save"
+        (click)="saveSettings()"
+        [disabled]="isSaving">
+        <i class="fas" [ngClass]="{'fa-save': !isSaving, 'fa-spinner fa-spin': isSaving}"></i>
+        <span *ngIf="!isSaving">Guardar Cambios</span>
+        <span *ngIf="isSaving">Guardando...</span>
+      </button>
+    </div>
+  </div>
+</div>

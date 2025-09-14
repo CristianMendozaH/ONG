@@ -1,80 +1,366 @@
 <header class="header">
   <div class="header-left">
-    <h1>Mantenimiento</h1>
-    <div class="breadcrumb"><a routerLink="/dashboard">Dashboard</a> <i class="fas fa-chevron-right"></i> <span>Mantenimiento</span></div>
+    <h1>Módulo de Mantenimiento</h1>
+    <div class="breadcrumb">
+      <a routerLink="/dashboard">Dashboard</a>
+      <i class="fas fa-chevron-right"></i>
+      <span>Mantenimiento</span>
+    </div>
   </div>
 </header>
 
-<div class="page-padding">
-  <!-- Formulario -->
-  <div class="table-wrap" style="margin-bottom:18px; padding:16px">
-    <h3 style="margin-top:0">Programar mantenimiento</h3>
-    <form [formGroup]="form" (ngSubmit)="crear()" class="loan-form">
-      <div class="form-row">
-        <label>Equipo</label>
-        <select formControlName="equipmentId" class="filter-select" style="width:100%">
-          <option value="">— Selecciona un equipo —</option>
-          <option *ngFor="let e of equipos" [value]="e.id">{{ e.code }} — {{ e.name }}</option>
-        </select>
+<div class="maintenance-content">
+  <!-- Main Section -->
+  <div class="main-section">
+    <!-- Header Section -->
+    <div class="content-header">
+      <h2 class="content-title">Gestión de Mantenimientos</h2>
+      <button class="btn-schedule" (click)="openMaintenanceModal()">
+        <i class="fas fa-plus"></i>
+        Programar Mantenimiento
+      </button>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">{{ getCountByStatus('programado') }}</div>
+        <div class="stat-label">Programados</div>
       </div>
-      <div class="form-row">
-        <label>Tipo</label>
-        <select formControlName="type" class="filter-select">
-          <option value="preventivo">Preventivo</option>
-          <option value="correctivo">Correctivo</option>
-          <option value="predictivo">Predictivo</option>
-        </select>
+      <div class="stat-card">
+        <div class="stat-number">{{ getCountByStatus('en-proceso') }}</div>
+        <div class="stat-label">En Proceso</div>
       </div>
-      <div class="form-row">
-        <label>Fecha Programada</label>
-        <input type="date" formControlName="scheduledDate" class="search-input" />
+      <div class="stat-card">
+        <div class="stat-number">{{ getCountByStatus('completado') }}</div>
+        <div class="stat-label">Completados</div>
       </div>
-      <div class="form-row" style="grid-column:1/-1">
-        <label>Notas</label>
-        <input formControlName="notes" class="search-input" placeholder="Observaciones (opcional)" />
+      <div class="stat-card">
+        <div class="stat-number">{{ alertsCount }}</div>
+        <div class="stat-label">Alertas Activas</div>
       </div>
-      <div>
-        <button class="btn" [disabled]="form.invalid"><i class="fas fa-save"></i> Guardar</button>
+    </div>
+
+    <!-- Loading and Error States -->
+    <div *ngIf="loading" class="loading-state">
+      <i class="fas fa-spinner fa-spin"></i> Cargando mantenimientos...
+    </div>
+
+    <div *ngIf="!loading && error" class="error-state">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ error }}
+    </div>
+
+    <!-- Maintenance Table -->
+    <div class="maintenance-table-container" *ngIf="!loading && !error">
+      <div class="table-header">
+        <h3 class="table-title">Órdenes de Mantenimiento</h3>
+        <div class="table-filters">
+          <select class="filter-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+            <option value="">Todos los estados</option>
+            <option value="programado">Programado</option>
+            <option value="en-proceso">En Proceso</option>
+            <option value="completado">Completado</option>
+          </select>
+          <select class="filter-select" [(ngModel)]="typeFilter" (change)="applyFilters()">
+            <option value="">Todos los tipos</option>
+            <option value="preventivo">Preventivo</option>
+            <option value="correctivo">Correctivo</option>
+            <option value="predictivo">Predictivo</option>
+          </select>
+        </div>
       </div>
-    </form>
+
+      <table class="maintenance-table">
+        <thead>
+          <tr>
+            <th>ID Orden</th>
+            <th>Equipo</th>
+            <th>Tipo</th>
+            <th>Fecha Programada</th>
+            <th>Fecha Realizada</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of filteredMantenimientos; trackBy: trackByMaintenanceId">
+            <td>{{ m.id }}</td>
+            <td>
+              <div class="equipment-info">
+                <div class="equipment-name">{{ m.equipment?.name || 'Equipo no encontrado' }}</div>
+                <div class="equipment-code">{{ m.equipment?.code }}</div>
+              </div>
+            </td>
+            <td>
+              <span class="type-badge" [ngClass]="'type-' + m.type">{{ m.type | titlecase }}</span>
+            </td>
+            <td>{{ m.scheduledDate | date:'dd/MM/yyyy' }}</td>
+            <td>{{ m.performedDate ? (m.performedDate | date:'dd/MM/yyyy') : '-' }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(m.status)">
+                {{ getStatusText(m.status) }}
+              </span>
+            </td>
+            <td>
+              <div class="actions-cell">
+                <button class="action-btn btn-view" (click)="viewMaintenance(m)">
+                  <i class="fas fa-eye"></i>
+                  Ver
+                </button>
+                <button
+                  *ngIf="m.status !== 'completado'"
+                  class="action-btn btn-complete"
+                  (click)="completar(m)">
+                  <i class="fas fa-check"></i>
+                  Completar
+                </button>
+                <button
+                  *ngIf="m.status === 'programado'"
+                  class="action-btn btn-edit"
+                  (click)="editMaintenance(m)">
+                  <i class="fas fa-edit"></i>
+                  Editar
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredMantenimientos.length === 0">
+            <td colspan="7" class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <p>No hay mantenimientos{{ statusFilter || typeFilter ? ' que coincidan con los filtros' : '' }}.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Lista -->
-  <div *ngIf="loading">Cargando...</div>
-  <div *ngIf="!loading && error" style="color:#b91c1c; font-weight:600">{{ error }}</div>
+  <!-- Alerts Panel -->
+  <div class="alerts-panel">
+    <div class="alerts-header">
+      <h3 class="alerts-title">
+        <i class="fas fa-exclamation-triangle" style="color: #EE9D08;"></i>
+        Alertas Predictivas
+      </h3>
+      <p class="alerts-subtitle">Mantenimientos recomendados por el sistema</p>
+    </div>
 
-  <div class="table-wrap" *ngIf="!loading && !error">
-    <table>
-      <thead>
-        <tr>
-          <th>Equipo</th>
-          <th>Tipo</th>
-          <th>Programado</th>
-          <th>Realizado</th>
-          <th>Estado</th>
-          <th style="width:160px">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let m of mantenimientos">
-          <td>
-            <div style="font-weight:600">{{ m.equipment?.name || m.equipmentId }}</div>
-            <div style="font-size:.85rem; color:#64748b">{{ m.equipment?.code }}</div>
-          </td>
-          <td>{{ m.type }}</td>
-          <td>{{ m.scheduledDate | date:'dd/MM/yyyy' }}</td>
-          <td>{{ m.performedDate  ? (m.performedDate | date:'dd/MM/yyyy') : '-' }}</td>
-          <td><span [ngClass]="estadoClase(m)">{{ m.status }}</span></td>
-          <td class="actions-cell">
-            <button class="action-btn btn-edit" [disabled]="m.status==='completado'" (click)="completar(m)">
-              <i class="fas fa-check"></i> Completar
-            </button>
-          </td>
-        </tr>
-        <tr *ngIf="mantenimientos.length === 0">
-          <td colspan="6" style="text-align:center; padding:18px; color:#64748b">No hay mantenimientos.</td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- Sample alerts - you can replace with dynamic data -->
+    <div class="alert-card critical" (click)="showAlertDetails('critical')">
+      <div class="alert-header">
+        <div class="alert-content-wrapper">
+          <div class="alert-icon alert-critical">
+            <i class="fas fa-exclamation-circle"></i>
+          </div>
+          <div class="alert-content">
+            <div class="alert-title">Mantenimiento Urgente Requerido</div>
+            <div class="alert-description">
+              Equipos con más de 1500 horas de uso requieren mantenimiento preventivo.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="alert-meta">
+        <div class="alert-time">
+          <i class="fas fa-clock"></i>
+          <span>Hace 2 horas</span>
+        </div>
+        <button class="alert-action" (click)="$event.stopPropagation(); openMaintenanceModal()">
+          Programar
+        </button>
+      </div>
+    </div>
+
+    <div class="alert-card warning" (click)="showAlertDetails('preventive')">
+      <div class="alert-header">
+        <div class="alert-content-wrapper">
+          <div class="alert-icon alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="alert-content">
+            <div class="alert-title">Mantenimiento Preventivo Próximo</div>
+            <div class="alert-description">
+              {{ getPreventiveMaintenanceDue() }} equipos requieren mantenimiento preventivo en los próximos 7 días.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="alert-meta">
+        <div class="alert-time">
+          <i class="fas fa-clock"></i>
+          <span>Actualizado hoy</span>
+        </div>
+        <button class="alert-action" (click)="$event.stopPropagation(); openMaintenanceModal()">
+          Ver equipos
+        </button>
+      </div>
+    </div>
+
+    <div class="alert-card info" (click)="showAlertDetails('completed')">
+      <div class="alert-header">
+        <div class="alert-content-wrapper">
+          <div class="alert-icon alert-info">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <div class="alert-content">
+            <div class="alert-title">Mantenimientos Completados</div>
+            <div class="alert-description">
+              {{ getCountByStatus('completado') }} mantenimientos completados este mes.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="alert-meta">
+        <div class="alert-time">
+          <i class="fas fa-calendar"></i>
+          <span>Este mes</span>
+        </div>
+        <button class="alert-action" (click)="$event.stopPropagation(); generateReport()">
+          Ver reporte
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Maintenance Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal($event)">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ editingMaintenance ? 'Editar' : 'Programar' }} Mantenimiento</h3>
+      <button class="modal-close" (click)="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="form" (ngSubmit)="crear()" class="maintenance-form">
+        <div class="form-group">
+          <label class="form-label">Equipo</label>
+          <select formControlName="equipmentId" class="form-select">
+            <option value="">Seleccione un equipo</option>
+            <option *ngFor="let e of equipos" [value]="e.id">
+              {{ e.code }} — {{ e.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="equipment-info" *ngIf="selectedEquipment" class="equipment-details">
+          <h4>Información del Equipo</h4>
+          <div class="info-row">
+            <span class="info-label">Código:</span>
+            <span class="info-value">{{ selectedEquipment.code }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Estado actual:</span>
+            <span class="info-value">{{ selectedEquipment.status | titlecase }}</span>
+          </div>
+          <div class="info-row" *ngIf="getLastMaintenanceDate(selectedEquipment.id)">
+            <span class="info-label">Último mantenimiento:</span>
+            <span class="info-value">{{ getLastMaintenanceDate(selectedEquipment.id) | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo de Mantenimiento</label>
+            <select formControlName="type" class="form-select">
+              <option value="preventivo">Preventivo</option>
+              <option value="correctivo">Correctivo</option>
+              <option value="predictivo">Predictivo</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Prioridad</label>
+            <select formControlName="priority" class="form-select">
+              <option value="">Seleccione la prioridad</option>
+              <option value="alta">Alta</option>
+              <option value="media">Media</option>
+              <option value="baja">Baja</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Fecha Programada</label>
+          <input type="date" formControlName="scheduledDate" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Notas y Observaciones</label>
+          <textarea
+            formControlName="notes"
+            class="form-textarea"
+            placeholder="Describa los trabajos a realizar o observaciones importantes..."
+            rows="4">
+          </textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
+      <button
+        type="button"
+        class="btn-save"
+        [disabled]="form.invalid || saving"
+        (click)="crear()">
+        <i class="fas fa-save" *ngIf="!saving"></i>
+        <i class="fas fa-spinner fa-spin" *ngIf="saving"></i>
+        {{ saving ? 'Guardando...' : (editingMaintenance ? 'Actualizar' : 'Guardar Orden') }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Maintenance Details Modal -->
+<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal($event)">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Detalles del Mantenimiento</h3>
+      <button class="modal-close" (click)="closeDetailsModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body" *ngIf="selectedMaintenanceDetails">
+      <div class="details-grid">
+        <div class="details-section">
+          <h4>Información General</h4>
+          <p><strong>ID Orden:</strong> {{ selectedMaintenanceDetails.id }}</p>
+          <p><strong>Equipo:</strong> {{ selectedMaintenanceDetails.equipment?.name }}</p>
+          <p><strong>Código:</strong> {{ selectedMaintenanceDetails.equipment?.code }}</p>
+          <p><strong>Tipo:</strong> {{ selectedMaintenanceDetails.type | titlecase }}</p>
+        </div>
+        <div class="details-section">
+          <h4>Cronograma</h4>
+          <p><strong>Fecha programada:</strong> {{ selectedMaintenanceDetails.scheduledDate | date:'dd/MM/yyyy' }}</p>
+          <p><strong>Fecha realizada:</strong> {{ selectedMaintenanceDetails.performedDate ? (selectedMaintenanceDetails.performedDate | date:'dd/MM/yyyy') : 'Pendiente' }}</p>
+          <p><strong>Estado:</strong>
+            <span class="status-badge" [ngClass]="getStatusClass(selectedMaintenanceDetails.status)">
+              {{ getStatusText(selectedMaintenanceDetails.status) }}
+            </span>
+          </p>
+          <p><strong>Creado:</strong> {{ selectedMaintenanceDetails.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+        </div>
+      </div>
+
+      <div class="notes-section" *ngIf="selectedMaintenanceDetails.notes">
+        <h4>Notas y Observaciones</h4>
+        <div class="notes-content">
+          {{ selectedMaintenanceDetails.notes }}
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeDetailsModal()">Cerrar</button>
+      <button
+        *ngIf="selectedMaintenanceDetails?.status !== 'completado'"
+        type="button"
+        class="btn-save"
+        (click)="completar(selectedMaintenanceDetails!)">
+        <i class="fas fa-check"></i>
+        Marcar como Completado
+      </button>
+    </div>
   </div>
 </div>

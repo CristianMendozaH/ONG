@@ -1,0 +1,547 @@
+// Mixins y variables
+$primary-color: #114495;
+$secondary-color: #EE9D08;
+$danger-color: #E6331B;
+$success-color: #2ECC71;
+$background-color: #f8f9fa;
+$text-color: #33475b;
+$border-color: #e0e0e0;
+$shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin transition($property: all, $duration: 0.3s, $timing: ease) {
+  transition: $property $duration $timing;
+}
+
+@mixin button-hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+// Component styles (sin sidebar duplicado)
+:host {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  background: $background-color;
+  color: $text-color;
+  min-height: 100vh;
+}
+
+// Header
+.header {
+  background: white;
+  padding: 20px 30px;
+  box-shadow: $shadow;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &-left {
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: $text-color;
+      margin-bottom: 5px;
+    }
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #666;
+
+    a {
+      color: $primary-color;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+// Loading state
+.loading-container {
+  @include flex-center;
+  flex-direction: column;
+  padding: 60px;
+  gap: 20px;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid $primary-color;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    font-size: 1.1rem;
+    color: #666;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Content layout
+.reports-content {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 30px;
+  padding: 30px;
+}
+
+.main-section {
+  display: flex;
+  flex-direction: column;
+}
+
+// Filters section
+.filters-section {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: $shadow;
+  margin-bottom: 25px;
+  border: 1px solid $border-color;
+
+  &-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: $text-color;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filter-label {
+    font-weight: 500;
+    color: $text-color;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+
+  .filter-input,
+  .filter-select {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    @include transition();
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba(17, 68, 149, 0.1);
+    }
+  }
+
+  &-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+}
+
+// Buttons
+.btn-filter {
+  background: $primary-color;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  @include transition();
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &:hover {
+    background: darken($primary-color, 10%);
+    @include button-hover;
+  }
+}
+
+.btn-clear {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  @include transition();
+
+  &:hover {
+    background: darken(#6c757d, 10%);
+  }
+}
+
+// Reports table
+.reports-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: $shadow;
+  overflow: hidden;
+  flex: 1;
+  border: 1px solid $border-color;
+
+  .table-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: $text-color;
+    }
+  }
+
+  .export-buttons {
+    display: flex;
+    gap: 12px;
+  }
+}
+
+.btn-export-pdf {
+  background: $danger-color;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  @include transition();
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+
+  &:hover {
+    background: darken($danger-color, 10%);
+    @include button-hover;
+  }
+}
+
+.btn-export-excel {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  @include transition();
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+
+  &:hover {
+    background: darken(#28a745, 10%);
+    @include button-hover;
+  }
+}
+
+// Table styles
+.reports-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background: #e3f2fd;
+  }
+
+  th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: $primary-color;
+    border-bottom: 2px solid $primary-color;
+    font-size: 0.9rem;
+  }
+
+  td {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+  }
+
+  tbody {
+    tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+
+    tr:hover {
+      background: #e8f4fd;
+    }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+
+    i {
+      font-size: 3rem;
+      color: #ddd;
+      margin-bottom: 15px;
+      display: block;
+    }
+
+    p {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+// Status badges
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+  min-width: 80px;
+  display: inline-block;
+
+  &.status-active {
+    background: #d4edda;
+    color: $success-color;
+  }
+
+  &.status-returned {
+    background: #cce5ff;
+    color: $primary-color;
+  }
+
+  &.status-overdue {
+    background: #f8d7da;
+    color: $danger-color;
+  }
+}
+
+// Charts panel
+.charts-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+
+  .chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: $shadow;
+    border: 1px solid $border-color;
+
+    &-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: $text-color;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 250px;
+    }
+
+    .chart-placeholder {
+      height: 250px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+
+      p {
+        color: #666;
+        font-size: 0.9rem;
+        margin: 5px 0;
+        text-align: center;
+
+        &:first-child {
+          font-weight: 600;
+          color: $primary-color;
+        }
+      }
+    }
+  }
+}
+
+// Statistics
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+
+  .stat-item {
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $primary-color;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 1200px) {
+  .reports-content {
+    grid-template-columns: 1fr;
+
+    .charts-panel {
+      order: -1;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+
+    &.active {
+      transform: translateX(0);
+    }
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  .reports-content {
+    padding: 20px;
+  }
+
+  .filters-section {
+    &-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .export-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .reports-table {
+    font-size: 0.8rem;
+
+    th,
+    td {
+      padding: 8px;
+    }
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card {
+    padding: 15px;
+
+    .chart-container {
+      height: 200px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 15px 20px;
+
+    &-left h1 {
+      font-size: 1.4rem;
+    }
+  }
+
+  .reports-content {
+    padding: 15px;
+  }
+
+  .filters-section,
+  .chart-card {
+    padding: 20px;
+  }
+
+  .table-header {
+    padding: 15px 20px;
+  }
+
+  .export-buttons {
+    .btn-export-pdf,
+    .btn-export-excel {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+    }
+  }
+
+  .reports-table {
+    th,
+    td {
+      padding: 6px;
+      font-size: 0.75rem;
+    }
+
+    .status-badge {
+      min-width: 60px;
+      font-size: 0.7rem;
+      padding: 3px 8px;
+    }
+  }
+}

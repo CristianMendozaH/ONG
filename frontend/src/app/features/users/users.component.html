@@ -1,42 +1,344 @@
 <header class="header">
   <div class="header-left">
     <h1>Módulo de Usuarios</h1>
-    <div class="breadcrumb"><a routerLink="/dashboard">Dashboard</a> <i class="fas fa-chevron-right"></i> <span>Usuarios</span></div>
+    <div class="breadcrumb">
+      <a routerLink="/dashboard">Dashboard</a>
+      <i class="fas fa-chevron-right"></i>
+      <span>Usuarios</span>
+    </div>
   </div>
 </header>
 
-<div class="page-padding">
+<div class="users-content">
   <div class="content-header">
     <h2 class="content-title">Gestión de Usuarios</h2>
-    <button class="btn"><i class="fas fa-plus"></i> Crear Usuario</button>
+    <button class="btn-create-user" (click)="openUserModal()">
+      <i class="fas fa-plus"></i>
+      Crear Usuario
+    </button>
   </div>
 
-  <div *ngIf="loading">Cargando...</div>
-  <div *ngIf="!loading && error" style="color:#b91c1c; font-weight:600">{{ error }}</div>
+  <!-- Loading and Error States -->
+  <div *ngIf="loading" class="loading-state">
+    <i class="fas fa-spinner fa-spin"></i>
+    Cargando usuarios...
+  </div>
 
-  <div class="table-wrap" *ngIf="!loading && !error">
-    <table>
+  <div *ngIf="!loading && error" class="error-state">
+    <i class="fas fa-exclamation-triangle"></i>
+    {{ error }}
+    <button (click)="loadUsers()" class="retry-btn">Reintentar</button>
+  </div>
+
+  <!-- Users Table -->
+  <div class="users-table-container" *ngIf="!loading && !error">
+    <div class="table-header">
+      <h3 class="table-title">Lista de Usuarios</h3>
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Buscar usuarios..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearch()">
+      </div>
+    </div>
+
+    <table class="users-table">
       <thead>
         <tr>
-          <th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Creado</th>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Fecha Registro</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let u of users">
-          <td>{{ u.name }}</td>
-          <td>{{ u.email }}</td>
-          <td><span [ngClass]="roleClass(u.role)">{{ u.role }}</span></td>
+        <tr *ngFor="let user of filteredUsers; trackBy: trackByUserId">
+          <td>{{ user.displayId }}</td>
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
           <td>
-            <span class="status-badge" [ngClass]="{'status-disponible': u.active, 'status-prestado': !u.active}">
-              {{ u.active ? 'Activo' : 'Inactivo' }}
+            <span class="role-badge" [ngClass]="roleClass(user.role)">
+              {{ roleLabels[user.role] || user.role }}
             </span>
           </td>
-          <td>{{ u.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="statusClass(user.status)">
+              {{ statusLabels[user.status] || user.status }}
+            </span>
+            <span *ngIf="user.passwordReset" class="password-reset-badge">
+              Cambio requerido
+            </span>
+          </td>
+          <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <div class="actions-cell">
+              <button
+                class="action-btn btn-edit"
+                (click)="openUserModal(user.id)"
+                title="Editar usuario">
+                <i class="fas fa-edit"></i>
+                Editar
+              </button>
+              <button
+                class="action-btn btn-password"
+                (click)="openPasswordModal(user.id)"
+                title="Gestionar contraseña">
+                <i class="fas fa-key"></i>
+                Contraseña
+              </button>
+              <button
+                class="action-btn btn-delete"
+                (click)="deleteUser(user.id)"
+                title="Eliminar usuario">
+                <i class="fas fa-trash"></i>
+                Eliminar
+              </button>
+            </div>
+          </td>
         </tr>
-        <tr *ngIf="users.length === 0">
-          <td colspan="5" style="text-align:center; padding:18px; color:#64748b">No hay usuarios para mostrar.</td>
+        <tr *ngIf="filteredUsers.length === 0">
+          <td colspan="7" class="empty-state">
+            <i class="fas fa-users"></i>
+            <span>No hay usuarios para mostrar</span>
+          </td>
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal-overlay" *ngIf="showUserModal" (click)="closeModal('user')">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ getModalTitle() }}</h3>
+      <button class="modal-close" (click)="closeModal('user')">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="userForm" (ngSubmit)="onSubmitUser()">
+        <div class="form-group">
+          <label class="form-label">Nombre Completo</label>
+          <input
+            type="text"
+            class="form-input"
+            formControlName="name"
+            placeholder="Ingrese el nombre completo"
+            [class.error]="userForm.get('name')?.invalid && userForm.get('name')?.touched">
+          <div *ngIf="userForm.get('name')?.invalid && userForm.get('name')?.touched" class="error-message">
+            El nombre es requerido
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input
+            type="email"
+            class="form-input"
+            formControlName="email"
+            placeholder="ejemplo@email.com"
+            [class.error]="userForm.get('email')?.invalid && userForm.get('email')?.touched">
+          <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched" class="error-message">
+            <span *ngIf="userForm.get('email')?.errors?.['required']">El email es requerido</span>
+            <span *ngIf="userForm.get('email')?.errors?.['email']">Formato de email inválido</span>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="!editingUserId">
+          <label class="form-label">Contraseña</label>
+          <div class="password-input-group">
+            <input
+              type="password"
+              class="form-input"
+              formControlName="password"
+              placeholder="Mínimo 8 caracteres"
+              [class.error]="userForm.get('password')?.invalid && userForm.get('password')?.touched"
+              id="userPassword">
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="togglePasswordVisibility('userPassword')">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          <div *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched" class="error-message">
+            <span *ngIf="userForm.get('password')?.errors?.['required']">La contraseña es requerida</span>
+            <span *ngIf="userForm.get('password')?.errors?.['minlength']">Mínimo 8 caracteres</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Rol</label>
+            <select
+              class="form-select"
+              formControlName="role"
+              [class.error]="userForm.get('role')?.invalid && userForm.get('role')?.touched">
+              <option value="">Seleccione un rol</option>
+              <option value="admin">Administrador</option>
+              <option value="tecnico">Técnico</option>
+              <option value="administrativo">Administrativo</option>
+              <option value="becado">Becado</option>
+            </select>
+            <div *ngIf="userForm.get('role')?.invalid && userForm.get('role')?.touched" class="error-message">
+              Seleccione un rol
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Estado</label>
+            <select
+              class="form-select"
+              formControlName="status"
+              [class.error]="userForm.get('status')?.invalid && userForm.get('status')?.touched">
+              <option value="">Seleccione el estado</option>
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+            <div *ngIf="userForm.get('status')?.invalid && userForm.get('status')?.touched" class="error-message">
+              Seleccione un estado
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeModal('user')">Cancelar</button>
+      <button type="submit" class="btn-save" (click)="onSubmitUser()" [disabled]="userForm.invalid">
+        <i class="fas fa-save"></i>
+        {{ getSaveButtonText() }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Password Reset Modal -->
+<div class="modal-overlay" *ngIf="showPasswordModal" (click)="closeModal('password')">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Gestión de Contraseña</h3>
+      <button class="modal-close" (click)="closeModal('password')">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        Está a punto de cambiar la contraseña del usuario: <strong>{{ getPasswordUserName() }}</strong>
+      </div>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="onSubmitPassword()">
+        <div class="form-group">
+          <label class="form-label">Nueva Contraseña</label>
+          <div class="password-input-group">
+            <input
+              type="password"
+              class="form-input"
+              formControlName="newPassword"
+              placeholder="Ingrese la nueva contraseña"
+              [class.error]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched"
+              id="newPassword">
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="togglePasswordVisibility('newPassword')">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          <div class="password-generator">
+            <button type="button" class="btn-generate-password" (click)="generatePassword()">
+              <i class="fas fa-random"></i>
+              Generar Contraseña Segura
+            </button>
+            <div class="generated-password" *ngIf="showGeneratedPassword">
+              <strong>Contraseña generada:</strong> {{ generatedPassword }}
+              <button
+                type="button"
+                (click)="copyToClipboard(generatedPassword)"
+                class="copy-btn">
+                <i class="fas fa-copy"></i> Copiar
+              </button>
+            </div>
+          </div>
+          <div *ngIf="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched" class="error-message">
+            <span *ngIf="passwordForm.get('newPassword')?.errors?.['required']">La contraseña es requerida</span>
+            <span *ngIf="passwordForm.get('newPassword')?.errors?.['minlength']">Mínimo 8 caracteres</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirmar Contraseña</label>
+          <div class="password-input-group">
+            <input
+              type="password"
+              class="form-input"
+              formControlName="confirmPassword"
+              placeholder="Confirme la nueva contraseña"
+              [class.error]="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched"
+              id="confirmPassword">
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="togglePasswordVisibility('confirmPassword')">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          <div *ngIf="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched" class="error-message">
+            La confirmación de contraseña es requerida
+          </div>
+        </div>
+
+        <div class="password-options">
+          <div class="checkbox-group">
+            <input
+              type="checkbox"
+              id="forcePasswordChange"
+              formControlName="forcePasswordChange">
+            <label for="forcePasswordChange">Forzar cambio en próximo login</label>
+          </div>
+          <div class="checkbox-group">
+            <input
+              type="checkbox"
+              id="sendNotification"
+              formControlName="sendNotification">
+            <label for="sendNotification">Notificar al usuario</label>
+          </div>
+        </div>
+
+        <div class="notification-options">
+          <div class="notification-title">
+            <i class="fas fa-envelope"></i>
+            Opciones de Notificación
+          </div>
+          <div class="checkbox-group">
+            <input
+              type="checkbox"
+              id="sendEmail"
+              formControlName="sendEmail">
+            <label for="sendEmail">Enviar por correo electrónico</label>
+          </div>
+          <div class="checkbox-group">
+            <input
+              type="checkbox"
+              id="showPassword"
+              formControlName="showPassword">
+            <label for="showPassword">Incluir contraseña temporal en notificación</label>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeModal('password')">Cancelar</button>
+      <button type="submit" class="btn-save" (click)="onSubmitPassword()" [disabled]="passwordForm.invalid">
+        <i class="fas fa-key"></i>
+        Cambiar Contraseña
+      </button>
+    </div>
   </div>
 </div>
