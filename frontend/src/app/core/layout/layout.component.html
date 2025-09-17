@@ -7,26 +7,26 @@
     </div>
 
     <div class="sidebar-menu">
-      <a *appIfRole="['admin', 'tech']" routerLink="/dashboard" routerLinkActive="active" class="menu-item">
+      <a *ngIf="userStore.currentUser()?.role === 'admin' || userStore.currentUser()?.role === 'tech'" routerLink="/dashboard" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-gauge"></i><span>Dashboard</span>
       </a>
-      <a *appIfRole="['admin', 'tech']" routerLink="/equipos" routerLinkActive="active" class="menu-item">
+      <a *ngIf="userStore.currentUser()?.role === 'admin' || userStore.currentUser()?.role === 'tech'" routerLink="/equipos" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-desktop"></i><span>Equipos</span>
       </a>
-      <a *appIfRole="['admin', 'tech']" routerLink="/prestamos" routerLinkActive="active" class="menu-item">
+      <a *ngIf="userStore.currentUser()?.role === 'admin' || userStore.currentUser()?.role === 'tech'" routerLink="/prestamos" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-share-nodes"></i><span>Préstamos</span>
       </a>
-      <a *appIfRole="['admin', 'tech']" routerLink="/mantenimiento" routerLinkActive="active" class="menu-item">
+      <a *ngIf="userStore.currentUser()?.role === 'admin' || userStore.currentUser()?.role === 'tech'" routerLink="/mantenimiento" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-screwdriver-wrench"></i><span>Mantenimiento</span>
       </a>
-      <a *appIfRole="['admin', 'tech']" routerLink="/reportes" routerLinkActive="active" class="menu-item">
+      <a *ngIf="userStore.currentUser()?.role === 'admin' || userStore.currentUser()?.role === 'tech'" routerLink="/reportes" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-chart-column"></i><span>Reportes</span>
       </a>
 
-      <a *appIfRole="'admin'" routerLink="/usuarios" routerLinkActive="active" class="menu-item">
+      <a *ngIf="userStore.isAdmin()" routerLink="/usuarios" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-users"></i><span>Usuarios</span>
       </a>
-      <a *appIfRole="'admin'" routerLink="/config" routerLinkActive="active" class="menu-item">
+      <a *ngIf="userStore.isAdmin()" routerLink="/config" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-gear"></i><span>Configuración</span>
       </a>
 

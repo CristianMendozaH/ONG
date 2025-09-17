@@ -2,12 +2,9 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-
-// CORREGIDO: Ruta correcta a la carpeta 'services'
 import { AuthService } from '../services/auth.service';
-// CORREGIDO: Ruta correcta a la carpeta 'shared'
 import { UserStore } from '../stores/user.store';
-import { User } from '../../shared/interfaces/models'; // <-- Faltaba esta importación
+import { User } from '../../shared/interfaces/models';
 
 @Component({
   selector: 'app-layout',
@@ -18,11 +15,10 @@ import { User } from '../../shared/interfaces/models'; // <-- Faltaba esta impor
     RouterLinkActive,
     RouterOutlet
   ],
-  // CORREGIDO: Debe apuntar a sus propios archivos HTML y SCSS
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss'
 })
-export class LayoutComponent { // <-- Asegúrate que se llame así y que tenga 'export'
+export class LayoutComponent {
   private authService = inject(AuthService);
   public userStore = inject(UserStore);
 

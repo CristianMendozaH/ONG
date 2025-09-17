@@ -1,3 +1,4 @@
+// src/app/features/auth/login.component.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -10,18 +11,18 @@ import { LoginDto } from '../../shared/interfaces/models';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrl: './login.component.scss' // Asegúrate de que esta línea apunte a tu archivo de estilos
 })
 export class LoginComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // --- LÓGICA AÑADIDA ---
+  // --- Lógica completa para el formulario ---
   loading = false;
-  submitted = false; // Para saber si el usuario ya intentó enviar el formulario
-  apiError = ''; // Para guardar el error del servidor (ej: "credenciales inválidas")
-  passwordFieldType: 'password' | 'text' = 'password'; // Controla si la contraseña se ve o no
+  submitted = false;
+  apiError = '';
+  passwordFieldType: 'password' | 'text' = 'password';
 
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -48,20 +49,17 @@ export class LoginComponent {
     });
   }
 
-  // --- FUNCIONES AÑADIDAS PARA EL TEMPLATE ---
+  // --- Funciones para el template HTML ---
 
-  // Función para mostrar/ocultar la contraseña
   togglePasswordVisibility(): void {
     this.passwordFieldType = this.passwordFieldType === 'password' ? 'text' : 'password';
   }
 
-  // Función para verificar si un campo es inválido y debe mostrar error
   isInvalid(controlName: 'email' | 'password'): boolean {
     const control = this.form.get(controlName);
     return !!control && control.invalid && (control.touched || this.submitted);
   }
 
-  // Función para marcar un campo como válido (borde verde)
   isValid(controlName: 'email' | 'password'): boolean {
     const control = this.form.get(controlName);
     return !!control && control.valid && (control.touched || this.submitted);
