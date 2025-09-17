@@ -37,4 +37,7 @@ export class Loan extends Model {
   @Default(0)
   @Column(DataType.DECIMAL(10,2))
   totalFine!: number;
+
+  @Column(DataType.TEXT)
+  observations?: string;
 }

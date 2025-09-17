@@ -9,7 +9,7 @@ export interface User {
   name: string;
   email: string;
   role: 'admin' | 'tecnico' | 'administrativo' | 'becado' | string;
-  status: 'activo' | 'inactivo' | string;
+  active: boolean; // <-- CAMBIADO de status a active
   createdAt: string;
   passwordReset?: boolean;
 }
@@ -19,14 +19,14 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   role: User['role'];
-  status: User['status'];
+  active: boolean; // <-- CAMBIADO de status a active
 }
 
 export interface UpdateUserRequest {
   name: string;
   email: string;
   role: User['role'];
-  status: User['status'];
+  active: boolean; // <-- CAMBIADO de status a active
 }
 
 export interface ChangePasswordRequest {

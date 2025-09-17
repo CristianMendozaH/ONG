@@ -1,14 +1,28 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, Pipe, PipeTransform } from '@angular/core';
 import { CommonModule, DatePipe, TitleCasePipe } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
-import { MantenimientoService, Mantenimiento } from './mantenimiento.service';
+import { MantenimientoService, Mantenimiento, CrearMantDTO, AlertaPredictiva, UpdateMantDTO } from './mantenimiento.service';
 import { EquiposService, Equipo } from '../equipos/equipos.service';
+
+@Pipe({
+  name: 'nl2br',
+  standalone: true
+})
+export class Nl2brPipe implements PipeTransform {
+  constructor(private sanitizer: DomSanitizer) {}
+  transform(value: string | null | undefined): SafeHtml {
+    if (!value) return '';
+    const brValue = value.replace(/(\r\n|\n|\r)/g, '<br/>');
+    return this.sanitizer.bypassSecurityTrustHtml(brValue);
+  }
+}
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, DatePipe, TitleCasePipe],
+  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, DatePipe, TitleCasePipe, Nl2brPipe],
   templateUrl: './mantenimiento.component.html',
   styleUrl: './mantenimiento.component.scss'
 })
@@ -17,71 +31,100 @@ export class MantenimientoComponent implements OnInit {
   private mantSvc = inject(MantenimientoService);
   private equiposSvc = inject(EquiposService);
 
-  // Data properties
+  notificationMessage = '';
+  notificationType: 'success' | 'error' = 'success';
+  showNotification = false;
+
   mantenimientos: Mantenimiento[] = [];
   filteredMantenimientos: Mantenimiento[] = [];
   equipos: Equipo[] = [];
+  availableEquipos: Equipo[] = [];
+  alertas: AlertaPredictiva[] = [];
 
-  // State properties
   loading = false;
   error = '';
   saving = false;
 
-  // Modal properties
   showModal = false;
   showDetailsModal = false;
+  showCompleteModal = false;
   editingMaintenance: Mantenimiento | null = null;
+  maintenanceToComplete: Mantenimiento | null = null;
   selectedMaintenanceDetails: Mantenimiento | null = null;
+  selectedMaintenanceDisplayId: string | null = null;
 
-  // Filter properties
   statusFilter = '';
   typeFilter = '';
 
-  // Computed properties
-  alertsCount = 5; // This could be calculated from your data
+  get alertsCount(): number {
+    return this.alertas.length;
+  }
   selectedEquipment: Equipo | null = null;
 
-  form = this.fb.group({
-    equipmentId: ['', Validators.required],
-    type: ['preventivo', Validators.required],
-    scheduledDate: ['', Validators.required],
-    notes: [''],
-  });
+  form: FormGroup;
+  completeForm: FormGroup;
+
+  constructor() {
+    this.form = this.fb.group({
+      equipmentId: ['', Validators.required],
+      type: ['preventivo', Validators.required],
+      priority: ['media', Validators.required],
+      scheduledDate: ['', Validators.required],
+      description: [''], // <-- CAMBIO: de 'notes' a 'description'
+    });
+
+    this.completeForm = this.fb.group({
+      performedDate: ['', Validators.required],
+      completionNotes: ['']
+    });
+  }
 
   ngOnInit() {
     this.load();
     this.loadEquipos();
     this.setDefaultDate();
 
-    // Watch equipment selection changes
     this.form.get('equipmentId')?.valueChanges.subscribe(equipmentId => {
       this.selectedEquipment = this.equipos.find(e => e.id === equipmentId) || null;
     });
   }
 
   private setDefaultDate() {
-    // Set tomorrow as default date
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateString = tomorrow.toISOString().split('T')[0];
-    this.form.patchValue({ scheduledDate: dateString });
+    const today = new Date().toISOString().slice(0, 10);
+    this.form.patchValue({ scheduledDate: today });
   }
 
   private loadEquipos() {
     this.equiposSvc.list().subscribe({
-      next: (equipos) => this.equipos = equipos,
-      error: (error) => console.error('Error loading equipos:', error)
+      next: (equipos) => {
+        this.equipos = equipos;
+        this.updateAvailableEquipmentList();
+      },
+      error: (error) => this.showErrorMessage('No se pudieron cargar los equipos.')
     });
   }
 
   load() {
     this.loading = true;
     this.error = '';
-
     this.mantSvc.list().subscribe({
       next: (res) => {
-        this.mantenimientos = res;
-        this.filteredMantenimientos = [...res];
+        const sortedByCreation = [...res].sort((a, b) =>
+          new Date(a.createdAt || a.scheduledDate).getTime() - new Date(b.createdAt || b.scheduledDate).getTime()
+        );
+
+        const withDisplayId = sortedByCreation.map((item, index) => ({
+          ...item,
+          displayId: `MA${(index + 1).toString().padStart(3, '0')}`
+        }));
+
+        this.mantenimientos = withDisplayId.sort((a, b) =>
+          new Date(b.createdAt || b.scheduledDate).getTime() - new Date(a.createdAt || a.scheduledDate).getTime()
+        );
+
+        this.applyFilters();
+        this.generarAlertasDinamicas();
+        this.updateAvailableEquipmentList();
         this.loading = false;
       },
       error: (e) => {
@@ -91,79 +134,154 @@ export class MantenimientoComponent implements OnInit {
     });
   }
 
-  crear() {
+  private updateAvailableEquipmentList() {
+    if (!this.mantenimientos.length || !this.equipos.length) {
+      this.availableEquipos = [...this.equipos];
+      return;
+    }
+
+    const busyEquipmentIds = new Set(
+      this.mantenimientos
+        .filter(m => m.status === 'programado' || m.status === 'en-proceso')
+        .map(m => m.equipmentId)
+    );
+
+    this.availableEquipos = this.equipos.filter(eq => !busyEquipmentIds.has(eq.id));
+
+    if (this.editingMaintenance) {
+      const isEditingEquipmentInList = this.availableEquipos.some(eq => eq.id === this.editingMaintenance!.equipmentId);
+      if (!isEditingEquipmentInList) {
+        const editingEquipment = this.equipos.find(eq => eq.id === this.editingMaintenance!.equipmentId);
+        if (editingEquipment) {
+          this.availableEquipos.unshift(editingEquipment);
+        }
+      }
+    }
+  }
+
+  guardarMantenimiento() {
     if (this.form.invalid) return;
-
     this.saving = true;
-    const formValue = this.form.value as any;
+    const formValue = this.form.value as CrearMantDTO;
 
-    this.mantSvc.create(formValue).subscribe({
+    const operation = this.editingMaintenance
+      ? this.mantSvc.update(this.editingMaintenance.id, formValue)
+      : this.mantSvc.create(formValue);
+
+    operation.subscribe({
       next: () => {
-        this.resetForm();
+        const message = this.editingMaintenance ? 'Mantenimiento actualizado exitosamente' : 'Mantenimiento programado exitosamente';
+        this.showSuccessMessage(message);
         this.closeModal();
         this.load();
-        this.showSuccessMessage('Mantenimiento programado exitosamente');
       },
       error: (e) => {
         this.saving = false;
-        this.showErrorMessage(e?.error?.message || 'No se pudo crear el mantenimiento');
+        const message = this.editingMaintenance ? 'No se pudo actualizar' : 'No se pudo crear';
+        this.showErrorMessage(e?.error?.message || `${message} el mantenimiento`);
       }
     });
   }
 
-  completar(m: Mantenimiento) {
-    const today = new Date().toISOString().slice(0, 10);
-    const fecha = prompt('Fecha realizada (yyyy-mm-dd):', today);
-
-    if (!fecha) return;
-
-    this.mantSvc.complete(m.id, fecha).subscribe({
-      next: () => {
-        this.load();
-        this.showSuccessMessage('Mantenimiento marcado como completado');
-        if (this.showDetailsModal) {
-          this.closeDetailsModal();
+  iniciarMantenimiento(m: Mantenimiento) {
+    this.mantSvc.start(m.id).subscribe({
+      next: (updatedMaintenance) => {
+        const index = this.mantenimientos.findIndex(item => item.id === m.id);
+        if (index !== -1) {
+          this.mantenimientos[index] = { ...this.mantenimientos[index], ...updatedMaintenance, displayId: this.mantenimientos[index].displayId };
         }
+        this.applyFilters();
+        this.showSuccessMessage('El mantenimiento ha iniciado.');
+      },
+      error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo iniciar el mantenimiento')
+    });
+  }
+
+  submitCompletion() {
+    if (this.completeForm.invalid || !this.maintenanceToComplete) {
+      return;
+    }
+
+    const { performedDate, completionNotes } = this.completeForm.value;
+    const currentDescription = this.maintenanceToComplete.description || '';
+
+    let updatedDescription = currentDescription;
+    if (completionNotes) {
+      const completionHeader = `\n\n--- COMPLETADO EL ${performedDate} ---`;
+      updatedDescription = `${currentDescription}${completionHeader}\n${completionNotes}`;
+    }
+
+    const payload: UpdateMantDTO = {
+      ...this.maintenanceToComplete,
+      performedDate: performedDate,
+      status: 'completado',
+      description: updatedDescription.trim() // <-- CAMBIO: de 'notes' a 'description'
+    };
+
+    this.mantSvc.update(this.maintenanceToComplete.id, payload).subscribe({
+      next: () => {
+        this.showSuccessMessage('Mantenimiento marcado como completado');
+        this.closeCompleteModal();
+        this.load();
       },
       error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo marcar como completado')
     });
   }
 
-  // Modal methods
   openMaintenanceModal() {
     this.editingMaintenance = null;
+    this.updateAvailableEquipmentList();
     this.resetForm();
     this.showModal = true;
   }
 
   editMaintenance(maintenance: Mantenimiento) {
     this.editingMaintenance = maintenance;
+    this.updateAvailableEquipmentList();
     this.form.patchValue({
       equipmentId: maintenance.equipmentId,
       type: maintenance.type,
-      scheduledDate: maintenance.scheduledDate,
-      notes: maintenance.notes || ''
+      priority: maintenance.priority || 'media',
+      scheduledDate: maintenance.scheduledDate.split('T')[0],
+      description: maintenance.description || '' // <-- CAMBIO: de 'notes' a 'description'
     });
     this.showModal = true;
   }
 
   viewMaintenance(maintenance: Mantenimiento) {
     this.selectedMaintenanceDetails = maintenance;
+    this.selectedMaintenanceDisplayId = maintenance.displayId || null;
     this.showDetailsModal = true;
   }
 
+  openCompleteModal(m: Mantenimiento) {
+    this.maintenanceToComplete = m;
+    this.completeForm.patchValue({
+      performedDate: new Date().toISOString().slice(0, 10),
+      completionNotes: ''
+    });
+    this.showCompleteModal = true;
+  }
+
+  closeCompleteModal(event?: Event) {
+    if (event && (event.target as HTMLElement).classList.contains('modal-overlay')) {
+      this.showCompleteModal = false;
+    } else if (!event) {
+      this.showCompleteModal = false;
+    }
+    this.maintenanceToComplete = null;
+  }
+
   closeModal(event?: Event) {
-    if (event && (event.target as HTMLElement).classList.contains('modal')) {
+    if (event && (event.target as HTMLElement).classList.contains('modal-overlay')) {
       this.showModal = false;
     } else if (!event) {
       this.showModal = false;
     }
-    this.resetForm();
-    this.editingMaintenance = null;
   }
 
   closeDetailsModal(event?: Event) {
-    if (event && (event.target as HTMLElement).classList.contains('modal')) {
+    if (event && (event.target as HTMLElement).classList.contains('modal-overlay')) {
       this.showDetailsModal = false;
     } else if (!event) {
       this.showDetailsModal = false;
@@ -172,15 +290,13 @@ export class MantenimientoComponent implements OnInit {
   }
 
   private resetForm() {
-    this.form.reset({
-      type: 'preventivo'
-    });
+    this.form.reset({ type: 'preventivo', priority: 'media' });
     this.setDefaultDate();
     this.saving = false;
     this.selectedEquipment = null;
+    this.editingMaintenance = null;
   }
 
-  // Filter methods
   applyFilters() {
     this.filteredMantenimientos = this.mantenimientos.filter(m => {
       const statusMatch = !this.statusFilter || m.status === this.statusFilter;
@@ -189,7 +305,6 @@ export class MantenimientoComponent implements OnInit {
     });
   }
 
-  // Statistics methods
   getCountByStatus(status: string): number {
     return this.mantenimientos.filter(m => m.status === status).length;
   }
@@ -197,44 +312,31 @@ export class MantenimientoComponent implements OnInit {
   getPreventiveMaintenanceDue(): number {
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     return this.mantenimientos.filter(m => {
       if (m.status !== 'programado' || m.type !== 'preventivo') return false;
       const scheduledDate = new Date(m.scheduledDate);
-      return scheduledDate <= sevenDaysFromNow;
+      return scheduledDate >= today && scheduledDate <= sevenDaysFromNow;
     }).length;
   }
 
-  // Utility methods
   trackByMaintenanceId(index: number, maintenance: Mantenimiento): string {
     return maintenance.id;
   }
 
   getStatusClass(status: string): string {
-    const baseClass = 'status-badge';
-    switch (status) {
-      case 'programado':
-        return `${baseClass} status-programado`;
-      case 'en-proceso':
-        return `${baseClass} status-en-proceso`;
-      case 'completado':
-        return `${baseClass} status-completado`;
-      default:
-        return baseClass;
-    }
+    const statusClassMap: { [key: string]: string } = {
+      'programado': 'status-programado',
+      'en-proceso': 'status-en-proceso',
+      'completado': 'status-completado'
+    };
+    return `status-badge ${statusClassMap[status] || ''}`;
   }
 
   getStatusText(status: string): string {
-    switch (status) {
-      case 'programado':
-        return 'Programado';
-      case 'en-proceso':
-        return 'En Proceso';
-      case 'completado':
-        return 'Completado';
-      default:
-        return status;
-    }
+    return status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 
   getLastMaintenanceDate(equipmentId: string): string | null {
@@ -245,46 +347,58 @@ export class MantenimientoComponent implements OnInit {
     return completedMaintenances.length > 0 ? completedMaintenances[0].performedDate! : null;
   }
 
-  // Alert methods
-  showAlertDetails(alertType: string) {
-    let message = '';
-    switch (alertType) {
-      case 'critical':
-        message = 'Alerta Crítica:\n\nSe han detectado equipos que requieren mantenimiento urgente.\n\n• Más de 1500 horas de uso\n• Signos de desgaste excesivo\n• Recomendación: Programar mantenimiento inmediatamente';
-        break;
-      case 'preventive':
-        message = `Mantenimiento Preventivo:\n\n${this.getPreventiveMaintenanceDue()} equipos requieren mantenimiento preventivo en los próximos 7 días.\n\nRecomendación: Programar mantenimientos preventivos para evitar fallos.`;
-        break;
-      case 'completed':
-        message = `Mantenimientos Completados:\n\n${this.getCountByStatus('completado')} mantenimientos completados este mes.\n\nRendimiento del equipo de mantenimiento: Excelente`;
-        break;
-      default:
-        message = 'Información de mantenimiento disponible.';
-    }
-    alert(message);
+  generarAlertasDinamicas() {
+      this.alertas = [];
+
+      const preventivosProximos = this.getPreventiveMaintenanceDue();
+      if (preventivosProximos > 0) {
+        this.alertas.push({
+          tipo: 'warning',
+          titulo: 'Mantenimiento Preventivo Próximo',
+          descripcion: `${preventivosProximos} equipo${preventivosProximos > 1 ? 's' : ''} requieren mant. preventivo en los próximos 7 días.`,
+          meta: 'Actualizado ahora'
+        });
+      }
+
+      const urgentes = this.mantenimientos.filter(m => m.priority === 'alta' && m.status !== 'completado').length;
+      if (urgentes > 0) {
+        this.alertas.push({
+          tipo: 'critical',
+          titulo: 'Mantenimiento Urgente Requerido',
+          descripcion: `Hay ${urgentes} órden${urgentes > 1 ? 'es' : ''} de mantenimiento con prioridad alta.`,
+          meta: 'Requiere atención'
+        });
+      }
+
+      const completadosEsteMes = this.mantenimientos.filter(m => {
+          if (m.status !== 'completado' || !m.performedDate) return false;
+          const fechaRealizado = new Date(m.performedDate);
+          const hoy = new Date();
+          return fechaRealizado.getMonth() === hoy.getMonth() && fechaRealizado.getFullYear() === hoy.getFullYear();
+      }).length;
+
+      if (completadosEsteMes > 0) {
+         this.alertas.push({
+            tipo: 'info',
+            titulo: 'Mantenimientos Completados',
+            descripcion: `${completadosEsteMes} mantenimientos completados este mes. ¡Buen trabajo!`,
+            meta: 'Este mes'
+        });
+      }
   }
 
-  generateReport() {
-    alert('Función de generación de reportes - En desarrollo\n\nEsta funcionalidad permitirá:\n• Exportar datos a Excel/PDF\n• Gráficos de rendimiento\n• Análisis de tendencias');
+  private showNotificationMessage(message: string, type: 'success' | 'error') {
+    this.notificationMessage = message;
+    this.notificationType = type;
+    this.showNotification = true;
+    setTimeout(() => this.showNotification = false, 3000);
   }
 
-  // Message methods
   private showSuccessMessage(message: string) {
-    // You might want to implement a proper toast/snackbar service
-    alert(message);
+    this.showNotificationMessage(message, 'success');
   }
 
   private showErrorMessage(message: string) {
-    alert(`Error: ${message}`);
-  }
-
-  // Legacy method for compatibility
-  estadoClase(m: Mantenimiento) {
-    return {
-      'status-badge': true,
-      'status-prestado': m.status === 'en-proceso',
-      'status-disponible': m.status === 'completado',
-      'status-mantto': m.status === 'programado'
-    };
+    this.showNotificationMessage(message, 'error');
   }
 }

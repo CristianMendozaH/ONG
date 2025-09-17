@@ -36,7 +36,7 @@ router.post('/', auth, async (req, res, next) => {
           borrowerName,
           loanDate,
           dueDate,
-          status: 'prestado', // 👈 asegura consistencia con tu modelo
+          status: 'prestado',
         },
         { transaction: t }
       );
@@ -59,7 +59,8 @@ router.post('/', auth, async (req, res, next) => {
  */
 router.post('/:id/return', auth, async (req, res, next) => {
   try {
-    const returnDate: Date = req.body?.returnDate ? new Date(req.body.returnDate) : new Date();
+    const { returnDate: returnDateStr, observations } = req.body;
+    const returnDate = returnDateStr ? new Date(returnDateStr) : new Date();
     if (isNaN(returnDate.getTime())) return res.status(400).json({ message: 'returnDate inválido' });
 
     const loan = await Loan.findByPk(req.params.id);
@@ -77,8 +78,8 @@ router.post('/:id/return', auth, async (req, res, next) => {
       const totalFine = overdueDays * finePerDay;
 
       await loan.update(
-        { returnDate, overdueDays, totalFine, status: 'devuelto' },
-        { transaction: t }
+      { returnDate, overdueDays, totalFine, status: 'devuelto', observations },
+      { transaction: t }
       );
       await eq.update({ status: 'disponible' }, { transaction: t });
 
@@ -110,6 +111,52 @@ router.get('/:id', auth, async (req, res, next) => {
     if (!loan) return res.status(404).json({ message: 'Préstamo no encontrado' });
     res.json(loan);
   } catch (e) { next(e); }
+});
+
+// --- RUTA AÑADIDA PARA EXTENDER PRÉSTAMO ---
+/**
+ * Extender fecha de devolución (Actualizar préstamo)
+ * Usa PATCH para actualizar un campo específico del préstamo.
+ * body: { dueDate (YYYY-MM-DD) }
+ */
+router.patch('/:id', auth, async (req, res, next) => {
+  try {
+    const { dueDate } = req.body;
+    // 1. Validar que la nueva fecha de devolución fue enviada
+    if (!dueDate) {
+      return res.status(400).json({ message: 'El campo dueDate es requerido' });
+    }
+
+    const newDueDate = new Date(dueDate);
+    if (isNaN(newDueDate.getTime())) {
+      return res.status(400).json({ message: 'Formato de dueDate inválido' });
+    }
+
+    // 2. Buscar el préstamo en la base de datos
+    const loan = await Loan.findByPk(req.params.id);
+    if (!loan) {
+      return res.status(404).json({ message: 'Préstamo no encontrado' });
+    }
+
+    // 3. Validar el estado del préstamo
+    if (loan.status === 'devuelto') {
+      return res.status(409).json({ message: 'No se puede extender un préstamo que ya fue devuelto' });
+    }
+
+    const currentDueDate = new Date(loan.dueDate);
+    if (newDueDate <= currentDueDate) {
+      return res.status(400).json({ message: 'La nueva fecha debe ser posterior a la fecha de devolución actual' });
+    }
+
+    // 4. Actualizar el préstamo con la nueva fecha y guardar en la BD
+    const updatedLoan = await loan.update({ dueDate });
+
+    // 5. Devolver el préstamo actualizado al frontend
+    res.json(updatedLoan);
+
+  } catch (e) {
+    next(e);
+  }
 });
 
 export default router;

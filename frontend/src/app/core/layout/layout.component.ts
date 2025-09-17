@@ -1,14 +1,38 @@
-import { Component } from '@angular/core';
+// src/app/core/layout/layout.component.ts
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
+// CORREGIDO: Ruta correcta a la carpeta 'services'
+import { AuthService } from '../services/auth.service';
+// CORREGIDO: Ruta correcta a la carpeta 'shared'
+import { UserStore } from '../stores/user.store';
+import { User } from '../../shared/interfaces/models'; // <-- Faltaba esta importación
+
 @Component({
-  standalone: true,
   selector: 'app-layout',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet
+  ],
+  // CORREGIDO: Debe apuntar a sus propios archivos HTML y SCSS
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss'
 })
-export class LayoutComponent {
+export class LayoutComponent { // <-- Asegúrate que se llame así y que tenga 'export'
+  private authService = inject(AuthService);
+  public userStore = inject(UserStore);
+
   sidebarOpen = false;
-  toggleSidebar() { this.sidebarOpen = !this.sidebarOpen; }
+
+  toggleSidebar(): void {
+    this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
 }

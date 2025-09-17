@@ -1,4 +1,3 @@
-<!-- Header -->
 <header class="header">
   <div class="header-left">
     <h1>Reportes y Analítica</h1>
@@ -10,125 +9,125 @@
   </div>
 </header>
 
-<!-- Loading State -->
+<div *ngIf="hasError" class="error-message">
+  <i class="fas fa-exclamation-triangle"></i>
+  {{ errorMessage }}
+</div>
+
 <div *ngIf="isLoading" class="loading-container">
   <div class="spinner"></div>
   <p>Cargando datos...</p>
 </div>
 
-<!-- Content -->
 <div class="reports-content" *ngIf="!isLoading">
-  <!-- Main Section -->
   <div class="main-section">
-    <!-- Filters Section -->
     <div class="filters-section">
-      <h3 class="filters-title">
+      <h3 class="filters-section-title">
         <i class="fas fa-filter"></i>
         Filtros de Búsqueda
       </h3>
-      <div class="filters-grid">
+      <div class="filters-section-grid">
         <div class="filter-group">
           <label class="filter-label">Fecha de Inicio</label>
-          <input
-            type="date"
-            class="filter-input"
-            [(ngModel)]="filtros.fechaInicio">
+          <input type="date" class="filter-input" [(ngModel)]="filtros.fechaInicio">
         </div>
         <div class="filter-group">
           <label class="filter-label">Fecha de Fin</label>
-          <input
-            type="date"
-            class="filter-input"
-            [(ngModel)]="filtros.fechaFin">
+          <input type="date" class="filter-input" [(ngModel)]="filtros.fechaFin">
         </div>
         <div class="filter-group">
           <label class="filter-label">Tipo de Reporte</label>
           <select class="filter-select" [(ngModel)]="filtros.tipoReporte">
-            <option
-              *ngFor="let tipo of tiposReporte"
-              [value]="tipo.value">
-              {{ tipo.label }}
-            </option>
+            <option *ngFor="let tipo of tiposReporte" [value]="tipo.value">{{ tipo.label }}</option>
           </select>
         </div>
       </div>
-      <div class="filters-actions">
-        <button class="btn-clear" (click)="limpiarFiltros()">
-          <i class="fas fa-times"></i>
-          Limpiar
-        </button>
-        <button class="btn-filter" (click)="aplicarFiltros()">
-          <i class="fas fa-search"></i>
-          Buscar
-        </button>
+      <div class="filters-section-actions">
+        <button class="btn-clear" (click)="limpiarFiltros()"><i class="fas fa-times"></i> Limpiar</button>
+        <button class="btn-filter" (click)="aplicarFiltros()"><i class="fas fa-search"></i> Buscar</button>
       </div>
     </div>
 
-    <!-- Reports Table -->
     <div class="reports-table-container">
       <div class="table-header">
-        <h3 class="table-title">Resultados del Reporte</h3>
+        <h3 class="table-header-title">Resultados del Reporte</h3>
         <div class="export-buttons">
-          <button class="btn-export-pdf" (click)="exportarPDF()">
-            <i class="fas fa-file-pdf"></i>
-            Exportar PDF
-          </button>
-          <button class="btn-export-excel" (click)="exportarExcel()">
-            <i class="fas fa-file-excel"></i>
-            Exportar Excel
-          </button>
+          <button class="btn-export-pdf" (click)="exportarPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
+          <button class="btn-export-excel" (click)="exportarExcel()"><i class="fas fa-file-excel"></i> Exportar Excel</button>
         </div>
       </div>
 
       <table class="reports-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Equipo</th>
-            <th>Usuario</th>
-            <th>Fecha Préstamo</th>
-            <th>Fecha Devolución</th>
-            <th>Estado</th>
-            <th>Días de Uso</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let reporte of reportesFiltrados; trackBy: trackByReporte">
-            <td>{{ reporte.id }}</td>
-            <td>{{ reporte.equipo }}</td>
-            <td>{{ reporte.usuario }}</td>
-            <td>{{ reporte.fechaPrestamo }}</td>
-            <td>{{ reporte.fechaDevolucion || '-' }}</td>
-            <td>
-              <span
-                class="status-badge"
-                [class]="getEstadoClass(reporte.estado)">
-                {{ reporte.estado }}
-              </span>
-            </td>
-            <td>{{ reporte.diasUso }}</td>
-          </tr>
+        <ng-container [ngSwitch]="filtros.tipoReporte">
 
-          <!-- Empty state -->
-          <tr *ngIf="reportesFiltrados.length === 0">
-            <td colspan="7" class="empty-state">
-              <i class="fas fa-inbox"></i>
-              <p>No se encontraron reportes con los filtros aplicados</p>
-            </td>
-          </tr>
-        </tbody>
+          <thead *ngSwitchCase="'mantenimiento'">
+            <tr>
+              <th>ID</th>
+              <th>Equipo</th>
+              <th>Tipo</th>
+              <th>Técnico</th>
+              <th>Fecha Realización</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody *ngSwitchCase="'mantenimiento'">
+            <tr *ngFor="let reporte of reportes; trackBy: trackByReporte">
+              <td>{{ reporte.correlativo | padNumber:3 }}</td>
+              <td>{{ reporte.equipo }} ({{ reporte.codigoEquipo }})</td>
+              <td>{{ reporte.tipo }}</td>
+              <td>{{ reporte.tecnico || '-' }}</td>
+              <td>{{ reporte.fechaRealizacion | date:'yyyy-MM-dd' }}</td>
+              <td><span class="status-badge">{{ reporte.estado }}</span></td>
+            </tr>
+          </tbody>
+
+          <thead *ngSwitchDefault>
+            <tr>
+              <th>ID</th>
+              <th>Equipo</th>
+              <th>Usuario</th>
+              <th>Fecha Préstamo</th>
+              <th>Fecha Devolución</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody *ngSwitchDefault>
+            <tr *ngFor="let reporte of reportes; trackBy: trackByReporte">
+              <td>{{ reporte.correlativo | padNumber:3 }}</td>
+              <td>{{ reporte.equipo }}</td>
+              <td>{{ reporte.usuario }}</td>
+              <td>{{ reporte.fechaPrestamo | date:'yyyy-MM-dd' }}</td>
+              <td>{{ reporte.fechaDevolucion ? (reporte.fechaDevolucion | date:'yyyy-MM-dd') : '-' }}</td>
+              <td>
+                <span class="status-badge" [class]="getEstadoClass(reporte.estado)">{{ reporte.estado }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </ng-container>
+
+        <tr *ngIf="!reportes || reportes.length === 0">
+          <td colspan="7" class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <p>No se encontraron reportes con los filtros aplicados</p>
+          </td>
+        </tr>
       </table>
+
+      <div class="pagination" *ngIf="totalItems > itemsPerPage">
+        <button class="pagination-btn" [disabled]="currentPage === 1" (click)="cambiarPagina(currentPage - 1)">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <span class="pagination-info">Página {{ currentPage }} de {{ totalPages }}</span>
+        <button class="pagination-btn" [disabled]="currentPage >= totalPages" (click)="cambiarPagina(currentPage + 1)">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Charts Panel -->
   <div class="charts-panel">
-    <!-- Statistics -->
     <div class="chart-card">
-      <h3 class="chart-title">
-        <i class="fas fa-chart-bar"></i>
-        Estadísticas Generales
-      </h3>
+      <h3 class="chart-card-title"><i class="fas fa-chart-bar"></i> Estadísticas Generales</h3>
       <div class="stats-grid">
         <div class="stat-item">
           <div class="stat-number">{{ totalPrestamos }}</div>
@@ -148,28 +147,28 @@
         </div>
       </div>
     </div>
-
-    <!-- Status Chart -->
     <div class="chart-card">
-      <h3 class="chart-title">
-        <i class="fas fa-chart-pie"></i>
-        Estado de Préstamos
-      </h3>
-      <div class="chart-placeholder">
-        <p>Gráfico en desarrollo</p>
-        <p>Los gráficos se implementarán una vez resueltos los problemas de Chart.js</p>
+      <h3 class="chart-card-title"><i class="fas fa-chart-pie"></i> Distribución por Estado</h3>
+      <div class="status-distribution">
+        <div class="status-item">
+          <div class="status-color status-active"></div>
+          <span>Activos: {{ totalActivos }}</span>
+        </div>
+        <div class="status-item">
+          <div class="status-color status-returned"></div>
+          <span>Devueltos: {{ totalDevueltos }}</span>
+        </div>
+        <div class="status-item">
+          <div class="status-color status-overdue"></div>
+          <span>Vencidos: {{ totalVencidos }}</span>
+        </div>
       </div>
     </div>
-
-    <!-- Activity Chart -->
     <div class="chart-card">
-      <h3 class="chart-title">
-        <i class="fas fa-chart-line"></i>
-        Actividad Mensual
-      </h3>
-      <div class="chart-placeholder">
-        <p>Gráfico en desarrollo</p>
-        <p>Los gráficos se implementarán una vez resueltos los problemas de Chart.js</p>
+      <h3 class="chart-card-title"><i class="fas fa-tools"></i> Acciones Rápidas</h3>
+      <div class="quick-actions">
+        <button class="quick-action-btn" (click)="refrescarDatos()"><i class="fas fa-sync"></i> Refrescar Datos</button>
+        <button class="quick-action-btn" (click)="limpiarFiltros()"><i class="fas fa-eraser"></i> Limpiar Filtros</button>
       </div>
     </div>
   </div>

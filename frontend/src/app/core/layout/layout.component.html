@@ -7,29 +7,31 @@
     </div>
 
     <div class="sidebar-menu">
-      <a routerLink="/dashboard" routerLinkActive="active" class="menu-item">
-        <i class="fa-solid fa-gauge"></i><span>Dashboard</span>               <!-- antes: fa-tachometer-alt -->
+      <a *appIfRole="['admin', 'tech']" routerLink="/dashboard" routerLinkActive="active" class="menu-item">
+        <i class="fa-solid fa-gauge"></i><span>Dashboard</span>
       </a>
-      <a routerLink="/equipos" routerLinkActive="active" class="menu-item">
+      <a *appIfRole="['admin', 'tech']" routerLink="/equipos" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-desktop"></i><span>Equipos</span>
       </a>
-      <a routerLink="/prestamos" routerLinkActive="active" class="menu-item">
-        <i class="fa-solid fa-share-nodes"></i><span>Préstamos</span>         <!-- antes: fa-share-alt -->
+      <a *appIfRole="['admin', 'tech']" routerLink="/prestamos" routerLinkActive="active" class="menu-item">
+        <i class="fa-solid fa-share-nodes"></i><span>Préstamos</span>
       </a>
-      <a routerLink="/mantenimiento" routerLinkActive="active" class="menu-item">
-        <i class="fa-solid fa-screwdriver-wrench"></i><span>Mantenimiento</span> <!-- más moderno que fa-wrench -->
+      <a *appIfRole="['admin', 'tech']" routerLink="/mantenimiento" routerLinkActive="active" class="menu-item">
+        <i class="fa-solid fa-screwdriver-wrench"></i><span>Mantenimiento</span>
       </a>
-      <a routerLink="/reportes" routerLinkActive="active" class="menu-item">
-        <i class="fa-solid fa-chart-column"></i><span>Reportes</span>         <!-- alternativa a fa-chart-bar -->
+      <a *appIfRole="['admin', 'tech']" routerLink="/reportes" routerLinkActive="active" class="menu-item">
+        <i class="fa-solid fa-chart-column"></i><span>Reportes</span>
       </a>
-      <a routerLink="/usuarios" routerLinkActive="active" class="menu-item">
+
+      <a *appIfRole="'admin'" routerLink="/usuarios" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-users"></i><span>Usuarios</span>
       </a>
-      <a routerLink="/config" routerLinkActive="active" class="menu-item">
-        <i class="fa-solid fa-gear"></i><span>Configuración</span>            <!-- antes: fa-cog -->
+      <a *appIfRole="'admin'" routerLink="/config" routerLinkActive="active" class="menu-item">
+        <i class="fa-solid fa-gear"></i><span>Configuración</span>
       </a>
-      <a routerLink="/login" class="menu-item">
-        <i class="fa-solid fa-right-from-bracket"></i><span>Salir</span>      <!-- antes: fa-sign-out-alt -->
+
+      <a (click)="logout()" class="menu-item">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Salir</span>
       </a>
     </div>
   </nav>

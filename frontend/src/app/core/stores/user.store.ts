@@ -6,17 +6,14 @@ import { User } from '../../shared/interfaces/models';
   providedIn: 'root'
 })
 export class UserStore {
-  // Señal reactiva para el usuario actual
   private _currentUser = signal<User | null>(null);
-
-  // Señal reactiva para el estado de autenticación
   private _isAuthenticated = signal<boolean>(false);
 
   // Getters computados (solo lectura)
   currentUser = this._currentUser.asReadonly();
   isAuthenticated = this._isAuthenticated.asReadonly();
 
-  // Computed properties para roles
+  // Computed properties para roles usando 'role'
   isAdmin = computed(() => this._currentUser()?.role === 'admin');
   isTech = computed(() => this._currentUser()?.role === 'tech');
   isUser = computed(() => this._currentUser()?.role === 'user');

@@ -10,9 +10,7 @@
 </header>
 
 <div class="maintenance-content">
-  <!-- Main Section -->
   <div class="main-section">
-    <!-- Header Section -->
     <div class="content-header">
       <h2 class="content-title">Gestión de Mantenimientos</h2>
       <button class="btn-schedule" (click)="openMaintenanceModal()">
@@ -21,7 +19,6 @@
       </button>
     </div>
 
-    <!-- Statistics Grid -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-number">{{ getCountByStatus('programado') }}</div>
@@ -41,7 +38,6 @@
       </div>
     </div>
 
-    <!-- Loading and Error States -->
     <div *ngIf="loading" class="loading-state">
       <i class="fas fa-spinner fa-spin"></i> Cargando mantenimientos...
     </div>
@@ -51,7 +47,6 @@
       {{ error }}
     </div>
 
-    <!-- Maintenance Table -->
     <div class="maintenance-table-container" *ngIf="!loading && !error">
       <div class="table-header">
         <h3 class="table-title">Órdenes de Mantenimiento</h3>
@@ -85,7 +80,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let m of filteredMantenimientos; trackBy: trackByMaintenanceId">
-            <td>{{ m.id }}</td>
+            <td>{{ m.displayId }}</td>
             <td>
               <div class="equipment-info">
                 <div class="equipment-name">{{ m.equipment?.name || 'Equipo no encontrado' }}</div>
@@ -105,22 +100,19 @@
             <td>
               <div class="actions-cell">
                 <button class="action-btn btn-view" (click)="viewMaintenance(m)">
-                  <i class="fas fa-eye"></i>
-                  Ver
+                  <i class="fas fa-eye"></i> Ver
                 </button>
-                <button
-                  *ngIf="m.status !== 'completado'"
-                  class="action-btn btn-complete"
-                  (click)="completar(m)">
-                  <i class="fas fa-check"></i>
-                  Completar
+
+                <button *ngIf="m.status === 'programado'" class="action-btn btn-start" (click)="iniciarMantenimiento(m)">
+                  <i class="fas fa-play"></i> Iniciar
                 </button>
-                <button
-                  *ngIf="m.status === 'programado'"
-                  class="action-btn btn-edit"
-                  (click)="editMaintenance(m)">
-                  <i class="fas fa-edit"></i>
-                  Editar
+
+                <button *ngIf="m.status === 'en-proceso'" class="action-btn btn-complete" (click)="openCompleteModal(m)">
+                  <i class="fas fa-check"></i> Completar
+                </button>
+
+                <button *ngIf="m.status === 'programado'" class="action-btn btn-edit" (click)="editMaintenance(m)">
+                  <i class="fas fa-edit"></i> Editar
                 </button>
               </div>
             </td>
@@ -136,7 +128,6 @@
     </div>
   </div>
 
-  <!-- Alerts Panel -->
   <div class="alerts-panel">
     <div class="alerts-header">
       <h3 class="alerts-title">
@@ -146,85 +137,43 @@
       <p class="alerts-subtitle">Mantenimientos recomendados por el sistema</p>
     </div>
 
-    <!-- Sample alerts - you can replace with dynamic data -->
-    <div class="alert-card critical" (click)="showAlertDetails('critical')">
+    <div *ngFor="let alerta of alertas" class="alert-card" [ngClass]="alerta.tipo">
       <div class="alert-header">
         <div class="alert-content-wrapper">
-          <div class="alert-icon alert-critical">
-            <i class="fas fa-exclamation-circle"></i>
+          <div class="alert-icon" [ngClass]="'alert-' + alerta.tipo">
+            <i class="fas" [ngClass]="{
+              'fa-exclamation-circle': alerta.tipo === 'critical',
+              'fa-exclamation-triangle': alerta.tipo === 'warning',
+              'fa-info-circle': alerta.tipo === 'info'
+            }"></i>
           </div>
           <div class="alert-content">
-            <div class="alert-title">Mantenimiento Urgente Requerido</div>
-            <div class="alert-description">
-              Equipos con más de 1500 horas de uso requieren mantenimiento preventivo.
-            </div>
+            <div class="alert-title">{{ alerta.titulo }}</div>
+            <div class="alert-description">{{ alerta.descripcion }}</div>
           </div>
         </div>
       </div>
       <div class="alert-meta">
         <div class="alert-time">
           <i class="fas fa-clock"></i>
-          <span>Hace 2 horas</span>
+          <span>{{ alerta.meta }}</span>
         </div>
-        <button class="alert-action" (click)="$event.stopPropagation(); openMaintenanceModal()">
-          Programar
-        </button>
       </div>
     </div>
 
-    <div class="alert-card warning" (click)="showAlertDetails('preventive')">
-      <div class="alert-header">
-        <div class="alert-content-wrapper">
-          <div class="alert-icon alert-warning">
-            <i class="fas fa-exclamation-triangle"></i>
-          </div>
-          <div class="alert-content">
-            <div class="alert-title">Mantenimiento Preventivo Próximo</div>
-            <div class="alert-description">
-              {{ getPreventiveMaintenanceDue() }} equipos requieren mantenimiento preventivo en los próximos 7 días.
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="alert-meta">
-        <div class="alert-time">
-          <i class="fas fa-clock"></i>
-          <span>Actualizado hoy</span>
-        </div>
-        <button class="alert-action" (click)="$event.stopPropagation(); openMaintenanceModal()">
-          Ver equipos
-        </button>
-      </div>
+    <div *ngIf="alertas.length === 0 && !loading" class="alert-card info">
+       <div class="alert-content-wrapper">
+         <div class="alert-icon alert-info"><i class="fas fa-check-circle"></i></div>
+         <div class="alert-content">
+           <div class="alert-title">Todo en Orden</div>
+           <div class="alert-description">No hay alertas activas en este momento.</div>
+         </div>
+       </div>
     </div>
 
-    <div class="alert-card info" (click)="showAlertDetails('completed')">
-      <div class="alert-header">
-        <div class="alert-content-wrapper">
-          <div class="alert-icon alert-info">
-            <i class="fas fa-info-circle"></i>
-          </div>
-          <div class="alert-content">
-            <div class="alert-title">Mantenimientos Completados</div>
-            <div class="alert-description">
-              {{ getCountByStatus('completado') }} mantenimientos completados este mes.
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="alert-meta">
-        <div class="alert-time">
-          <i class="fas fa-calendar"></i>
-          <span>Este mes</span>
-        </div>
-        <button class="alert-action" (click)="$event.stopPropagation(); generateReport()">
-          Ver reporte
-        </button>
-      </div>
-    </div>
   </div>
 </div>
 
-<!-- New Maintenance Modal -->
 <div class="modal-overlay" *ngIf="showModal" (click)="closeModal($event)">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -234,18 +183,18 @@
       </button>
     </div>
     <div class="modal-body">
-      <form [formGroup]="form" (ngSubmit)="crear()" class="maintenance-form">
+      <form [formGroup]="form" (ngSubmit)="guardarMantenimiento()" class="maintenance-form">
         <div class="form-group">
           <label class="form-label">Equipo</label>
           <select formControlName="equipmentId" class="form-select">
             <option value="">Seleccione un equipo</option>
-            <option *ngFor="let e of equipos" [value]="e.id">
+            <option *ngFor="let e of availableEquipos" [value]="e.id">
               {{ e.code }} — {{ e.name }}
             </option>
           </select>
         </div>
 
-        <div class="equipment-info" *ngIf="selectedEquipment" class="equipment-details">
+        <div *ngIf="selectedEquipment" class="equipment-details">
           <h4>Información del Equipo</h4>
           <div class="info-row">
             <span class="info-label">Código:</span>
@@ -274,10 +223,9 @@
           <div class="form-group">
             <label class="form-label">Prioridad</label>
             <select formControlName="priority" class="form-select">
-              <option value="">Seleccione la prioridad</option>
-              <option value="alta">Alta</option>
-              <option value="media">Media</option>
               <option value="baja">Baja</option>
+              <option value="media">Media</option>
+              <option value="alta">Alta</option>
             </select>
           </div>
         </div>
@@ -290,9 +238,9 @@
         <div class="form-group">
           <label class="form-label">Notas y Observaciones</label>
           <textarea
-            formControlName="notes"
+            formControlName="description"
             class="form-textarea"
-            placeholder="Describa los trabajos a realizar o observaciones importantes..."
+            placeholder="Describa el problema o la razón del mantenimiento..."
             rows="4">
           </textarea>
         </div>
@@ -301,19 +249,18 @@
     <div class="modal-footer">
       <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
       <button
-        type="button"
+        type="submit"
         class="btn-save"
         [disabled]="form.invalid || saving"
-        (click)="crear()">
-        <i class="fas fa-save" *ngIf="!saving"></i>
+        (click)="guardarMantenimiento()">
         <i class="fas fa-spinner fa-spin" *ngIf="saving"></i>
+        <i class="fas fa-save" *ngIf="!saving"></i>
         {{ saving ? 'Guardando...' : (editingMaintenance ? 'Actualizar' : 'Guardar Orden') }}
       </button>
     </div>
   </div>
 </div>
 
-<!-- Maintenance Details Modal -->
 <div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal($event)">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -326,15 +273,16 @@
       <div class="details-grid">
         <div class="details-section">
           <h4>Información General</h4>
-          <p><strong>ID Orden:</strong> {{ selectedMaintenanceDetails.id }}</p>
+          <p><strong>ID Orden:</strong> {{ selectedMaintenanceDisplayId }}</p>
           <p><strong>Equipo:</strong> {{ selectedMaintenanceDetails.equipment?.name }}</p>
           <p><strong>Código:</strong> {{ selectedMaintenanceDetails.equipment?.code }}</p>
           <p><strong>Tipo:</strong> {{ selectedMaintenanceDetails.type | titlecase }}</p>
+          <p><strong>Prioridad:</strong> {{ selectedMaintenanceDetails.priority | titlecase }}</p>
         </div>
         <div class="details-section">
           <h4>Cronograma</h4>
-          <p><strong>Fecha programada:</strong> {{ selectedMaintenanceDetails.scheduledDate | date:'dd/MM/yyyy' }}</p>
-          <p><strong>Fecha realizada:</strong> {{ selectedMaintenanceDetails.performedDate ? (selectedMaintenanceDetails.performedDate | date:'dd/MM/yyyy') : 'Pendiente' }}</p>
+          <p><strong>Fecha programada:</strong> {{ selectedMaintenanceDetails.scheduledDate | date:'fullDate' }}</p>
+          <p><strong>Fecha realizada:</strong> {{ selectedMaintenanceDetails.performedDate ? (selectedMaintenanceDetails.performedDate | date:'fullDate') : 'Pendiente' }}</p>
           <p><strong>Estado:</strong>
             <span class="status-badge" [ngClass]="getStatusClass(selectedMaintenanceDetails.status)">
               {{ getStatusText(selectedMaintenanceDetails.status) }}
@@ -344,23 +292,67 @@
         </div>
       </div>
 
-      <div class="notes-section" *ngIf="selectedMaintenanceDetails.notes">
+      <div class="notes-section" *ngIf="selectedMaintenanceDetails.description; else noNotes">
         <h4>Notas y Observaciones</h4>
-        <div class="notes-content">
-          {{ selectedMaintenanceDetails.notes }}
-        </div>
+        <div class="notes-content" [innerHTML]="selectedMaintenanceDetails.description | nl2br"></div>
       </div>
+      <ng-template #noNotes>
+        <div class="notes-section">
+          <h4>Notas y Observaciones</h4>
+          <div class="notes-content">
+            No se ingresaron notas para este mantenimiento.
+          </div>
+        </div>
+      </ng-template>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn-cancel" (click)="closeDetailsModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showCompleteModal" (click)="closeCompleteModal($event)">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Completar Mantenimiento</h3>
+      <button class="modal-close" (click)="closeCompleteModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="completeForm" (ngSubmit)="submitCompletion()" class="maintenance-form">
+        <div class="form-group">
+          <label class="form-label">Fecha de Realización</label>
+          <input type="date" formControlName="performedDate" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notas de Finalización (Opcional)</label>
+          <textarea
+            formControlName="completionNotes"
+            class="form-textarea"
+            placeholder="Describa el trabajo realizado, piezas cambiadas, etc."
+            rows="4">
+          </textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeCompleteModal()">Cancelar</button>
       <button
-        *ngIf="selectedMaintenanceDetails?.status !== 'completado'"
-        type="button"
+        type="submit"
         class="btn-save"
-        (click)="completar(selectedMaintenanceDetails!)">
+        [disabled]="completeForm.invalid"
+        (click)="submitCompletion()">
         <i class="fas fa-check"></i>
         Marcar como Completado
       </button>
     </div>
   </div>
+</div>
+
+<div *ngIf="showNotification"
+     class="notification-toast"
+     [ngClass]="{ 'is-success': notificationType === 'success', 'is-error': notificationType === 'error' }">
+  <i class="fas" [ngClass]="{ 'fa-check-circle': notificationType === 'success', 'fa-exclamation-circle': notificationType === 'error' }"></i>
+  <span>{{ notificationMessage }}</span>
 </div>

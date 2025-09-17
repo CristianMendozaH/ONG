@@ -10,7 +10,6 @@
 </header>
 
 <div class="loans-content">
-  <!-- Success Message -->
   <div class="success-message" [class.show]="showSuccessMessage" *ngIf="successMessageText">
     <i class="fas fa-check-circle"></i>
     <span>{{ successMessageText }}</span>
@@ -30,15 +29,33 @@
     </div>
   </div>
 
-  <!-- QR Scanner Section -->
   <div class="qr-scanner-section">
     <div class="scanner-card">
       <h3 class="scanner-title">Escáner de Código QR</h3>
       <p class="scanner-subtitle">Escanea el código QR del equipo para préstamos o devoluciones</p>
 
-      <div class="scanner-area" id="scannerArea" [class.active]="isScanning" [class.scanning]="scanSuccess" (click)="simulateQRScan()">
+      <div class="scanner-area"
+           [class.active]="isScanning"
+           [class.scanning]="scanSuccess"
+           (click)="startScan()"
+           *ngIf="!showCameraPreview">
         <i class="fas fa-camera scanner-icon"></i>
         <p class="scanner-text">{{ scannerText }}</p>
+      </div>
+
+      <div class="camera-preview" *ngIf="showCameraPreview" style="position: relative; width: 100%; height: 250px; background: #000; border-radius: 12px; overflow: hidden;">
+        <video #videoElement
+               style="width: 100%; height: 100%; object-fit: cover;"
+               playsinline>
+        </video>
+        <div style="position: absolute; top: 10px; right: 10px;">
+          <button (click)="stopScan()" style="background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">
+          {{ scannerText }}
+        </div>
       </div>
 
       <div class="scan-result" [class.show]="scannedEquipment" *ngIf="scannedEquipment">
@@ -92,7 +109,6 @@
     </div>
   </div>
 
-  <!-- Loading y Error States -->
   <div *ngIf="loading" class="loading-state">
     <i class="fas fa-spinner fa-spin"></i>
     <p>Cargando préstamos...</p>
@@ -104,7 +120,6 @@
     <button class="btn-retry" (click)="loadPrestamos()">Reintentar</button>
   </div>
 
-  <!-- Loans Table -->
   <div class="loans-table-container" *ngIf="!loading && !error">
     <div class="table-header">
       <h3 class="table-title">Préstamos Activos</h3>
@@ -139,11 +154,11 @@
       </thead>
       <tbody>
         <tr *ngFor="let prestamo of filteredPrestamos; trackBy: trackByPrestamoId">
-          <td>PR{{ padNumber(prestamo.id) }}</td>
+          <td>{{ formatLoanId(prestamo.id) }}</td>
           <td>
             <div class="equipment-info">
-              <div class="equipment-name">{{ prestamo.equipment?.name || 'Equipo sin nombre' }}</div>
-              <div class="equipment-code">{{ prestamo.equipment?.code || 'N/A' }}</div>
+              <div class="equipment-name">{{ getEquipmentName(prestamo) }}</div>
+              <div class="equipment-code">{{ getEquipmentCode(prestamo) }}</div>
             </div>
           </td>
           <td>{{ prestamo.borrowerName }}</td>
@@ -200,7 +215,6 @@
   </div>
 </div>
 
-<!-- New Loan Modal -->
 <div class="modal-overlay" [class.show]="showLoanModal" (click)="closeModal('loan')">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -215,7 +229,7 @@
           <label class="form-label">Equipo</label>
           <select class="form-select" formControlName="equipmentId">
             <option value="">Seleccione un equipo</option>
-            <option *ngFor="let equipo of equipos" [value]="equipo.id">
+            <option *ngFor="let equipo of availableEquipos" [value]="equipo.id">
               {{ equipo.code }} - {{ equipo.name }}
             </option>
           </select>
@@ -281,7 +295,6 @@
   </div>
 </div>
 
-<!-- Return Modal -->
 <div class="modal-overlay" [class.show]="showReturnModal" (click)="closeModal('return')">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -291,18 +304,16 @@
       </button>
     </div>
     <div class="modal-body">
-      <!-- Selector de préstamo solo si no hay uno seleccionado y hay múltiples opciones -->
       <div *ngIf="!selectedPrestamo && getActiveLoans().length > 1" class="form-group">
         <label class="form-label">Seleccionar Préstamo a Devolver</label>
         <select class="form-select" [(ngModel)]="selectedPrestamoId" (change)="onSelectPrestamoForReturn()">
           <option value="">Seleccione un préstamo activo</option>
           <option *ngFor="let prestamo of getActiveLoans()" [value]="prestamo.id">
-            PR{{ padNumber(prestamo.id) }} - {{ prestamo.equipment?.name || 'Equipo sin nombre' }} ({{ prestamo.borrowerName }})
+            {{ formatLoanId(prestamo.id) }} - {{ getEquipmentName(prestamo) }} ({{ prestamo.borrowerName }})
           </option>
         </select>
       </div>
 
-      <!-- Si solo hay un préstamo activo, seleccionarlo automáticamente -->
       <div *ngIf="!selectedPrestamo && getActiveLoans().length === 1" class="auto-select-message">
         <div style="background: #e8f4fd; border: 1px solid #114495; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
           <p style="margin: 0; color: #114495;">
@@ -312,7 +323,6 @@
         </div>
       </div>
 
-      <!-- Si no hay préstamos activos -->
       <div *ngIf="getActiveLoans().length === 0" class="no-active-loans">
         <div style="text-align: center; padding: 40px; color: #666;">
           <i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 15px; color: #114495;"></i>
@@ -321,13 +331,12 @@
         </div>
       </div>
 
-      <!-- Formulario completo cuando hay préstamo seleccionado -->
       <div *ngIf="selectedPrestamo">
         <div class="form-group">
           <label class="form-label">Información del Préstamo</label>
           <div class="loan-info">
-            <p><strong>ID Préstamo:</strong> PR{{ padNumber(selectedPrestamo.id) }}</p>
-            <p><strong>Equipo:</strong> {{ selectedPrestamo.equipment?.name || 'Equipo sin nombre' }}</p>
+            <p><strong>ID Préstamo:</strong> {{ formatLoanId(selectedPrestamo.id) }}</p>
+            <p><strong>Equipo:</strong> {{ getEquipmentName(selectedPrestamo) }}</p>
             <p><strong>Usuario:</strong> {{ selectedPrestamo.borrowerName }}</p>
             <p><strong>Fecha de préstamo:</strong> {{ selectedPrestamo.loanDate | date:'dd/MM/yyyy' }}</p>
             <p><strong>Fecha límite:</strong> {{ selectedPrestamo.dueDate | date:'dd/MM/yyyy' }}</p>
@@ -399,7 +408,6 @@
   </div>
 </div>
 
-<!-- QR Preview Modal -->
 <div class="modal-overlay" [class.show]="!!qrUrl" (click)="qrUrl = null">
   <div class="modal qr-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -413,11 +421,14 @@
     </div>
     <div class="modal-footer">
       <button type="button" class="btn-cancel" (click)="qrUrl = null">Cerrar</button>
+      <button type="button" class="btn-confirm" (click)="downloadQR()" *ngIf="qrUrl">
+        <i class="fas fa-download"></i>
+        Descargar QR
+      </button>
     </div>
   </div>
 </div>
 
-<!-- Overdue Loans Modal -->
 <div class="modal-overlay" [class.show]="showOverdueLoansModal" (click)="closeModal('overdue')">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -454,8 +465,8 @@
 
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
               <div>
-                <h5 style="margin: 0; color: #33475b;">PR{{ padNumber(prestamo.id) }}</h5>
-                <p style="margin: 2px 0; color: #666; font-size: 0.9rem;">{{ prestamo.equipment?.name || 'Equipo sin nombre' }}</p>
+                <h5 style="margin: 0; color: #33475b;">{{ formatLoanId(prestamo.id) }}</h5>
+                <p style="margin: 2px 0; color: #666; font-size: 0.9rem;">{{ getEquipmentName(prestamo) }}</p>
               </div>
               <span class="status-badge status-atrasado">{{ getDaysOverdue(prestamo) }} días</span>
             </div>
@@ -520,7 +531,6 @@
   </div>
 </div>
 
-<!-- Loan Details Modal -->
 <div class="modal-overlay" [class.show]="showLoanDetailsModal" (click)="closeModal('details')">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -535,11 +545,11 @@
         <div class="details-grid">
           <div class="detail-item">
             <span class="detail-label">ID Préstamo</span>
-            <span class="detail-value">PR{{ padNumber(selectedPrestamo.id) }}</span>
+            <span class="detail-value">{{ formatLoanId(selectedPrestamo.id) }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Equipo</span>
-            <span class="detail-value">{{ selectedPrestamo.equipment?.name || 'Equipo sin nombre' }}</span>
+            <span class="detail-value">{{ getEquipmentName(selectedPrestamo) }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Usuario</span>
@@ -547,7 +557,7 @@
           </div>
           <div class="detail-item">
             <span class="detail-label">Código Equipo</span>
-            <span class="detail-value">{{ selectedPrestamo.equipment?.code || 'N/A' }}</span>
+            <span class="detail-value">{{ getEquipmentCode(selectedPrestamo) }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Fecha Préstamo</span>
@@ -565,17 +575,41 @@
             <span class="detail-label">Días restantes</span>
             <span class="detail-value">{{ getDaysLeftText(selectedPrestamo) }}</span>
           </div>
+          <div *ngIf="selectedPrestamo.status === 'devuelto' && selectedPrestamo.observations" class="details-section">
+            <h4 class="details-title">Observaciones de Devolución</h4>
+            <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px;">
+            <p style="margin: 0; font-style: italic;">"{{ selectedPrestamo.observations }}"</p>
+        </div>
+      </div>
         </div>
       </div>
 
       <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
         <h4 style="color: #33475b; margin-bottom: 10px;">Código QR del Equipo</h4>
-        <div style="width: 150px; height: 150px; background: white; border: 2px solid #ddd; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-          <i class="fas fa-qrcode" style="font-size: 3rem; color: #114495;"></i>
+
+        <div *ngIf="qrUrl; else noQrCode" style="margin: 0 auto 15px; max-width: 200px;">
+          <img [src]="qrUrl" alt="QR Code" style="width: 100%; height: auto; border: 2px solid #ddd; border-radius: 8px;">
         </div>
-        <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">
-          Código QR para el equipo {{ selectedPrestamo.equipment?.code || 'N/A' }}
+
+        <ng-template #noQrCode>
+          <div style="width: 150px; height: 150px; background: white; border: 2px solid #ddd; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+            <i class="fas fa-qrcode" style="font-size: 3rem; color: #114495;"></i>
+          </div>
+        </ng-template>
+
+        <p style="margin: 10px 0; color: #666; font-size: 0.9rem;">
+          Código QR para el equipo {{ getEquipmentCode(selectedPrestamo) }}
         </p>
+
+          <div style="display: flex; gap: 10px; justify-content: center;">
+          <button
+            *ngIf="!qrUrl"
+            class="btn-confirm"
+            (click)="generateQRForSelectedLoan()"
+            style="padding: 8px 16px; font-size: 0.9rem;">
+            <i class="fas fa-qrcode"></i> Generar QR
+          </button>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -588,7 +622,6 @@
   </div>
 </div>
 
-<!-- Extend Loan Modal -->
 <div class="modal-overlay" [class.show]="showExtendModal" (click)="closeModal('extend')">
   <div class="modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -600,8 +633,8 @@
     <div class="modal-body" *ngIf="selectedPrestamo">
       <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
         <h4 style="color: #33475b; margin-bottom: 10px;">Información del Préstamo</h4>
-        <p><strong>ID:</strong> PR{{ padNumber(selectedPrestamo.id) }}</p>
-        <p><strong>Equipo:</strong> {{ selectedPrestamo.equipment?.name || 'Equipo sin nombre' }}</p>
+        <p><strong>ID:</strong> {{ formatLoanId(selectedPrestamo.id) }}</p>
+        <p><strong>Equipo:</strong> {{ getEquipmentName(selectedPrestamo) }}</p>
         <p><strong>Usuario:</strong> {{ selectedPrestamo.borrowerName }}</p>
         <p><strong>Fecha actual de devolución:</strong> {{ selectedPrestamo.dueDate | date:'dd/MM/yyyy' }}</p>
       </div>

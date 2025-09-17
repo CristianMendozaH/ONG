@@ -24,6 +24,24 @@ export async function updateUser(req: Request, res: Response) {
   res.json(user);
 }
 
+// --- FUNCIÓN AÑADIDA ---
+export async function deleteUser(req: Request, res: Response) {
+  // Busca el usuario por el ID que viene en la URL
+  const user = await User.findByPk(req.params.id);
+
+  // Si no se encuentra el usuario, devuelve un error 404
+  if (!user) {
+    return res.status(404).json({ message: 'Usuario no encontrado' });
+  }
+
+  // Si se encuentra, elimínalo de la base de datos
+  await user.destroy();
+
+  // Envía una respuesta de éxito (204 significa "No Content", es estándar para un DELETE exitoso)
+  res.sendStatus(204);
+}
+// --- FIN DE LA FUNCIÓN AÑADIDA ---
+
 export async function resetPassword(req: Request, res: Response) {
   const { password } = req.body;
   const user = await User.findByPk(req.params.id);

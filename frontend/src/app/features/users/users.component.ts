@@ -4,6 +4,12 @@ import { RouterLink } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { UsersService, User, CreateUserRequest, UpdateUserRequest, ChangePasswordRequest } from './users.service';
 
+interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'error';
+}
+
 @Component({
   standalone: true,
   imports: [CommonModule, RouterLink, DatePipe, FormsModule, ReactiveFormsModule],
@@ -17,21 +23,21 @@ export class UsersComponent implements OnInit {
   error = '';
   searchTerm = '';
 
-  // Modal states
   showUserModal = false;
   showPasswordModal = false;
+  showDeleteModal = false;
+  userToDelete: User | null = null;
   editingUserId: string | null = null;
   passwordUserId: string | null = null;
 
-  // Forms
+  toasts: Toast[] = [];
+
   userForm!: FormGroup;
   passwordForm!: FormGroup;
 
-  // Password generation
   generatedPassword = '';
   showGeneratedPassword = false;
 
-  // Role and status labels
   roleLabels: { [key: string]: string } = {
     admin: 'Administrador',
     tecnico: 'Técnico',
@@ -61,7 +67,7 @@ export class UsersComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
       role: ['', [Validators.required]],
-      status: ['', [Validators.required]]
+      active: [true, [Validators.required]] // <-- CAMBIADO de status a active
     });
 
     this.passwordForm = this.fb.group({
@@ -79,15 +85,9 @@ export class UsersComponent implements OnInit {
     this.error = '';
     this.usersSvc.list().subscribe({
       next: (data) => {
-        // Ordenar usuarios por fecha de creación (más antiguos primero)
-        this.users = data.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
-        // Asignar displayId basado en el orden de creación
-        this.users.forEach((user, index) => {
-          user.displayId = index + 1;
-        });
-
-        this.filteredUsers = [...this.users];
+        // La normalización de 'status' ya no es necesaria.
+        this.users = data;
+        this.recalculateDisplayIds();
         this.loading = false;
       },
       error: (err) => {
@@ -102,7 +102,6 @@ export class UsersComponent implements OnInit {
       this.filteredUsers = [...this.users];
       return;
     }
-
     const term = this.searchTerm.toLowerCase();
     this.filteredUsers = this.users.filter(user =>
       user.name.toLowerCase().includes(term) ||
@@ -111,34 +110,19 @@ export class UsersComponent implements OnInit {
     );
   }
 
-  // Método para obtener el número de orden basado en fecha de creación
-  getUserOrderNumber(userId: string): number {
-    const userIndex = this.users.findIndex(u => u.id === userId);
-    return userIndex + 1;
-  }
-
-  // Modal functions
   openUserModal(userId?: string) {
     this.editingUserId = userId || null;
     this.showUserModal = true;
-
     if (userId) {
-      // Edit mode
       const user = this.users.find(u => u.id === userId);
       if (user) {
-        this.userForm.patchValue({
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          status: user.status
-        });
-        // Make password optional for editing
+        // Usamos patchValue con 'active'
+        this.userForm.patchValue({ name: user.name, email: user.email, role: user.role, active: user.active });
         this.userForm.get('password')?.clearValidators();
         this.userForm.get('password')?.updateValueAndValidity();
       }
     } else {
-      // Create mode
-      this.userForm.reset();
+      this.userForm.reset({ active: true }); // Valor por defecto para 'active'
       this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(8)]);
       this.userForm.get('password')?.updateValueAndValidity();
     }
@@ -147,78 +131,61 @@ export class UsersComponent implements OnInit {
   openPasswordModal(userId: string) {
     this.passwordUserId = userId;
     this.showPasswordModal = true;
-    this.passwordForm.reset({
-      forcePasswordChange: true,
-      sendNotification: true,
-      sendEmail: true,
-      showPassword: false
-    });
+    this.passwordForm.reset({ forcePasswordChange: true, sendNotification: true, sendEmail: true, showPassword: false });
     this.generatedPassword = '';
     this.showGeneratedPassword = false;
   }
 
-  closeModal(modal: 'user' | 'password') {
+  openDeleteModal(user: User) {
+    this.userToDelete = user;
+    this.showDeleteModal = true;
+  }
+
+  closeModal(modal: 'user' | 'password' | 'delete') {
     if (modal === 'user') {
       this.showUserModal = false;
       this.editingUserId = null;
-    } else {
+    } else if (modal === 'password') {
       this.showPasswordModal = false;
       this.passwordUserId = null;
+    } else {
+      this.showDeleteModal = false;
+      this.userToDelete = null;
     }
   }
 
-  // User CRUD operations
   onSubmitUser() {
     if (this.userForm.invalid) {
       this.markFormGroupTouched(this.userForm);
       return;
     }
-
     const formValue = this.userForm.value;
-
     if (this.editingUserId) {
-      // Update user
-      const updateData: UpdateUserRequest = {
-        name: formValue.name,
-        email: formValue.email,
-        role: formValue.role,
-        status: formValue.status
-      };
-
+      // Enviamos el objeto con 'active'
+      const updateData: UpdateUserRequest = { name: formValue.name, email: formValue.email, role: formValue.role, active: formValue.active };
       this.usersSvc.update(this.editingUserId, updateData).subscribe({
         next: (updatedUser) => {
           const index = this.users.findIndex(u => u.id === this.editingUserId);
           if (index !== -1) {
             this.users[index] = updatedUser;
-            this.onSearch(); // Refresh filtered list
+            this.recalculateDisplayIds();
           }
           this.closeModal('user');
-          alert('Usuario actualizado correctamente');
+          this.showToast('Usuario actualizado correctamente');
         },
-        error: (err) => {
-          alert('Error al actualizar usuario: ' + (err?.error?.message || 'Error desconocido'));
-        }
+        error: (err) => this.showToast(err?.error?.message || 'Error al actualizar usuario', 'error')
       });
     } else {
-      // Create user
-      const createData: CreateUserRequest = {
-        name: formValue.name,
-        email: formValue.email,
-        password: formValue.password,
-        role: formValue.role,
-        status: formValue.status
-      };
-
+      // Enviamos el objeto con 'active'
+      const createData: CreateUserRequest = { name: formValue.name, email: formValue.email, password: formValue.password, role: formValue.role, active: formValue.active };
       this.usersSvc.create(createData).subscribe({
         next: (newUser) => {
           this.users.push(newUser);
-          this.onSearch(); // Refresh filtered list
+          this.recalculateDisplayIds();
           this.closeModal('user');
-          alert('Usuario creado correctamente');
+          this.showToast('Usuario creado correctamente');
         },
-        error: (err) => {
-          alert('Error al crear usuario: ' + (err?.error?.message || 'Error desconocido'));
-        }
+        error: (err) => this.showToast(err?.error?.message || 'Error al crear usuario', 'error')
       });
     }
   }
@@ -228,125 +195,72 @@ export class UsersComponent implements OnInit {
       this.markFormGroupTouched(this.passwordForm);
       return;
     }
-
     const formValue = this.passwordForm.value;
-
-    // Validate password confirmation
     if (formValue.newPassword !== formValue.confirmPassword) {
-      alert('Las contraseñas no coinciden');
+      this.showToast('Las contraseñas no coinciden', 'error');
       return;
     }
-
     if (!this.passwordUserId) return;
-
-    const passwordData: ChangePasswordRequest = {
-      newPassword: formValue.newPassword,
-      forcePasswordChange: formValue.forcePasswordChange,
-      sendNotification: formValue.sendNotification,
-      sendEmail: formValue.sendEmail,
-      showPassword: formValue.showPassword
-    };
-
+    const passwordData: ChangePasswordRequest = { newPassword: formValue.newPassword, forcePasswordChange: formValue.forcePasswordChange, sendNotification: formValue.sendNotification, sendEmail: formValue.sendEmail, showPassword: formValue.showPassword };
     this.usersSvc.changePassword(this.passwordUserId, passwordData).subscribe({
       next: () => {
-        // Update user password reset status locally
         const userIndex = this.users.findIndex(u => u.id === this.passwordUserId);
         if (userIndex !== -1) {
           this.users[userIndex].passwordReset = formValue.forcePasswordChange;
-          this.onSearch(); // Refresh filtered list
+          this.onSearch();
         }
-
-        let message = 'Contraseña cambiada correctamente';
-        if (formValue.sendNotification && formValue.sendEmail) {
-          message += '\n• Notificación enviada por correo electrónico';
-          if (formValue.showPassword) {
-            message += '\n• Contraseña temporal incluida en el correo';
-          }
-        }
-        if (formValue.forcePasswordChange) {
-          message += '\n• El usuario deberá cambiar la contraseña en su próximo login';
-        }
-
         this.closeModal('password');
-        alert(message);
+        this.showToast('Contraseña cambiada correctamente');
+      },
+      error: (err) => this.showToast(err?.error?.message || 'Error al cambiar contraseña', 'error')
+    });
+  }
+
+  confirmDelete() {
+    if (!this.userToDelete) return;
+    this.usersSvc.delete(this.userToDelete.id).subscribe({
+      next: () => {
+        this.users = this.users.filter(u => u.id !== this.userToDelete!.id);
+        this.recalculateDisplayIds();
+        this.closeModal('delete');
+        this.showToast('Usuario eliminado correctamente');
       },
       error: (err) => {
-        alert('Error al cambiar contraseña: ' + (err?.error?.message || 'Error desconocido'));
+        this.closeModal('delete');
+        this.showToast(err?.error?.message || 'Error al eliminar usuario', 'error');
       }
     });
   }
 
-  deleteUser(userId: string) {
-    const user = this.users.find(u => u.id === userId);
-    if (!user) {
-      alert('Usuario no encontrado');
-      return;
-    }
-
-    if (confirm(`¿Está seguro de que desea eliminar el usuario "${user.name}"?`)) {
-      this.usersSvc.delete(userId).subscribe({
-        next: () => {
-          this.users = this.users.filter(u => u.id !== userId);
-          this.onSearch(); // Refresh filtered list
-          alert('Usuario eliminado correctamente');
-        },
-        error: (err) => {
-          console.error('Error al eliminar usuario:', err);
-          let errorMessage = 'Error al eliminar usuario';
-
-          if (err.status === 404) {
-            errorMessage = 'Usuario no encontrado en el servidor';
-          } else if (err.status === 500) {
-            errorMessage = 'Error interno del servidor';
-          } else if (err?.error?.message) {
-            errorMessage = err.error.message;
-          }
-
-          alert(errorMessage);
-        }
-      });
-    }
+  private showToast(message: string, type: 'success' | 'error' = 'success') {
+    const id = Date.now();
+    this.toasts.push({ id, message, type });
+    setTimeout(() => this.removeToast(id), 5000);
   }
 
-  // Password generation
+  removeToast(id: number) {
+    this.toasts = this.toasts.filter(toast => toast.id !== id);
+  }
+
   generatePassword() {
-    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const numbers = '0123456789';
-    const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz', uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', numbers = '0123456789', symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
     const allChars = lowercase + uppercase + numbers + symbols;
-
     let password = '';
-
-    // Ensure at least one character from each category
     password += lowercase[Math.floor(Math.random() * lowercase.length)];
     password += uppercase[Math.floor(Math.random() * uppercase.length)];
     password += numbers[Math.floor(Math.random() * numbers.length)];
     password += symbols[Math.floor(Math.random() * symbols.length)];
-
-    // Fill remaining characters
     for (let i = 4; i < 12; i++) {
       password += allChars[Math.floor(Math.random() * allChars.length)];
     }
-
-    // Shuffle password
     password = password.split('').sort(() => Math.random() - 0.5).join('');
-
     this.generatedPassword = password;
     this.showGeneratedPassword = true;
-
-    // Update form
-    this.passwordForm.patchValue({
-      newPassword: password,
-      confirmPassword: password
-    });
+    this.passwordForm.patchValue({ newPassword: password, confirmPassword: password });
   }
 
   copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text).then(() => {
-      alert('Contraseña copiada al portapapeles');
-    });
+    navigator.clipboard.writeText(text).then(() => this.showToast('Contraseña copiada al portapapeles'));
   }
 
   togglePasswordVisibility(inputId: string) {
@@ -356,22 +270,16 @@ export class UsersComponent implements OnInit {
     }
   }
 
-  // Utility functions
   roleClass(role: string) {
-    return {
-      'role-badge': true,
-      'role-admin': role === 'admin',
-      'role-tecnico': role === 'tecnico',
-      'role-administrativo': role === 'administrativo',
-      'role-becado': role === 'becado'
-    };
+    return { 'role-badge': true, 'role-admin': role === 'admin', 'role-tecnico': role === 'tecnico', 'role-administrativo': role === 'administrativo', 'role-becado': role === 'becado' };
   }
 
-  statusClass(status: string) {
+  // CAMBIADO: Acepta un booleano
+  statusClass(isActive: boolean) {
     return {
       'status-badge': true,
-      'status-activo': status === 'activo',
-      'status-inactivo': status === 'inactivo'
+      'status-activo': isActive,
+      'status-inactivo': !isActive
     };
   }
 
@@ -396,7 +304,14 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  // Track by function for ngFor performance
+  private recalculateDisplayIds() {
+    this.users.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    this.users.forEach((user, index) => {
+      user.displayId = index + 1;
+    });
+    this.onSearch();
+  }
+
   trackByUserId(index: number, user: User): string {
     return user.id;
   }

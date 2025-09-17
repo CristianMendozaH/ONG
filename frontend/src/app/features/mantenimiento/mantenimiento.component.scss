@@ -342,6 +342,7 @@ $background-light: #f8f9fa;
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 4px;
+    align-items: flex-start;
   }
 }
 
@@ -357,32 +358,26 @@ $background-light: #f8f9fa;
   gap: 4px;
   text-decoration: none;
   font-family: 'Poppins', sans-serif;
+  color: white;
 
   &.btn-view {
     background: #6c757d;
-    color: white;
-
-    &:hover {
-      background: #5a6268;
-    }
+    &:hover { background: #5a6268; }
   }
 
   &.btn-edit {
     background: $secondary-color;
-    color: white;
+    &:hover { background: darken($secondary-color, 8%); }
+  }
 
-    &:hover {
-      background: darken($secondary-color, 8%);
-    }
+  &.btn-start {
+    background: $primary-color;
+    &:hover { background: darken($primary-color, 8%); }
   }
 
   &.btn-complete {
     background: $success-color;
-    color: white;
-
-    &:hover {
-      background: darken($success-color, 8%);
-    }
+    &:hover { background: darken($success-color, 8%); }
   }
 
   &:disabled {
@@ -788,18 +783,43 @@ $background-light: #f8f9fa;
   border-left: 3px solid $primary-color;
 }
 
-// Legacy compatibility
-.status-prestado {
-  background: #fff3cd !important;
-  color: $secondary-color !important;
+// Notification Toast Styles
+.notification-toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  padding: 15px 25px;
+  border-radius: 8px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  animation: slideInUp 0.3s ease-out;
+
+  i {
+    font-size: 1.4rem;
+  }
+
+  &.is-success {
+    background-color: $success-color;
+  }
+
+  &.is-error {
+    background-color: $error-color;
+  }
 }
 
-.status-disponible {
-  background: #d4edda !important;
-  color: $success-color !important;
-}
-
-.status-mantto {
-  background: #cce5ff !important;
-  color: $primary-color !important;
+@keyframes slideInUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

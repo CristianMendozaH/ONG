@@ -14,6 +14,10 @@ export class Maintenance extends Model {
 
   @Column(DataType.DATEONLY)
   scheduledDate!: string;
+  
+  // ✅ CAMBIO: Añadir esta nueva columna
+  @Column(DataType.DATEONLY)
+  performedDate?: string;
 
   @Column(DataType.STRING)   // preventivo/correctivo/predictivo/emergencia
   type!: string;

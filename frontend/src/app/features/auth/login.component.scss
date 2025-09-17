@@ -1,0 +1,293 @@
+/* login.component.scss */
+
+// Definición de variables de color basadas en tu prototipo para fácil mantenimiento
+$primary-color: #114495;
+$accent-color: #EE9D08;
+$danger-color: #E6331B;
+$success-color: #28a745;
+$text-primary: #33475b;
+$text-secondary: #6c757d;
+$background-light: #f8f9fa;
+$border-color: #e9ecef;
+
+// Estilo base del cuerpo, similar al prototipo
+:host {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #ffffff 0%, $background-light 100%);
+  min-height: 100vh;
+}
+
+// Barra decorativa superior
+.bg-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, $primary-color 25%, $accent-color 25%, $accent-color 50%, $danger-color 50%, $danger-color 75%, #FFED00 75%);
+}
+
+// Encabezado con logo y título
+.header {
+  background: #ffffff;
+  padding: 2rem 0 1rem 0;
+  border-bottom: 1px solid $border-color;
+
+  // ** INICIO DE LA CORRECCIÓN **
+  // Convertimos el header en un contenedor flex
+  // para centrar su contenido horizontalmente de forma precisa.
+  display: flex;
+  justify-content: center;
+  // ** FIN DE LA CORRECCIÓN **
+
+  .logo-container {
+    // Se mantiene como inline-flex para alinear el logo y el texto.
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .logo {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, $primary-color 0%, #2563eb 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    box-shadow: 0 4px 12px rgba(17, 68, 149, 0.2);
+  }
+
+  .org-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $primary-color;
+    margin: 0;
+  }
+
+  .system-title {
+    font-size: 0.95rem;
+    color: $text-primary;
+    margin-top: 0.25rem;
+  }
+}
+
+// Contenedor principal que centra la tarjeta de login
+.main-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+// Tarjeta de inicio de sesión
+.login-card {
+  background: #ffffff;
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid rgba(17, 68, 149, 0.1);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $primary-color, $accent-color);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .welcome-text {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .welcome-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: $primary-color;
+    margin-bottom: 0.5rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .welcome-subtitle {
+    font-size: 0.95rem;
+    color: $text-primary;
+  }
+}
+
+// Estilos para los grupos del formulario
+.form-group {
+  margin-bottom: 1.5rem;
+
+  .form-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: $text-primary;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-container {
+    position: relative;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 3rem;
+    border: 2px solid $border-color;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba(17, 68, 149, 0.1);
+
+      & + .input-icon {
+        color: $primary-color;
+      }
+    }
+
+    // Clases para validación
+    &.error {
+      border-color: $danger-color;
+      box-shadow: 0 0 0 3px rgba(230, 51, 27, 0.1);
+    }
+    &.success {
+      border-color: $success-color;
+    }
+  }
+
+  .input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $text-secondary;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $text-secondary;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+    &:hover {
+      color: $primary-color;
+    }
+  }
+}
+
+// Botón de Login
+.login-button {
+  width: 100%;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, $primary-color 0%, #1e5bb8 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(17, 68, 149, 0.2);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0d3a7a 0%, #1a52a3 100%);
+    box-shadow: 0 6px 16px rgba(17, 68, 149, 0.3);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+// Enlace de contraseña olvidada
+.forgot-password {
+  text-align: center;
+  .forgot-link {
+    color: $accent-color;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    &:hover {
+      color: darken($accent-color, 10%);
+      text-decoration: underline;
+    }
+  }
+}
+
+// Mensajes de error
+.error-message {
+  color: $danger-color;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  display: block; // Se mostrará con *ngIf
+}
+
+.api-error {
+  text-align: center;
+  margin-top: -1rem;
+  margin-bottom: 1.5rem;
+}
+
+// Animación de carga
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// Footer
+.footer {
+  background: $primary-color;
+  padding: 1rem;
+  text-align: center;
+  color: white;
+  font-size: 0.85rem;
+}
+
+// Diseño responsivo
+@media (max-width: 768px) {
+  .header {
+    .org-name { font-size: 1.3rem; }
+    .logo { width: 50px; height: 50px; font-size: 20px; }
+  }
+  .main-container { padding: 1rem; }
+  .login-card { padding: 2rem 1.5rem; margin: 0 1rem; }
+  .welcome-title { font-size: 1.5rem; }
+}

@@ -1,11 +1,15 @@
-// src/app/core/services/token.service.ts
 import { Injectable } from '@angular/core';
+import { jwtDecode } from 'jwt-decode';
+
+interface JwtPayload {
+  exp: number;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class TokenService {
-  private readonly TOKEN_KEY = 'auth_token';
+  private readonly TOKEN_KEY = 'jwt';
 
   setToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
@@ -21,20 +25,15 @@ export class TokenService {
 
   isTokenValid(): boolean {
     const token = this.getToken();
-    if (!token) return false;
-
+    if (!token) {
+      return false;
+    }
     try {
-      // Decodificar el JWT para verificar expiración
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const decodedToken = jwtDecode<JwtPayload>(token);
       const currentTime = Math.floor(Date.now() / 1000);
-
-      return payload.exp > currentTime;
+      return decodedToken.exp > currentTime;
     } catch (error) {
       return false;
     }
-  }
-
-  hasToken(): boolean {
-    return !!this.getToken();
   }
 }

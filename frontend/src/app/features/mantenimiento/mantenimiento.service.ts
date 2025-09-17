@@ -3,14 +3,23 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 
+export interface AlertaPredictiva {
+  tipo: 'critical' | 'warning' | 'info';
+  titulo: string;
+  descripcion: string;
+  meta: string;
+}
+
 export interface Mantenimiento {
   id: string;
+  displayId?: string;
   equipmentId: string;
   type: 'preventivo' | 'correctivo' | 'predictivo' | string;
+  priority: 'alta' | 'media' | 'baja' | string;
   scheduledDate: string;
   performedDate?: string | null;
   status: 'programado' | 'en-proceso' | 'completado' | string;
-  notes?: string;
+  description?: string; // <-- CAMBIO: de 'notes' a 'description'
   createdAt?: string;
   updatedAt?: string;
   equipment?: { id: string; code: string; name: string };
@@ -19,13 +28,16 @@ export interface Mantenimiento {
 export interface CrearMantDTO {
   equipmentId: string;
   type: string;
-  scheduledDate: string; // yyyy-mm-dd
-  notes?: string;
+  priority: string;
+  scheduledDate: string;
+  description?: string; // <-- CAMBIO: de 'notes' a 'description'
 }
+
+export type UpdateMantDTO = Partial<Mantenimiento>;
 
 @Injectable({ providedIn: 'root' })
 export class MantenimientoService {
-  private base = `${environment.apiUrl}/maintenances`; // ajusta a tu backend si usara /maintenances
+  private base = `${environment.apiUrl}/maintenances`;
 
   constructor(private http: HttpClient) {}
 
@@ -37,7 +49,15 @@ export class MantenimientoService {
     return this.http.post<Mantenimiento>(this.base, payload);
   }
 
-  complete(id: string, performedDate: string) {
-    return this.http.post<Mantenimiento>(`${this.base}/${id}/complete`, { performedDate });
+  update(id: string, payload: UpdateMantDTO): Observable<Mantenimiento> {
+    return this.http.put<Mantenimiento>(`${this.base}/${id}`, payload);
+  }
+
+  start(id: string): Observable<Mantenimiento> {
+    return this.http.post<Mantenimiento>(`${this.base}/${id}/start`, {});
+  }
+
+  complete(id: string, performedDate: string, notes?: string): Observable<Mantenimiento> {
+    return this.http.post<Mantenimiento>(`${this.base}/${id}/complete`, { performedDate, notes });
   }
 }

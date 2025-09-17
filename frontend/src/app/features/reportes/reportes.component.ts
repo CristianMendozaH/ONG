@@ -1,224 +1,217 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ReportesService } from './reportes.service';
-import { KPIs, Activity } from '../../shared/interfaces/models';
-
-interface ReporteItem {
-  id: string;
-  equipo: string;
-  usuario: string;
-  fechaPrestamo: string;
-  fechaDevolucion: string | null;
-  estado: 'Activo' | 'Devuelto' | 'Vencido';
-  diasUso: number;
-}
-
-interface FiltrosReporte {
-  fechaInicio: string;
-  fechaFin: string;
-  tipoReporte: string;
-}
+import { Subject, of } from 'rxjs';
+import { takeUntil, finalize, catchError } from 'rxjs/operators';
+import { ReportesService, FiltrosReporte, ReporteItem, ReporteResponse, EstadisticasReporte, ExportOptions } from './reportes.service';
+import { PadNumberPipe } from '../../shared/pipes/pad-number.pipe';
 
 @Component({
   selector: 'app-reportes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PadNumberPipe],
   templateUrl: './reportes.component.html',
   styleUrl: './reportes.component.scss'
 })
-export class ReportesComponent implements OnInit {
-  // Datos principales
+export class ReportesComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
   reportes: ReporteItem[] = [];
-  reportesFiltrados: ReporteItem[] = [];
-  kpis: KPIs | null = null;
-  activity: Activity | null = null;
-
-  // Estado de la aplicación
+  estadisticas: EstadisticasReporte | null = null;
   isLoading = false;
-  sidebarActive = false;
+  errorMessage = '';
+  hasError = false;
+  currentPage = 1;
+  totalItems = 0;
+  itemsPerPage = 50;
 
-  // Filtros
   filtros: FiltrosReporte = {
-    fechaInicio: '2025-01-01',
-    fechaFin: '2025-01-31',
-    tipoReporte: ''
+    fechaInicio: this.getDefaultStartDate(),
+    fechaFin: this.getDefaultEndDate(),
+    tipoReporte: 'prestamos'
   };
 
-  // Opciones para el select
-  tiposReporte = [
-    { value: '', label: 'Seleccione un tipo' },
-    { value: 'prestamos', label: 'Préstamos de Equipos' },
-    { value: 'mantenimiento', label: 'Mantenimientos' },
-    { value: 'usuarios', label: 'Actividad de Usuarios' },
-    { value: 'estado', label: 'Estado de Equipos' },
-    { value: 'vencimientos', label: 'Próximos Vencimientos' }
-  ];
+  tiposReporte: Array<{ value: string; label: string }> = [];
 
   constructor(private reportesService: ReportesService) {}
 
   ngOnInit(): void {
-    this.inicializarReportesDummy();
+    this.inicializarDatos();
   }
 
-  /**
-   * Inicializar datos dummy para la tabla
-   */
-  inicializarReportesDummy(): void {
-    this.reportes = [
-      {
-        id: 'PR001',
-        equipo: 'Laptop Dell Inspiron 15',
-        usuario: 'María González',
-        fechaPrestamo: '15/01/2025',
-        fechaDevolucion: '22/01/2025',
-        estado: 'Devuelto',
-        diasUso: 7
-      },
-      {
-        id: 'PR002',
-        equipo: 'Proyector Epson X400',
-        usuario: 'Carlos Mendoza',
-        fechaPrestamo: '20/01/2025',
-        fechaDevolucion: null,
-        estado: 'Activo',
-        diasUso: 11
-      },
-      {
-        id: 'PR003',
-        equipo: 'Tablet Samsung Galaxy',
-        usuario: 'Ana Rodríguez',
-        fechaPrestamo: '10/01/2025',
-        fechaDevolucion: '25/01/2025',
-        estado: 'Vencido',
-        diasUso: 21
-      },
-      {
-        id: 'PR004',
-        equipo: 'Cámara Canon EOS',
-        usuario: 'Luis Morales',
-        fechaPrestamo: '18/01/2025',
-        fechaDevolucion: '20/01/2025',
-        estado: 'Devuelto',
-        diasUso: 2
-      },
-      {
-        id: 'PR005',
-        equipo: 'Laptop HP Pavilion',
-        usuario: 'Pedro Martínez',
-        fechaPrestamo: '25/01/2025',
-        fechaDevolucion: null,
-        estado: 'Activo',
-        diasUso: 6
-      },
-      {
-        id: 'PR006',
-        equipo: 'Monitor LG 24"',
-        usuario: 'Sofia Torres',
-        fechaPrestamo: '12/01/2025',
-        fechaDevolucion: '19/01/2025',
-        estado: 'Devuelto',
-        diasUso: 7
-      }
-    ];
-
-    this.reportesFiltrados = [...this.reportes];
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  /**
-   * Toggle sidebar para móvil
-   */
-  toggleSidebar(): void {
-    this.sidebarActive = !this.sidebarActive;
-  }
+  private inicializarDatos(): void {
+    this.isLoading = true;
+    this.hasError = false;
 
-  /**
-   * Aplicar filtros
-   */
-  aplicarFiltros(): void {
-    console.log('Aplicando filtros:', this.filtros);
-
-    this.reportesFiltrados = this.reportes.filter(reporte => {
-      let cumpleFiltros = true;
-
-      // Filtrar por tipo de reporte si está seleccionado
-      if (this.filtros.tipoReporte && this.filtros.tipoReporte !== '') {
-        // Implementar lógica específica según el tipo
-      }
-
-      // Filtrar por fechas si están seleccionadas
-      if (this.filtros.fechaInicio || this.filtros.fechaFin) {
-        // Implementar filtrado por fechas
-      }
-
-      return cumpleFiltros;
+    Promise.all([
+      this.cargarReportes(),
+      this.cargarEstadisticas(),
+      this.cargarTiposReporte()
+    ]).finally(() => {
+      this.isLoading = false;
     });
-
-    console.log('Filtros aplicados. Resultados:', this.reportesFiltrados.length);
   }
 
-  /**
-   * Limpiar filtros
-   */
+  private cargarReportes(): Promise<void> {
+    return new Promise((resolve) => {
+      this.reportesService.getReportes(this.filtros, this.currentPage, this.itemsPerPage)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response: ReporteResponse) => {
+            this.reportes = response.data;
+            this.totalItems = response.total;
+            this.currentPage = response.page;
+            resolve();
+          },
+          error: () => resolve()
+        });
+    });
+  }
+
+  private cargarEstadisticas(): Promise<void> {
+    return new Promise((resolve) => {
+      this.reportesService.getEstadisticasReporte(this.filtros)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(data => {
+          this.estadisticas = data;
+          resolve();
+        });
+    });
+  }
+
+  private cargarTiposReporte(): Promise<void> {
+      return new Promise((resolve) => {
+          this.reportesService.getTiposReporte()
+              .pipe(takeUntil(this.destroy$))
+              .subscribe(tipos => {
+                  this.tiposReporte = [{ value: 'prestamos', label: 'Seleccione un tipo' }, ...tipos];
+                  resolve();
+              });
+      });
+  }
+
+  aplicarFiltros(): void {
+    this.isLoading = true;
+    this.hasError = false;
+    this.currentPage = 1;
+    Promise.all([this.cargarReportes(), this.cargarEstadisticas()]).finally(() => {
+      this.isLoading = false;
+    });
+  }
+
   limpiarFiltros(): void {
     this.filtros = {
-      fechaInicio: '',
-      fechaFin: '',
-      tipoReporte: ''
+      fechaInicio: this.getDefaultStartDate(),
+      fechaFin: this.getDefaultEndDate(),
+      tipoReporte: 'prestamos'
     };
-    this.reportesFiltrados = [...this.reportes];
-    console.log('Filtros limpiados');
+    this.aplicarFiltros();
   }
 
-  /**
-   * Exportar a PDF
-   */
   exportarPDF(): void {
-    console.log('Exportando reporte a PDF...');
+    this.exportarArchivo('pdf');
   }
 
-  /**
-   * Exportar a Excel
-   */
   exportarExcel(): void {
-    console.log('Exportando reporte a Excel...');
+    this.exportarArchivo('excel');
+  }
+
+  private exportarArchivo(formato: 'pdf' | 'excel'): void {
+    if (this.reportes.length === 0) {
+      this.mostrarError('No hay datos para exportar');
+      return;
+    }
+    const options: ExportOptions = { formato, filtros: this.filtros };
+    this.isLoading = true;
+
+    const exportObservable = formato === 'pdf'
+      ? this.reportesService.exportarPDF(options)
+      : this.reportesService.exportarExcel(options);
+
+    exportObservable.pipe(
+      takeUntil(this.destroy$),
+      finalize(() => this.isLoading = false),
+      catchError(error => {
+        this.mostrarError(`Error al exportar el reporte en ${formato.toUpperCase()}`);
+        return of(null);
+      })
+    ).subscribe(blob => {
+      if (blob) {
+        this.descargarArchivo(blob, `reporte.${formato === 'pdf' ? 'pdf' : 'xlsx'}`);
+      }
+    });
+  }
+
+  private descargarArchivo(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 
   /**
-   * Obtener clase CSS para el estado
+   * ✅ FUNCIÓN CORREGIDA
+   * Ahora acepta 'string | undefined' como argumento.
    */
-  getEstadoClass(estado: string): string {
-    switch (estado) {
-      case 'Activo': return 'status-active';
-      case 'Devuelto': return 'status-returned';
-      case 'Vencido': return 'status-overdue';
+  getEstadoClass(estado: string | undefined): string {
+    if (!estado) {
+      return ''; // Si el estado es nulo o indefinido, no retorna ninguna clase.
+    }
+    // El resto de la lógica se mantiene igual.
+    switch (estado.toLowerCase()) {
+      case 'activo': return 'status-active';
+      case 'devuelto': return 'status-returned';
+      case 'vencido': return 'status-overdue';
+      case 'atrasado': return 'status-overdue';
       default: return '';
     }
   }
 
-  /**
-   * TrackBy function para optimizar el rendimiento de la tabla
-   */
   trackByReporte(index: number, item: ReporteItem): string {
     return item.id;
   }
 
-  /**
-   * Calcular totales para estadísticas
-   */
-  get totalPrestamos(): number {
-    return this.reportesFiltrados.length;
+  get totalPrestamos(): number { return this.estadisticas?.totalPrestamos ?? 0; }
+  get totalDevueltos(): number { return this.estadisticas?.prestamosDevueltos ?? 0; }
+  get totalActivos(): number { return this.estadisticas?.prestamosActivos ?? 0; }
+  get totalVencidos(): number { return this.estadisticas?.prestamosVencidos ?? 0; }
+
+  refrescarDatos(): void {
+    this.inicializarDatos();
   }
 
-  get totalDevueltos(): number {
-    return this.reportesFiltrados.filter(r => r.estado === 'Devuelto').length;
+  private getDefaultStartDate(): string {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date.toISOString().split('T')[0];
   }
 
-  get totalActivos(): number {
-    return this.reportesFiltrados.filter(r => r.estado === 'Activo').length;
+  private getDefaultEndDate(): string {
+    return new Date().toISOString().split('T')[0];
   }
 
-  get totalVencidos(): number {
-    return this.reportesFiltrados.filter(r => r.estado === 'Vencido').length;
+  private mostrarError(mensaje: string): void {
+    this.errorMessage = mensaje;
+    this.hasError = true;
+    setTimeout(() => this.hasError = false, 5000);
+  }
+
+  cambiarPagina(nuevaPagina: number): void {
+    if (nuevaPagina < 1 || nuevaPagina > this.totalPages) return;
+    this.currentPage = nuevaPagina;
+    this.cargarReportes();
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalItems / this.itemsPerPage);
   }
 }

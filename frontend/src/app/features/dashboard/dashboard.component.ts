@@ -1,31 +1,17 @@
-// src/app/features/dashboard/dashboard.component.ts
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ReportesService } from '../reportes/reportes.service';
+import { DashboardService, DashboardKPIs, DashboardActivity } from './dashboard.service';
 import { UserStore } from '../../core/stores/user.store';
-import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
-import { KPIs, Activity, Loan, Maintenance } from '../../shared/interfaces/models';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 // Registrar Chart.js components
 Chart.register(...registerables);
 
-// Interfaz simplificada para evitar conflictos
-interface SimpleActivityItem {
-  id: string;
-  itemType: 'loan' | 'maintenance'; // Cambiamos 'type' por 'itemType' para evitar conflictos
-  updatedAt: string;
-  status: string;
-  title: string;
-  icon: string;
-  iconClass: string;
-}
-
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, StatusBadgeComponent],
+  imports: [CommonModule, RouterLink],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -33,9 +19,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('barChart', { static: false }) barChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('doughnutChart', { static: false }) doughnutChartRef!: ElementRef<HTMLCanvasElement>;
 
-  kpis: KPIs | null = null;
-  recentActivity: SimpleActivityItem[] = [];
+  kpis: DashboardKPIs | null = null;
+  recentActivity: DashboardActivity[] = [];
   loading = true;
+  connectionError = false;
+  lastUpdated: Date | null = null;
 
   // Charts instances
   private barChart: Chart | null = null;
@@ -49,23 +37,22 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   constructor(
-    private reportesService: ReportesService,
+    private dashboardService: DashboardService,
     public userStore: UserStore
   ) {}
 
   ngOnInit(): void {
-    this.loadDashboardData();
+    console.log('🚀 Inicializando Dashboard...');
+    this.checkConnectionAndLoadData();
   }
 
   ngAfterViewInit(): void {
-    // Delay para asegurar que los elementos estén en el DOM
     setTimeout(() => {
       this.initializeCharts();
     }, 100);
   }
 
   ngOnDestroy(): void {
-    // Limpiar charts al destruir el componente
     if (this.barChart) {
       this.barChart.destroy();
     }
@@ -74,110 +61,142 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private loadDashboardData(): void {
+  /**
+   * Verificar conexión y cargar datos
+   */
+  private async checkConnectionAndLoadData(): Promise<void> {
     this.loading = true;
+    this.connectionError = false;
 
-    // Cargar KPIs
-    this.reportesService.getKpis().subscribe({
-      next: (kpis) => {
-        this.kpis = kpis;
-        // Actualizar gráfico de dona después de obtener los datos
-        this.updateDoughnutChart();
-      },
-      error: (error) => {
-        console.error('Error cargando KPIs:', error);
-        // Datos de fallback para demo
-        this.kpis = {
-          disponibles: 24,
-          prestados: 18,
-          atrasos: 3,
-          totalEquipos: 50,
-          enMantenimiento: 5
-        };
-        this.updateDoughnutChart();
+    try {
+      console.log('🔍 Verificando conexión...');
+
+      // Verificar conexión con backend
+      const isConnected = await this.dashboardService.checkBackendConnection().toPromise();
+
+      if (!isConnected) {
+        console.warn('⚠️ Backend no disponible, usando datos de fallback');
+        this.connectionError = true;
       }
-    });
 
-    // Datos de actividad de prueba
-    this.recentActivity = [
-      {
-        id: '1',
-        itemType: 'loan',
-        updatedAt: new Date().toISOString(),
-        status: 'prestado',
-        title: 'Préstamo de equipo a María González',
-        icon: 'fa-arrow-up',
-        iconClass: 'activity-prestamo'
-      },
-      {
-        id: '2',
-        itemType: 'maintenance',
-        updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        status: 'completado',
-        title: 'Mantenimiento preventivo - completado',
-        icon: 'fa-wrench',
-        iconClass: 'activity-mantenimiento'
-      }
-    ];
+      // Cargar datos independientemente
+      await this.loadDashboardData();
 
-    // Cargar actividad reciente desde el backend
-    this.reportesService.getActivity().subscribe({
-      next: (activity) => {
-        // Procesar actividad de préstamos
-        const loanActivities: SimpleActivityItem[] = activity.loans.map(loan => ({
-          id: loan.id,
-          itemType: 'loan',
-          updatedAt: loan.updatedAt,
-          status: loan.status,
-          title: this.generateLoanTitle(loan),
-          icon: loan.status === 'prestado' ? 'fa-arrow-up' : 'fa-arrow-down',
-          iconClass: loan.status === 'prestado' ? 'activity-prestamo' : 'activity-devolucion'
-        }));
-
-        // Procesar actividad de mantenimiento
-        const maintenanceActivities: SimpleActivityItem[] = activity.maintenances.map(maintenance => ({
-          id: maintenance.id,
-          itemType: 'maintenance',
-          updatedAt: maintenance.updatedAt,
-          status: maintenance.status,
-          title: this.generateMaintenanceTitle(maintenance),
-          icon: 'fa-wrench',
-          iconClass: 'activity-mantenimiento'
-        }));
-
-        // Combinar y ordenar
-        const allActivities = [...loanActivities, ...maintenanceActivities];
-        this.recentActivity = allActivities
-          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-          .slice(0, 5);
-
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error cargando actividad:', error);
-        this.loading = false;
-      }
-    });
-  }
-
-  private generateLoanTitle(loan: Loan): string {
-    if (loan.status === 'prestado') {
-      return `Préstamo de equipo a ${loan.borrowerName}`;
-    } else {
-      return `Devolución de equipo por ${loan.borrowerName}`;
+    } catch (error) {
+      console.error('❌ Error durante la inicialización:', error);
+      this.connectionError = true;
+      await this.loadDashboardData(); // Intentar cargar datos de fallback
     }
   }
 
-  private generateMaintenanceTitle(maintenance: Maintenance): string {
-    const typeMap: Record<string, string> = {
-      'preventivo': 'preventivo',
-      'correctivo': 'correctivo',
-      'predictivo': 'predictivo',
-      'emergencia': 'de emergencia'
+  /**
+   * Cargar datos del dashboard
+   */
+  private async loadDashboardData(): Promise<void> {
+    console.log('📊 Cargando datos del dashboard...');
+
+    try {
+      // Cargar KPIs y actividad en paralelo
+      const [kpis, activities] = await Promise.all([
+        this.dashboardService.getKpis().toPromise(),
+        this.dashboardService.getActivity().toPromise()
+      ]);
+
+      // Procesar KPIs
+      if (kpis) {
+        this.kpis = kpis;
+        console.log('✅ KPIs cargados:', this.kpis);
+        this.updateDoughnutChart();
+      }
+
+      // Procesar actividades
+      if (activities) {
+        this.recentActivity = activities.slice(0, 5);
+        console.log('✅ Actividades cargadas:', this.recentActivity);
+      }
+
+      this.lastUpdated = new Date();
+      this.loading = false;
+
+    } catch (error) {
+      console.error('❌ Error cargando datos del dashboard:', error);
+
+      // Usar datos de fallback
+      this.loadFallbackData();
+      this.loading = false;
+    }
+  }
+
+  /**
+   * Cargar datos de fallback para pruebas
+   */
+  private loadFallbackData(): void {
+    console.warn('🔄 Cargando datos de fallback...');
+
+    this.kpis = {
+      disponibles: 14,
+      prestados: 4,
+      atrasos: 0,
+      totalEquipos: 18,
+      enMantenimiento: 0
     };
 
-    const maintenanceType = typeMap[maintenance.type] || 'programado';
-    return `Mantenimiento ${maintenanceType} - ${maintenance.status}`;
+    this.recentActivity = [
+      {
+        id: '1',
+        tipo: 'prestamo',
+        descripcion: 'Préstamo de equipo a María González',
+        fecha: new Date().toISOString(),
+        equipo: 'Laptop Dell Inspiron 15',
+        usuario: 'María González'
+      },
+      {
+        id: '2',
+        tipo: 'devolucion',
+        descripcion: 'Devolución de equipo por Carlos Mendoza',
+        fecha: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        equipo: 'Proyector Epson',
+        usuario: 'Carlos Mendoza'
+      }
+    ];
+
+    this.updateDoughnutChart();
+    console.log('✅ Datos de fallback cargados');
+  }
+
+  /**
+   * Refrescar datos del dashboard
+   */
+  refreshData(): void {
+    console.log('🔄 Refrescando datos del dashboard...');
+    this.checkConnectionAndLoadData();
+  }
+
+  /**
+   * Método temporal para debugging
+   */
+  checkManualEndpoint(): void {
+    console.log('🧪 Probando endpoint manual...');
+    this.dashboardService.checkBackendConnection().subscribe({
+      next: (connected) => {
+        console.log('Conexión:', connected);
+        if (connected) {
+          // Hacer petición manual
+          this.dashboardService.getKpis().subscribe({
+            next: (data) => {
+              console.log('✅ Datos recibidos manualmente:', data);
+              alert('Datos recibidos: ' + JSON.stringify(data, null, 2));
+            },
+            error: (error) => {
+              console.error('❌ Error manual:', error);
+              alert('Error: ' + error.message);
+            }
+          });
+        } else {
+          alert('No hay conexión con el backend');
+        }
+      }
+    });
   }
 
   private initializeCharts(): void {
@@ -186,7 +205,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private createBarChart(): void {
-    if (!this.barChartRef?.nativeElement) return;
+    if (!this.barChartRef?.nativeElement) {
+      console.warn('⚠️ Elemento barChart no encontrado');
+      return;
+    }
 
     const config: ChartConfiguration<'bar'> = {
       type: 'bar',
@@ -258,22 +280,30 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     };
 
-    this.barChart = new Chart(this.barChartRef.nativeElement, config);
+    try {
+      this.barChart = new Chart(this.barChartRef.nativeElement, config);
+      console.log('✅ Gráfico de barras creado');
+    } catch (error) {
+      console.error('❌ Error creando gráfico de barras:', error);
+    }
   }
 
   private createDoughnutChart(): void {
-    if (!this.doughnutChartRef?.nativeElement) return;
+    if (!this.doughnutChartRef?.nativeElement) {
+      console.warn('⚠️ Elemento doughnutChart no encontrado');
+      return;
+    }
 
     const config: ChartConfiguration<'doughnut'> = {
       type: 'doughnut',
       data: {
         labels: ['Disponibles', 'Prestados', 'Atrasados'],
         datasets: [{
-          data: [0, 0, 0], // Se actualizará con datos reales
+          data: [0, 0, 0],
           backgroundColor: [
-            '#2ECC71', // Verde para disponibles
-            '#114495', // Azul para prestados
-            '#E6331B'  // Rojo para atrasados
+            '#2ECC71',
+            '#114495',
+            '#E6331B'
           ],
           borderWidth: 0
         }]
@@ -298,7 +328,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
             callbacks: {
               label: (context) => {
                 const total = (context.dataset.data as number[]).reduce((a: number, b: number) => a + b, 0);
-                const percentage = (((context.parsed as number) / total) * 100).toFixed(1);
+                const percentage = total > 0 ? (((context.parsed as number) / total) * 100).toFixed(1) : '0';
                 return `${context.label}: ${context.parsed} (${percentage}%)`;
               }
             }
@@ -307,7 +337,12 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     };
 
-    this.doughnutChart = new Chart(this.doughnutChartRef.nativeElement, config);
+    try {
+      this.doughnutChart = new Chart(this.doughnutChartRef.nativeElement, config);
+      console.log('✅ Gráfico doughnut creado');
+    } catch (error) {
+      console.error('❌ Error creando gráfico doughnut:', error);
+    }
   }
 
   private updateDoughnutChart(): void {
@@ -321,28 +356,63 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.doughnutChart.data.datasets[0].data = data;
     this.doughnutChart.update();
+    console.log('📊 Gráfico doughnut actualizado con datos:', data);
   }
 
-  // Helper para formatear fecha relativa
   getRelativeTime(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
-    if (diffInMinutes < 1) return 'Ahora mismo';
-    if (diffInMinutes < 60) return `Hace ${diffInMinutes} min`;
+      if (diffInMinutes < 1) return 'Ahora mismo';
+      if (diffInMinutes < 60) return `Hace ${diffInMinutes} min`;
 
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `Hace ${diffInHours}h`;
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `Hace ${diffInHours}h`;
 
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `Hace ${diffInDays}d`;
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) return `Hace ${diffInDays}d`;
 
-    return date.toLocaleDateString();
+      return date.toLocaleDateString();
+    } catch (error) {
+      console.error('❌ Error procesando fecha:', dateString, error);
+      return 'Fecha inválida';
+    }
   }
 
-  // Getter para tarjeta de mantenimiento
+  getActivityIcon(tipo: string): string {
+    switch (tipo) {
+      case 'prestamo': return 'fa-arrow-up';
+      case 'devolucion': return 'fa-arrow-down';
+      case 'mantenimiento': return 'fa-wrench';
+      default: return 'fa-circle';
+    }
+  }
+
+  getActivityClass(tipo: string): string {
+    switch (tipo) {
+      case 'prestamo': return 'activity-prestamo';
+      case 'devolucion': return 'activity-devolucion';
+      case 'mantenimiento': return 'activity-mantenimiento';
+      default: return 'activity-general';
+    }
+  }
+
   get enMantenimiento(): number {
-    return this.kpis?.enMantenimiento || 5;
+    return this.kpis?.enMantenimiento || 0;
+  }
+
+  /**
+   * Getter para mostrar información de debug
+   */
+  get debugInfo(): any {
+    return {
+      kpis: this.kpis,
+      activitiesCount: this.recentActivity.length,
+      lastUpdated: this.lastUpdated,
+      connectionError: this.connectionError,
+      loading: this.loading
+    };
   }
 }

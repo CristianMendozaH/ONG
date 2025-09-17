@@ -8,7 +8,7 @@ $info-color: #17a2b8;
 $light-gray: #f8f9fa;
 $border-color: #f0f0f0;
 $text-color: #33475b;
-$text-muted: #666;
+$text-muted: #6c757d;
 
 // Header styles
 .header {
@@ -144,8 +144,15 @@ $text-muted: #666;
       background: $light-gray;
       border-radius: 8px;
       padding: 8px 15px;
-      width: 300px;
+      width: 260px;
       justify-self: end;
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
+
+      &:focus-within {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba(17, 68, 149, 0.1);
+      }
 
       input {
         border: none;
@@ -154,7 +161,7 @@ $text-muted: #666;
         font-family: 'Poppins', sans-serif;
         font-size: 0.9rem;
         width: 100%;
-        padding: 4px 8px;
+        padding-left: 8px;
 
         &::placeholder {
           color: #999;
@@ -163,7 +170,6 @@ $text-muted: #666;
 
       i {
         color: #999;
-        margin-right: 8px;
       }
     }
   }
@@ -270,18 +276,23 @@ $text-muted: #666;
   flex-wrap: wrap;
 }
 
+// INICIO: Estilo de botones de acción modificado
 .action-btn {
-  padding: 6px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 50%; // Esto los hace circulares
   cursor: pointer;
-  font-size: 0.8rem;
   transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  white-space: nowrap;
+  justify-content: center;
+  width: 36px;  // Ancho fijo
+  height: 36px; // Alto fijo para formar un círculo
+
+  i {
+    font-size: 0.9rem;
+  }
 }
+// FIN: Estilo de botones de acción modificado
 
 .btn-edit {
   background: $warning-color;
@@ -362,6 +373,10 @@ $text-muted: #666;
 
   .modal-body {
     padding: 25px;
+    .text-muted {
+      color: $text-muted;
+      font-size: 0.9rem;
+    }
   }
 
   .modal-footer {
@@ -369,6 +384,10 @@ $text-muted: #666;
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+  }
+
+  &.modal-sm {
+    max-width: 400px;
   }
 }
 
@@ -545,7 +564,7 @@ $text-muted: #666;
 
 // Button styles
 .btn-cancel {
-  background: #6c757d;
+  background: $text-muted;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -555,7 +574,7 @@ $text-muted: #666;
   transition: all 0.3s ease;
 
   &:hover {
-    background: darken(#6c757d, 10%);
+    background: darken($text-muted, 10%);
   }
 }
 
@@ -583,6 +602,88 @@ $text-muted: #666;
   }
 }
 
+.btn-danger {
+  background-color: $danger-color;
+  &:hover:not(:disabled) {
+    background: darken($danger-color, 10%);
+  }
+}
+
+// --- INICIO: NUEVOS ESTILOS PARA NOTIFICACIONES (TOASTS) ---
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  width: 320px;
+  background: white;
+  color: $text-color;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  animation: slideInRight 0.5s ease forwards;
+  border-left: 5px solid;
+
+  .toast-icon {
+    font-size: 1.5rem;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .toast-message {
+    flex-grow: 1;
+    font-size: 0.9rem;
+    padding-right: 10px;
+  }
+
+  .toast-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: $text-muted;
+    cursor: pointer;
+    padding: 5px;
+    flex-shrink: 0;
+    &:hover {
+      color: $text-color;
+    }
+  }
+
+  &.success {
+    border-color: $success-color;
+    .toast-icon {
+      color: $success-color;
+    }
+  }
+
+  &.error {
+    border-color: $danger-color;
+    .toast-icon {
+      color: $danger-color;
+    }
+  }
+}
+// --- FIN: ESTILOS PARA NOTIFICACIONES ---
+
 // Responsive design
 @media (max-width: 768px) {
   .users-content {
@@ -608,7 +709,8 @@ $text-muted: #666;
   .users-table {
     font-size: 0.8rem;
 
-    th, td {
+    th,
+    td {
       padding: 8px;
     }
   }
