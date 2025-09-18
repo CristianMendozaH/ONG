@@ -70,7 +70,7 @@ export class MantenimientoComponent implements OnInit {
       type: ['preventivo', Validators.required],
       priority: ['media', Validators.required],
       scheduledDate: ['', Validators.required],
-      description: [''], // <-- CAMBIO: de 'notes' a 'description'
+      description: [''],
     });
 
     this.completeForm = this.fb.group({
@@ -197,32 +197,23 @@ export class MantenimientoComponent implements OnInit {
     });
   }
 
+  /**
+   * Esta es la función clave que se ejecuta al completar un mantenimiento.
+   * Llama a `mantSvc.complete`, que a su vez se encarga de emitir la notificación
+   * a través de `DataRefreshService`. La implementación es correcta.
+   */
   submitCompletion() {
     if (this.completeForm.invalid || !this.maintenanceToComplete) {
       return;
     }
 
     const { performedDate, completionNotes } = this.completeForm.value;
-    const currentDescription = this.maintenanceToComplete.description || '';
 
-    let updatedDescription = currentDescription;
-    if (completionNotes) {
-      const completionHeader = `\n\n--- COMPLETADO EL ${performedDate} ---`;
-      updatedDescription = `${currentDescription}${completionHeader}\n${completionNotes}`;
-    }
-
-    const payload: UpdateMantDTO = {
-      ...this.maintenanceToComplete,
-      performedDate: performedDate,
-      status: 'completado',
-      description: updatedDescription.trim() // <-- CAMBIO: de 'notes' a 'description'
-    };
-
-    this.mantSvc.update(this.maintenanceToComplete.id, payload).subscribe({
+    this.mantSvc.complete(this.maintenanceToComplete.id, performedDate, completionNotes).subscribe({
       next: () => {
         this.showSuccessMessage('Mantenimiento marcado como completado');
         this.closeCompleteModal();
-        this.load();
+        this.load(); // Recarga la lista de mantenimientos en este componente.
       },
       error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo marcar como completado')
     });
@@ -243,7 +234,7 @@ export class MantenimientoComponent implements OnInit {
       type: maintenance.type,
       priority: maintenance.priority || 'media',
       scheduledDate: maintenance.scheduledDate.split('T')[0],
-      description: maintenance.description || '' // <-- CAMBIO: de 'notes' a 'description'
+      description: maintenance.description || ''
     });
     this.showModal = true;
   }

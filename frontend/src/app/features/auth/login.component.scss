@@ -10,9 +10,10 @@ $text-secondary: #6c757d;
 $background-light: #f8f9fa;
 $border-color: #e9ecef;
 
-// Estilo base del cuerpo, similar al prototipo
+// MODIFICACIÓN PRINCIPAL: Hacer que el host tenga display flex y altura completa
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
   font-family: 'Poppins', sans-serif;
   background: linear-gradient(135deg, #ffffff 0%, $background-light 100%);
   min-height: 100vh;
@@ -33,16 +34,12 @@ $border-color: #e9ecef;
   background: #ffffff;
   padding: 2rem 0 1rem 0;
   border-bottom: 1px solid $border-color;
+  flex-shrink: 0; // Evita que se comprima
 
-  // ** INICIO DE LA CORRECCIÓN **
-  // Convertimos el header en un contenedor flex
-  // para centrar su contenido horizontalmente de forma precisa.
   display: flex;
   justify-content: center;
-  // ** FIN DE LA CORRECCIÓN **
 
   .logo-container {
-    // Se mantiene como inline-flex para alinear el logo y el texto.
     display: inline-flex;
     align-items: center;
     gap: 1rem;
@@ -76,12 +73,13 @@ $border-color: #e9ecef;
   }
 }
 
-// Contenedor principal que centra la tarjeta de login
+// MODIFICACIÓN: El main container ahora crece para ocupar el espacio disponible
 .main-container {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
+  flex: 1; // Esto hace que crezca y ocupe todo el espacio disponible
 }
 
 // Tarjeta de inicio de sesión
@@ -248,7 +246,7 @@ $border-color: #e9ecef;
   color: $danger-color;
   font-size: 0.85rem;
   margin-top: 0.5rem;
-  display: block; // Se mostrará con *ngIf
+  display: block;
 }
 
 .api-error {
@@ -272,13 +270,15 @@ $border-color: #e9ecef;
   to { transform: rotate(360deg); }
 }
 
-// Footer
+// MODIFICACIÓN: Footer ahora tiene flex-shrink: 0 y margin-top: auto para pegarse abajo
 .footer {
   background: $primary-color;
   padding: 1rem;
   text-align: center;
   color: white;
   font-size: 0.85rem;
+  flex-shrink: 0; // Evita que se comprima
+  margin-top: auto; // Se empuja hacia abajo automáticamente
 }
 
 // Diseño responsivo

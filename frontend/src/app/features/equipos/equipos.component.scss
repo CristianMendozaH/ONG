@@ -219,6 +219,19 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+
+    /* ===== NUEVO: Estilos para botones de acción solo con ícono ===== */
+    .btn-ghost, .btn-warning, .btn-info, .btn-danger {
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      justify-content: center;
+
+      i {
+        font-size: 1rem;
+        margin: 0; // Quita el gap
+      }
+    }
   }
 }
 

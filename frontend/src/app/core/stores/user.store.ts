@@ -14,9 +14,10 @@ export class UserStore {
   isAuthenticated = this._isAuthenticated.asReadonly();
 
   // Computed properties para roles usando 'role'
-  isAdmin = computed(() => this._currentUser()?.role === 'admin');
-  isTech = computed(() => this._currentUser()?.role === 'tech');
-  isUser = computed(() => this._currentUser()?.role === 'user');
+  // --- CAMBIO: Se añadió .trim() para eliminar espacios en blanco ---
+  isAdmin = computed(() => this._currentUser()?.role.trim().toLowerCase() === 'admin');
+  isTech = computed(() => this._currentUser()?.role.trim().toLowerCase() === 'tecnico');
+  isUser = computed(() => this._currentUser()?.role.trim().toLowerCase() === 'user');
 
   // Computed para mostrar nombre
   userName = computed(() => this._currentUser()?.name || 'Usuario');
@@ -52,20 +53,21 @@ export class UserStore {
    * Verificar si tiene un rol específico
    */
   hasRole(role: string): boolean {
-    return this._currentUser()?.role === role;
+    // Se añade .trim() aquí también por consistencia
+    return this._currentUser()?.role.trim().toLowerCase() === role.trim().toLowerCase();
   }
 
   /**
    * Verificar si puede acceder a funciones de admin
    */
-  canAccess(requiredRole: 'admin' | 'tech' | 'user'): boolean {
-    const userRole = this._currentUser()?.role;
+  canAccess(requiredRole: 'admin' | 'tecnico' | 'user'): boolean {
+    const userRole = this._currentUser()?.role.trim().toLowerCase();
 
     switch (requiredRole) {
       case 'admin':
         return userRole === 'admin';
-      case 'tech':
-        return userRole === 'admin' || userRole === 'tech';
+      case 'tecnico':
+        return userRole === 'admin' || userRole === 'tecnico';
       case 'user':
         return true; // Cualquier usuario autenticado
       default:

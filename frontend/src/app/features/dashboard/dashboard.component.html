@@ -1,4 +1,3 @@
-<!-- Header -->
 <header class="header">
   <div class="header-left">
     <h1>¡Buen día, {{ userStore.userName() }}!</h1>
@@ -19,9 +18,7 @@
   </div>
 </header>
 
-<!-- Dashboard Content -->
 <div class="dashboard-content">
-  <!-- Loading state -->
   <div *ngIf="loading" class="loading-container">
     <div class="loading-spinner">
       <i class="fas fa-spinner fa-spin"></i>
@@ -29,19 +26,13 @@
     </div>
   </div>
 
-  <!-- Content when loaded -->
   <div *ngIf="!loading">
-    <!-- KPI Cards -->
     <div class="kpi-grid" *ngIf="kpis">
       <div class="kpi-card disponibles">
         <div class="kpi-header">
           <div class="kpi-content">
             <div class="kpi-value">{{ kpis.disponibles }}</div>
             <div class="kpi-label">Equipos Disponibles</div>
-            <div class="kpi-trend trend-up">
-              <i class="fas fa-arrow-up"></i>
-              <span>+3 esta semana</span>
-            </div>
           </div>
           <div class="kpi-icon">
             <i class="fas fa-check-circle"></i>
@@ -54,10 +45,6 @@
           <div class="kpi-content">
             <div class="kpi-value">{{ kpis.prestados }}</div>
             <div class="kpi-label">Equipos Prestados</div>
-            <div class="kpi-trend">
-              <i class="fas fa-minus"></i>
-              <span>Sin cambios</span>
-            </div>
           </div>
           <div class="kpi-icon">
             <i class="fas fa-share-alt"></i>
@@ -70,10 +57,6 @@
           <div class="kpi-content">
             <div class="kpi-value">{{ kpis.atrasos }}</div>
             <div class="kpi-label">Devoluciones Atrasadas</div>
-            <div class="kpi-trend trend-down">
-              <i class="fas fa-arrow-down"></i>
-              <span>-1 desde ayer</span>
-            </div>
           </div>
           <div class="kpi-icon">
             <i class="fas fa-exclamation-triangle"></i>
@@ -86,10 +69,6 @@
           <div class="kpi-content">
             <div class="kpi-value">{{ enMantenimiento }}</div>
             <div class="kpi-label">En Mantenimiento</div>
-            <div class="kpi-trend">
-              <i class="fas fa-tools"></i>
-              <span>2 programados</span>
-            </div>
           </div>
           <div class="kpi-icon">
             <i class="fas fa-wrench"></i>
@@ -98,7 +77,6 @@
       </div>
     </div>
 
-    <!-- Charts Section -->
     <div class="charts-grid">
       <div class="chart-card">
         <div class="chart-header">
@@ -121,7 +99,6 @@
       </div>
     </div>
 
-    <!-- Recent Activity -->
     <div class="activity-section">
       <div class="activity-header">
         <h3 class="chart-title">Actividad Reciente</h3>
@@ -153,7 +130,6 @@
       </ng-template>
     </div>
 
-    <!-- Quick Actions -->
     <div class="quick-actions-section">
       <h3 class="section-title">Acciones Rápidas</h3>
       <div class="quick-actions-grid">
@@ -197,43 +173,6 @@
           </div>
         </a>
       </div>
-    </div>
-
-    <!-- DEBUG: Información detallada - TEMPORAL -->
-    <div style="background: #ffebee; padding: 20px; margin: 20px 0; border-radius: 8px; border: 2px solid #f44336;">
-      <h4 style="color: #d32f2f;">🔍 DIAGNÓSTICO COMPLETO</h4>
-
-      <div style="margin: 15px 0;">
-        <h5>📡 Estado de conexión:</h5>
-        <code>Loading: {{ loading }}</code><br>
-        <code>Connection Error: {{ connectionError }}</code><br>
-        <code>Last Updated: {{ lastUpdated | date:'short' }}</code>
-      </div>
-
-      <div style="margin: 15px 0;">
-        <h5>📊 KPIs actuales:</h5>
-        <pre style="background: white; padding: 10px; max-height: 150px; overflow: auto;">{{ kpis | json }}</pre>
-      </div>
-
-      <div style="margin: 15px 0;">
-        <h5>📋 Actividades ({{ recentActivity.length }}):</h5>
-        <pre style="background: white; padding: 10px; max-height: 150px; overflow: auto;">{{ recentActivity | json }}</pre>
-      </div>
-
-      <div style="margin: 15px 0;">
-        <h5>👤 Usuario:</h5>
-        <code>Nombre: {{ userStore.userName() }}</code><br>
-        <code>Email: {{ userStore.userEmail() }}</code><br>
-        <code>Rol: {{ userStore.isAdmin() ? 'Administrador' : userStore.isTech() ? 'Técnico' : 'Usuario' }}</code>
-      </div>
-
-      <button (click)="refreshData()" style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
-        🔄 Forzar Recarga
-      </button>
-
-      <button (click)="checkManualEndpoint()" style="padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer;">
-        🧪 Probar Endpoint Manual
-      </button>
     </div>
   </div>
 </div>

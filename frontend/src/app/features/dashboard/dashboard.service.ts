@@ -23,6 +23,13 @@ export interface DashboardActivity {
   usuario?: string;
 }
 
+// Nueva interfaz para los datos de la gráfica semanal
+export interface DashboardWeeklyActivity {
+  labels: string[];
+  prestamos: number[];
+  devoluciones: number[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -43,70 +50,40 @@ export class DashboardService {
         console.log('🔍 Propiedades disponibles:', Object.keys(response));
       }),
       map(response => {
-        // Extraer datos del backend con valores por defecto
         const totalEquipos = Number(response.totalEquipos) || 0;
         const prestamosHoy = Number(response.prestamosHoy) || 0;
-
-        // Calcular disponibles: total - prestados
         const disponibles = Math.max(0, totalEquipos - prestamosHoy);
-
-        // Buscar atrasos en diferentes campos posibles del backend
         const atrasos = Number(response.atrasos) ||
                        Number(response.atrasados) ||
                        Number(response.prestamosVencidos) ||
                        Number(response.prestamosAtrasados) ||
                        Number(response.overdue) || 0;
-
-        // Buscar mantenimiento en diferentes campos posibles
         const enMantenimiento = Number(response.enMantenimiento) ||
                                Number(response.mantenimiento) ||
                                Number(response.equiposMantenimiento) ||
                                Number(response.maintenance) || 0;
 
         const kpis: DashboardKPIs = {
-          disponibles: disponibles,
+          disponibles,
           prestados: prestamosHoy,
-          atrasos: atrasos,
-          totalEquipos: totalEquipos,
-          enMantenimiento: enMantenimiento
+          atrasos,
+          totalEquipos,
+          enMantenimiento
         };
 
         console.log('📊 KPIs procesados:', kpis);
-        console.log('📋 Cálculos realizados:', {
-          totalEquipos,
-          prestamosHoy,
-          disponibles: `${totalEquipos} - ${prestamosHoy} = ${disponibles}`,
-          atrasos,
-          enMantenimiento
-        });
-
         return kpis;
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('❌ Error obteniendo KPIs del dashboard:', error);
-        console.error('📍 URL que falló:', `${this.API_URL}/reports/kpis`);
-        console.error('📋 Detalles del error:', {
-          status: error.status,
-          statusText: error.statusText,
-          message: error.message,
-          url: error.url
-        });
-
-        // Verificar si es un problema de CORS o red
-        if (error.status === 0) {
-          console.error('🌐 Posible problema de CORS o servidor no disponible');
-        }
-
-        // Datos de fallback realistas basados en tu backend
         const fallbackData: DashboardKPIs = {
-          disponibles: 14, // 18 - 4
+          disponibles: 14,
           prestados: 4,
           atrasos: 0,
           totalEquipos: 18,
           enMantenimiento: 0
         };
-
-        console.warn('🔄 Usando datos de fallback:', fallbackData);
+        console.warn('🔄 Usando datos de fallback para KPIs:', fallbackData);
         return of(fallbackData);
       })
     );
@@ -119,32 +96,24 @@ export class DashboardService {
     console.log('🔍 Solicitando actividad desde:', `${this.API_URL}/reports/activity`);
 
     return this.http.get<any>(`${this.API_URL}/reports/activity`).pipe(
-      tap(response => {
-        console.log('✅ Respuesta actividad del servidor:', response);
-      }),
+      tap(response => console.log('✅ Respuesta actividad del servidor:', response)),
       map(response => {
-        // Manejar diferentes estructuras de respuesta
         let activities = [];
-
         if (Array.isArray(response)) {
           activities = response;
-        } else if (response.recientes) {
-          activities = response.recientes;
-        } else if (response.activities) {
-          activities = response.activities;
-        } else if (response.data) {
+        } else if (response.data && Array.isArray(response.data)) {
           activities = response.data;
-        } else if (response.activity) {
-          activities = response.activity;
+        } else if (response.activities && Array.isArray(response.activities)) {
+          activities = response.activities;
         }
 
         const mappedActivities = activities.map((item: any, index: number) => ({
           id: item.id || item._id || `activity_${index}`,
           tipo: this.normalizeActivityType(item.tipo || item.type || item.action || 'general'),
-          descripcion: item.descripcion || item.description || item.details || item.mensaje || 'Actividad del sistema',
-          fecha: item.fecha || item.date || item.created_at || item.timestamp || new Date().toISOString(),
-          equipo: item.equipo || item.equipment || item.equipo_nombre || item.equipment_name || 'N/A',
-          usuario: item.usuario || item.user || item.usuario_nombre || item.user_name || 'Sistema'
+          descripcion: item.descripcion || item.description || 'Actividad del sistema',
+          fecha: item.fecha || item.date || new Date().toISOString(),
+          equipo: item.equipo || item.equipment || 'N/A',
+          usuario: item.usuario || item.user || 'Sistema'
         }));
 
         console.log('📋 Actividades procesadas:', mappedActivities);
@@ -152,38 +121,42 @@ export class DashboardService {
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('❌ Error obteniendo actividad del dashboard:', error);
-        console.error('📍 URL que falló:', `${this.API_URL}/reports/activity`);
-
-        // Datos de fallback más realistas
         const fallbackActivities: DashboardActivity[] = [
-          {
-            id: '1',
-            tipo: 'prestamo',
-            descripcion: 'Préstamo de equipo registrado',
-            fecha: new Date().toISOString(),
-            equipo: 'Laptop Dell Inspiron',
-            usuario: 'Usuario del Sistema'
-          },
-          {
-            id: '2',
-            tipo: 'devolucion',
-            descripcion: 'Devolución de equipo procesada',
-            fecha: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            equipo: 'Proyector Epson',
-            usuario: 'Usuario del Sistema'
-          },
-          {
-            id: '3',
-            tipo: 'mantenimiento',
-            descripcion: 'Mantenimiento programado',
-            fecha: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-            equipo: 'Impresora HP',
-            usuario: 'Técnico'
-          }
+          { id: '1', tipo: 'prestamo', descripcion: 'Préstamo de equipo registrado', fecha: new Date().toISOString(), equipo: 'Laptop Dell Inspiron', usuario: 'Usuario del Sistema' },
+          { id: '2', tipo: 'devolucion', descripcion: 'Devolución de equipo procesada', fecha: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), equipo: 'Proyector Epson', usuario: 'Usuario del Sistema' }
         ];
-
         console.warn('🔄 Usando datos de actividad de fallback:', fallbackActivities);
         return of(fallbackActivities);
+      })
+    );
+  }
+
+  /**
+   * Obtener datos de actividad semanal para la gráfica de barras
+   */
+  getWeeklyActivity(): Observable<DashboardWeeklyActivity> {
+    console.log('🔍 Solicitando actividad semanal desde:', `${this.API_URL}/reports/weekly-activity`);
+
+    return this.http.get<any>(`${this.API_URL}/reports/weekly-activity`).pipe(
+      tap(response => console.log('✅ Respuesta de actividad semanal:', response)),
+      map(response => {
+        const weeklyData: DashboardWeeklyActivity = {
+          labels: response.labels || [],
+          prestamos: response.prestamos || [],
+          devoluciones: response.devoluciones || []
+        };
+        console.log('📊 Datos de gráfica semanal procesados:', weeklyData);
+        return weeklyData;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('❌ Error obteniendo actividad semanal:', error);
+        const fallbackData: DashboardWeeklyActivity = {
+          labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+          prestamos: [12, 8, 15, 10, 14, 6, 4],
+          devoluciones: [8, 12, 10, 15, 9, 8, 7]
+        };
+        console.warn('🔄 Usando datos de fallback para la gráfica semanal:', fallbackData);
+        return of(fallbackData);
       })
     );
   }
@@ -193,29 +166,12 @@ export class DashboardService {
    */
   private normalizeActivityType(type: string): string {
     if (!type) return 'general';
-
     const normalizedType = type.toLowerCase().trim();
-
-    // Mapeo de tipos comunes
     const typeMap: { [key: string]: string } = {
-      'prestamo': 'prestamo',
-      'préstamo': 'prestamo',
-      'loan': 'prestamo',
-      'borrow': 'prestamo',
-      'borrowed': 'prestamo',
-      'devolucion': 'devolucion',
-      'devolución': 'devolucion',
-      'return': 'devolucion',
-      'returned': 'devolucion',
-      'mantenimiento': 'mantenimiento',
-      'maintenance': 'mantenimiento',
-      'repair': 'mantenimiento',
-      'reparacion': 'mantenimiento',
-      'reparación': 'mantenimiento',
-      'fixed': 'mantenimiento',
-      'servicio': 'mantenimiento'
+      'prestamo': 'prestamo', 'préstamo': 'prestamo', 'loan': 'prestamo',
+      'devolucion': 'devolucion', 'devolución': 'devolucion', 'return': 'devolucion',
+      'mantenimiento': 'mantenimiento', 'maintenance': 'mantenimiento', 'repair': 'mantenimiento'
     };
-
     return typeMap[normalizedType] || 'general';
   }
 
@@ -223,49 +179,16 @@ export class DashboardService {
    * Método para verificar la conectividad con el backend
    */
   checkBackendConnection(): Observable<boolean> {
-    console.log('🔍 Verificando conexión con backend...');
-    console.log('🌐 URL base configurada:', this.API_URL);
-
-    // Intentar con /reports/kpis ya que sabemos que funciona
-    return this.http.get(`${this.API_URL}/reports/kpis`).pipe(
+    console.log('🔍 Verificando conexión con backend en:', this.API_URL);
+    return this.http.get(`${this.API_URL}/health-check`).pipe( // Usar un endpoint ligero como health-check
       map(() => {
-        console.log('✅ Backend conectado correctamente en:', this.API_URL);
+        console.log('✅ Backend conectado correctamente.');
         return true;
       }),
-      catchError((error) => {
-        console.error('❌ Backend no disponible en:', this.API_URL);
-        console.error('📋 Error completo:', error);
+      catchError(() => {
+        console.error('❌ Backend no disponible.');
         return of(false);
       })
     );
-  }
-
-  /**
-   * Método para refrescar datos manualmente
-   */
-  refreshData(): Observable<{ kpis: DashboardKPIs; activity: DashboardActivity[] }> {
-    console.log('🔄 Refrescando todos los datos del dashboard...');
-
-    return new Observable(observer => {
-      Promise.all([
-        this.getKpis().toPromise(),
-        this.getActivity().toPromise()
-      ]).then(([kpis, activity]) => {
-        observer.next({
-          kpis: kpis || {
-            disponibles: 0,
-            prestados: 0,
-            atrasos: 0,
-            totalEquipos: 0,
-            enMantenimiento: 0
-          },
-          activity: activity || []
-        });
-        observer.complete();
-      }).catch(error => {
-        console.error('❌ Error refrescando datos:', error);
-        observer.error(error);
-      });
-    });
   }
 }

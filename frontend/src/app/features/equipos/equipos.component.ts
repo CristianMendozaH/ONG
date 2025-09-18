@@ -5,6 +5,7 @@ import { EquiposService, Equipo } from './equipos.service';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { DataRefreshService } from '../../services/data-refresh.service'; // Asegúrate que la ruta sea correcta
 
 @Component({
   standalone: true,
@@ -40,7 +41,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
     code: '',
     name: '',
     type: '',
-    status: 'disponible' as Equipo['status'],
+    status: 'disponible' as any, // Se usa 'any' para compatibilidad con estados de mantenimiento
     description: ''
   };
 
@@ -54,7 +55,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
     { value: 'printer', label: 'Impresora' }
   ];
 
-  // Estados disponibles
+  // Estados disponibles para el filtro
   availableStatuses = [
     { value: 'disponible', label: 'Disponible' },
     { value: 'prestado', label: 'Prestado' },
@@ -74,10 +75,13 @@ export class EquiposComponent implements OnInit, OnDestroy {
   private hideTimer?: any;
 
   // ====== Config correlativo de código ======
-  readonly CODE_PREFIX = 'EQ';  // cambia si usas otro prefijo
-  readonly CODE_PAD = 3;        // EQ + 3 dígitos => EQ001
+  readonly CODE_PREFIX = 'EQ';
+  readonly CODE_PAD = 3;
 
-  constructor(private equiposSvc: EquiposService) {
+  constructor(
+    private equiposSvc: EquiposService,
+    private dataRefreshService: DataRefreshService // Inyectar el servicio de refresco
+  ) {
     this.searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
@@ -88,7 +92,15 @@ export class EquiposComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.load();
+    this.load(); // Carga inicial de datos
+
+    // Suscribirse a las notificaciones para recargar la lista cuando sea necesario
+    this.dataRefreshService.refreshNeeded$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        console.log('Notificación recibida: Recargando lista de equipos...');
+        this.load();
+      });
   }
 
   ngOnDestroy() {
@@ -145,8 +157,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
   }
 
   // ====== Correlativo de código (frontend) ======
-
-  /** Extrae el número del código (EQ004 -> 4). Si no matchea, retorna null */
   private parseCode(code?: string | null): number | null {
     if (!code) return null;
     const re = new RegExp(`^${this.CODE_PREFIX}(\\d+)$`, 'i');
@@ -154,7 +164,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     return m ? Number(m[1]) : null;
   }
 
-  /** Calcula el siguiente código disponible a partir de los ya cargados */
   private getNextCode(): string {
     let max = 0;
     for (const e of this.equipos) {
@@ -167,7 +176,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     return `${this.CODE_PREFIX}${next}`;
   }
 
-  /** Garantiza que el code del form no duplique uno existente */
   ensureUniqueCode(): void {
     const current = (this.equipmentForm.code || '').trim().toUpperCase();
     if (!current) {
@@ -184,8 +192,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     this.showViewModal = false;
     this.showDeleteModal = false;
     this.showQRModal = false;
-
-    // Limpiar datos
     this.equipoSeleccionado = null;
     this.resetForm();
 
@@ -211,10 +217,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
     this.isEditMode = false;
     this.modalTitle = 'Agregar Nuevo Equipo';
     this.resetForm();
-
-    // Genera el correlativo automáticamente
     this.equipmentForm.code = this.getNextCode();
-
     this.showAddEditModal = true;
   }
 
@@ -222,17 +225,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
     this.isEditMode = true;
     this.modalTitle = 'Editar Equipo';
     this.equipoSeleccionado = equipo;
-
-    // Llenar formulario
-    this.equipmentForm = {
-      id: equipo.id,
-      code: equipo.code,
-      name: equipo.name,
-      type: equipo.type,
-      status: equipo.status,
-      description: equipo.description || ''
-    };
-
+    this.equipmentForm = { ...equipo, description: equipo.description || '' };
     this.showAddEditModal = true;
   }
 
@@ -269,7 +262,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Asegura un código válido y no duplicado cuando se crea
     if (!this.isEditMode) {
       if (!this.equipmentForm.code?.trim()) {
         this.equipmentForm.code = this.getNextCode();
@@ -278,51 +270,33 @@ export class EquiposComponent implements OnInit, OnDestroy {
       }
     }
 
-    const equipoData: Partial<Equipo> = {
-      name: this.equipmentForm.name,
-      type: this.equipmentForm.type,
-      status: this.equipmentForm.status,
-      description: this.equipmentForm.description,
-      code: this.equipmentForm.code
-    };
+    const equipoData: Partial<Equipo> = { ...this.equipmentForm };
 
-    if (this.isEditMode && this.equipoSeleccionado) {
-      // Actualizar equipo existente
-      this.equiposSvc.update(this.equipoSeleccionado.id, equipoData).subscribe({
-        next: () => {
-          this.showSuccess('Equipo actualizado correctamente');
-          this.closeModal();
-          this.load();
-        },
-        error: (err) => {
-          const errorMessage = err?.error?.message || 'No se pudo actualizar el equipo';
-          this.showError(errorMessage);
-          console.error('Error actualizando equipo:', err);
-        }
-      });
-    } else {
-      // Crear nuevo equipo
-      this.equiposSvc.create(equipoData).subscribe({
-        next: () => {
-          this.showSuccess('Equipo creado correctamente');
-          this.closeModal();
-          this.load();
-        },
-        error: (err) => {
-          const errorMessage = err?.error?.message || 'No se pudo crear el equipo';
-          this.showError(errorMessage);
-          console.error('Error creando equipo:', err);
-        }
-      });
-    }
+    const action = this.isEditMode && this.equipoSeleccionado
+      ? this.equiposSvc.update(this.equipoSeleccionado.id, equipoData)
+      : this.equiposSvc.create(equipoData);
+
+    action.subscribe({
+      next: () => {
+        const message = this.isEditMode ? 'actualizado' : 'creado';
+        this.showSuccess(`Equipo ${message} correctamente`);
+        this.closeModal();
+        this.load();
+      },
+      error: (err) => {
+        const message = this.isEditMode ? 'actualizar' : 'crear';
+        const errorMessage = err?.error?.message || `No se pudo ${message} el equipo`;
+        this.showError(errorMessage);
+        console.error(`Error al ${message} equipo:`, err);
+      }
+    });
   }
 
   editarDesdeVista() {
     if (this.equipoSeleccionado) {
+      const equipoParaEditar = this.equipoSeleccionado;
       this.closeModal();
-      setTimeout(() => {
-        this.editarEquipo(this.equipoSeleccionado!);
-      }, 0);
+      setTimeout(() => this.editarEquipo(equipoParaEditar), 50);
     }
   }
 
@@ -337,8 +311,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
         this.showQRModal = true;
       },
       error: (err) => {
-        const errorMessage = err?.error?.message || 'No se pudo generar el código QR';
-        this.showError(errorMessage);
+        this.showError(err?.error?.message || 'No se pudo generar el código QR');
         console.error('Error generando QR:', err);
       }
     });
@@ -346,7 +319,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
 
   descargarQR() {
     if (!this.qrUrl || !this.equipoSeleccionado) return;
-
     const link = document.createElement('a');
     link.href = this.qrUrl;
     link.download = `QR_${this.equipoSeleccionado.code}_${this.equipoSeleccionado.name}.png`;
@@ -356,7 +328,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
   }
 
   // ===== FUNCIONES DE UTILIDAD =====
-  /** Muestra un mensaje de éxito (y lo oculta en n segundos) */
   showSuccess(message: string, seconds = 3) {
     this.successText = message;
     this.showSuccessMessage = true;
@@ -364,7 +335,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     this.hideTimer = setTimeout(() => (this.showSuccessMessage = false), seconds * 1000);
   }
 
-  /** Muestra un mensaje de error (y lo oculta en n segundos) */
   showError(message: string, seconds = 4) {
     this.errorText = message;
     this.showErrorMessage = true;
@@ -380,12 +350,10 @@ export class EquiposComponent implements OnInit, OnDestroy {
     const statusMap: Record<string, string> = {
       'disponible': 'Disponible',
       'prestado': 'Prestado',
-      'mantenimiento': 'Mantenimiento',
       'dañado': 'Dañado',
-      'available': 'Disponible',
-      'loaned': 'Prestado',
-      'maintenance': 'Mantenimiento',
-      'damaged': 'Dañado'
+      'mantenimiento': 'Mantenimiento',
+      'programado': 'Mantenimiento',
+      'en-proceso': 'Mantenimiento',
     };
     return statusMap[status] || status;
   }
@@ -394,12 +362,10 @@ export class EquiposComponent implements OnInit, OnDestroy {
     const classMap: Record<string, string> = {
       'disponible': 'status-disponible',
       'prestado': 'status-prestado',
-      'mantenimiento': 'status-mantenimiento',
       'dañado': 'status-danado',
-      'available': 'status-disponible',
-      'loaned': 'status-prestado',
-      'maintenance': 'status-mantenimiento',
-      'damaged': 'status-danado'
+      'mantenimiento': 'status-mantenimiento',
+      'programado': 'status-mantenimiento',
+      'en-proceso': 'status-mantenimiento',
     };
     return classMap[status] || 'status-disponible';
   }
@@ -412,31 +378,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
       'camera': 'Cámara',
       'monitor': 'Monitor',
       'printer': 'Impresora',
-      'phone': 'Teléfono',
-      'headphones': 'Audífonos',
-      'mouse': 'Mouse',
-      'keyboard': 'Teclado'
     };
     return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
-  }
-
-  formatDate(dateString: string): string {
-    if (!dateString) return 'N/A';
-
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
-
-  copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text).then(() => {
-      this.showSuccess('Texto copiado al portapapeles');
-    }).catch(err => {
-      this.showError('No se pudo copiar al portapapeles');
-      console.error('Error al copiar al portapapeles:', err);
-    });
   }
 }

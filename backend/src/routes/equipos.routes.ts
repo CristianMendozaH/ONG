@@ -1,14 +1,56 @@
 import { Router } from 'express';
 import { Equipment } from '../models/Equipment';
 import QRCode from 'qrcode';
+import { Op } from 'sequelize'; // <<<--- IMPORTANTE: Importar el operador de Sequelize
 
 const router = Router();
 
-// Listar
-router.get('/', async (_req, res) => {
-  const rows = await Equipment.findAll({ order: [['createdAt', 'DESC']] });
+// =======================================================================
+// RUTA LISTAR (MODIFICADA PARA ACEPTAR FILTROS)
+// =======================================================================
+router.get('/', async (req, res) => {
+  // Se extraen los parámetros de la consulta (query)
+  const { search, status, type } = req.query;
+  
+  // Se crea un objeto 'where' para construir la consulta dinámicamente
+  const where: any = {};
+
+  // 1. Lógica para el filtro de búsqueda (search)
+  if (search && typeof search === 'string' && search.trim()) {
+    const searchTerm = `%${search.trim()}%`;
+    where[Op.or] = [
+      { name: { [Op.iLike]: searchTerm } }, // Busca en el nombre (insensible a mayúsculas)
+      { code: { [Op.iLike]: searchTerm } }, // Busca en el código (insensible a mayúsculas)
+    ];
+  }
+
+  // 2. Lógica para el filtro de estado (status)
+  if (status && typeof status === 'string') {
+    // Si el estado es 'mantenimiento', busca en la base de datos los estados 'Programada' o 'En proceso'
+    if (status === 'mantenimiento') {
+      where.status = { [Op.in]: ['Programada', 'En proceso'] };
+    } else {
+      where.status = status;
+    }
+  }
+
+  // 3. Lógica para el filtro de tipo (type)
+  if (type && typeof type === 'string') {
+    where.type = type;
+  }
+
+  // Se ejecuta la consulta con los filtros construidos
+  const rows = await Equipment.findAll({ 
+    where, 
+    order: [['createdAt', 'DESC']] 
+  });
+  
   res.json(rows);
 });
+
+// =======================================================================
+// OTRAS RUTAS (SIN CAMBIOS)
+// =======================================================================
 
 // Crear
 router.post('/', async (req, res, next) => {

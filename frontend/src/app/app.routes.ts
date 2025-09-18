@@ -4,7 +4,6 @@ import { authGuard } from './core/guards/auth.guard';
 export const routes: Routes = [
   {
     path: 'login',
-    // CORREGIDO: Usando la ruta que me confirmaste
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
   },
   {
@@ -14,22 +13,44 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 
+      // Rutas para Admin y Tecnico
       {
         path: 'dashboard',
-        data: { roles: ['admin', 'tech'] },
+        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
         path: 'equipos',
-        data: { roles: ['admin', 'tech'] },
+        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
         loadComponent: () => import('./features/equipos/equipos.component').then(m => m.EquiposComponent)
       },
-      // ... El resto de tus rutas
+      {
+        path: 'prestamos',
+        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
+        loadComponent: () => import('./features/prestamos/prestamos.component').then(m => m.PrestamosComponent)
+      },
+      {
+        path: 'mantenimiento',
+        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
+        loadComponent: () => import('./features/mantenimiento/mantenimiento.component').then(m => m.MantenimientoComponent)
+      },
+      {
+        path: 'reportes',
+        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
+        loadComponent: () => import('./features/reportes/reportes.component').then(m => m.ReportesComponent)
+      },
+
+      // Rutas solo para Admin
       {
         path: 'usuarios',
         data: { roles: ['admin'] },
         loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
       },
+      {
+        path: 'config',
+        data: { roles: ['admin'] },
+        loadComponent: () => import('./features/config/config.component').then(m => m.ConfigComponent)
+      }
     ],
   },
   { path: '**', redirectTo: '' }

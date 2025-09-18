@@ -1,4 +1,3 @@
-<!-- Header -->
 <header class="header">
   <div class="header-left">
     <h1>Módulo de Equipos</h1>
@@ -10,7 +9,6 @@
   </div>
 </header>
 
-<!-- Mensajes de estado -->
 <div class="alert success-message" *ngIf="showSuccessMessage">
   <i class="fas fa-check-circle"></i>
   <span>{{ successText }}</span>
@@ -21,10 +19,8 @@
   <span>{{ errorText }}</span>
 </div>
 
-<!-- Contenido principal -->
 <div class="page-content">
 
-  <!-- Barra de filtros / acciones -->
   <div class="filters-card">
     <div class="filters-row">
       <div class="filter">
@@ -68,11 +64,9 @@
     </div>
   </div>
 
-  <!-- Estados de carga / error -->
   <div class="state" *ngIf="loading">Cargando equipos...</div>
   <div class="state error" *ngIf="!loading && error">{{ error }}</div>
 
-  <!-- Tabla -->
   <div class="table-card" *ngIf="!loading && !error">
     <table class="equipos-table" *ngIf="equipos?.length; else emptyList">
       <thead>
@@ -81,8 +75,7 @@
           <th>Nombre</th>
           <th style="width: 160px;">Tipo</th>
           <th style="width: 160px;">Estado</th>
-          <th style="width: 260px;">Acciones</th>
-        </tr>
+          <th style="width: 220px;">Acciones</th> </tr>
       </thead>
       <tbody>
         <tr *ngFor="let e of equipos; trackBy: trackByEquipo">
@@ -100,17 +93,17 @@
             </span>
           </td>
           <td class="actions">
-            <button class="btn-ghost" (click)="verEquipo(e)">
-              <i class="fas fa-eye"></i> Ver
+            <button class="btn-ghost" (click)="verEquipo(e)" title="Ver Detalles">
+              <i class="fas fa-eye"></i>
             </button>
-            <button class="btn-warning" (click)="editarEquipo(e)">
-              <i class="fas fa-edit"></i> Editar
+            <button class="btn-warning" (click)="editarEquipo(e)" title="Editar Equipo">
+              <i class="fas fa-edit"></i>
             </button>
-            <button class="btn-info" (click)="verQR(e)">
-              <i class="fas fa-qrcode"></i> QR
+            <button class="btn-info" (click)="verQR(e)" title="Ver QR">
+              <i class="fas fa-qrcode"></i>
             </button>
-            <button class="btn-danger" (click)="eliminar(e)">
-              <i class="fas fa-trash"></i> Eliminar
+            <button class="btn-danger" (click)="eliminar(e)" title="Eliminar Equipo">
+              <i class="fas fa-trash"></i>
             </button>
           </td>
         </tr>
@@ -126,9 +119,6 @@
   </div>
 </div>
 
-<!-- ===================== MODALES ===================== -->
-
-<!-- Modal Agregar / Editar -->
 <div class="modal-overlay" *ngIf="showAddEditModal">
   <div class="modal">
     <div class="modal-header">
@@ -193,7 +183,6 @@
   </div>
 </div>
 
-<!-- Modal Ver -->
 <div class="modal-overlay" *ngIf="showViewModal && equipoSeleccionado">
   <div class="modal">
     <div class="modal-header">
@@ -235,7 +224,6 @@
   </div>
 </div>
 
-<!-- Modal Eliminar -->
 <div class="modal-overlay" *ngIf="showDeleteModal && equipoSeleccionado">
   <div class="modal">
     <div class="modal-header">
@@ -260,7 +248,6 @@
   </div>
 </div>
 
-<!-- Modal QR -->
 <div class="modal-overlay" *ngIf="showQRModal && equipoSeleccionado">
   <div class="modal modal-qr">
     <div class="modal-header">
