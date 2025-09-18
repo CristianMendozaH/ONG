@@ -91,18 +91,35 @@ export async function start(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// ==========================================================
+// ========= FUNCIÓN MODIFICADA Y CORREGIDA AQUÍ ============
+// ==========================================================
 export async function complete(req: Request, res: Response, next: NextFunction) {
   const t = await sequelize.transaction();
   try {
+    // 1. OBTENER LA FECHA DEL BODY DE LA PETICIÓN
+    const { performedDate } = req.body; 
+    if (!performedDate) {
+      await t.rollback();
+      return res.status(400).json({ message: 'El campo performedDate es obligatorio' });
+    }
+
     const maintenance = await Maintenance.findByPk(req.params.id, { transaction: t });
     if (!maintenance) {
       await t.rollback();
       return res.status(404).json({ message: 'No encontrado' });
     }
-    // 1. Actualizar mantenimiento a 'completado'
-    await maintenance.update({ status: 'completado' }, { transaction: t });
+    
+    // 2. ACTUALIZAR EL ESTADO Y LA FECHA DE REALIZACIÓN
+    await maintenance.update(
+      { 
+        status: 'completado', 
+        performedDate: performedDate 
+      }, 
+      { transaction: t }
+    );
 
-    // 2. Actualizar equipo a 'disponible'
+    // 3. ACTUALIZAR EL ESTADO DEL EQUIPO A 'DISPONIBLE'
     if (maintenance.equipmentId) {
       await Equipment.update(
         { status: 'disponible' },
@@ -116,6 +133,9 @@ export async function complete(req: Request, res: Response, next: NextFunction) 
     next(error);
   }
 }
+// ==========================================================
+// =================== FIN DE LA MODIFICACIÓN ===============
+// ==========================================================
 
 export async function cancel(req: Request, res: Response, next: NextFunction) {
   const t = await sequelize.transaction();

@@ -1,3 +1,4 @@
+@use 'sass:color';
 // Variables
 $primary-color: #114495;
 $secondary-color: #EE9D08;
@@ -77,7 +78,7 @@ $text-muted: #6c757d;
     box-shadow: 0 4px 12px rgba(17, 68, 149, 0.3);
 
     &:hover {
-      background: darken($primary-color, 10%);
+      background: color.adjust($primary-color, $lightness: -10%);
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(17, 68, 149, 0.4);
     }
@@ -299,7 +300,7 @@ $text-muted: #6c757d;
   color: white;
 
   &:hover {
-    background: darken($warning-color, 10%);
+    background: color.adjust($warning-color, $lightness: -10%);
   }
 }
 
@@ -308,7 +309,7 @@ $text-muted: #6c757d;
   color: white;
 
   &:hover {
-    background: darken(#6f42c1, 10%);
+    background: color.adjust(#6f42c1, $lightness: -10%);
   }
 }
 
@@ -317,7 +318,7 @@ $text-muted: #6c757d;
   color: white;
 
   &:hover {
-    background: darken($danger-color, 10%);
+    background: color.adjust($danger-color, $lightness: -10%);
   }
 }
 
@@ -473,7 +474,7 @@ $text-muted: #6c757d;
     gap: 6px;
 
     &:hover {
-      background: darken($info-color, 10%);
+      background: color.adjust($info-color, $lightness: -10%);
     }
   }
 
@@ -502,7 +503,7 @@ $text-muted: #6c757d;
       gap: 4px;
 
       &:hover {
-        background: darken($primary-color, 10%);
+        background: color.adjust($primary-color, $lightness: -10%);
       }
     }
   }
@@ -574,7 +575,7 @@ $text-muted: #6c757d;
   transition: all 0.3s ease;
 
   &:hover {
-    background: darken($text-muted, 10%);
+    background: color.adjust($text-muted, $lightness: -10%);
   }
 }
 
@@ -593,7 +594,7 @@ $text-muted: #6c757d;
   gap: 8px;
 
   &:hover:not(:disabled) {
-    background: darken($primary-color, 10%);
+    background: color.adjust($primary-color, $lightness: -10%);
   }
 
   &:disabled {
@@ -605,7 +606,7 @@ $text-muted: #6c757d;
 .btn-danger {
   background-color: $danger-color;
   &:hover:not(:disabled) {
-    background: darken($danger-color, 10%);
+    background: color.adjust($danger-color, $lightness: -10%);
   }
 }
 

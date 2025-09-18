@@ -1,3 +1,4 @@
+@use 'sass:color';
 // Variables
 $primary-color: #114495;
 $secondary-color: #EE9D08;
@@ -66,7 +67,7 @@ $background-light: #f8f9fa;
   box-shadow: 0 4px 12px rgba(238, 157, 8, 0.3);
 
   &:hover {
-    background: darken($secondary-color, 8%);
+    background: color.adjust($secondary-color, $lightness: -8%);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(238, 157, 8, 0.4);
   }
@@ -367,17 +368,17 @@ $background-light: #f8f9fa;
 
   &.btn-edit {
     background: $secondary-color;
-    &:hover { background: darken($secondary-color, 8%); }
+    &:hover { background: color.adjust($secondary-color, $lightness: -8%); }
   }
 
   &.btn-start {
     background: $primary-color;
-    &:hover { background: darken($primary-color, 8%); }
+    &:hover { background: color.adjust($primary-color, $lightness: -8%); }
   }
 
   &.btn-complete {
     background: $success-color;
-    &:hover { background: darken($success-color, 8%); }
+    &:hover { background: color.adjust($success-color, $lightness: -8%); }
   }
 
   &:disabled {
@@ -703,7 +704,7 @@ $background-light: #f8f9fa;
   transition: all 0.3s ease;
 
   &:hover {
-    background: darken(#6c757d, 8%);
+    background: color.adjust(#6c757d, $lightness: -8%);
   }
 }
 
@@ -722,7 +723,7 @@ $background-light: #f8f9fa;
   gap: 8px;
 
   &:hover:not(:disabled) {
-    background: darken($primary-color, 8%);
+    background: color.adjust($primary-color, $lightness: -8%);
   }
 
   &:disabled {

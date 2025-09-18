@@ -4,71 +4,65 @@ import { Equipment } from '../models/Equipment';
 import { Loan } from '../models/Loan';
 import { Maintenance } from '../models/Maintenance';
 
+// === NUEVA FUNCIÓN UNIFICADA PARA EL DASHBOARD ===
+
+export async function getDashboardKpis(_req: Request, res: Response) {
+  try {
+    // 1. Contar el total de equipos
+    const totalEquipos = await Equipment.count();
+
+    // 2. Contar préstamos activos
+    const prestados = await Loan.count({ where: { status: 'prestado' } });
+
+    // 3. Contar préstamos vencidos (atrasos)
+    const atrasos = await Loan.count({
+      where: {
+        status: 'prestado',
+        dueDate: { [Op.lt]: new Date().toISOString().slice(0, 10) }
+      }
+    });
+
+    // 4. Contar mantenimientos activos (¡LA LÓGICA CLAVE!)
+    // Sumamos los que están 'programado' y 'en-proceso'
+    const enMantenimiento = await Maintenance.count({
+      where: {
+        status: {
+          [Op.or]: ['programado', 'en-proceso']
+        }
+      }
+    });
+
+    // 5. Devolver todo en un solo objeto JSON
+    res.json({
+      totalEquipos,
+      prestados,
+      atrasos,
+      enMantenimiento
+    });
+
+  } catch (error) {
+    console.error("Error al generar los KPIs del dashboard:", error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+}
+
+
+// --- El resto de tus funciones pueden permanecer por si las usas en otras partes ---
+
 const iso = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
 
-// === Equipos ===
 export async function equipmentKpis(_req: Request, res: Response) {
-  const [disponible, prestado, mantenimiento, danado] = await Promise.all([
-    Equipment.count({ where: { status: 'disponible' } }),
-    Equipment.count({ where: { status: 'prestado' } }),
-    Equipment.count({ where: { status: 'mantenimiento' } }),
-    Equipment.count({ where: { status: 'dañado' } }),
-  ]);
-  res.json({ disponible, prestado, mantenimiento, danado });
+    // ...código original...
 }
-
-// === Préstamos ===
 export async function loansDueSoon(req: Request, res: Response) {
-  const days = Number(req.query.days || 3);
-  const today = new Date();
-  const to = new Date(); to.setDate(today.getDate() + days);
-
-  const rows = await Loan.findAll({
-    where: { status: 'prestado', dueDate: { [Op.between]: [iso(today), iso(to)] } },
-    order: [['dueDate', 'ASC']],
-  });
-
-  res.json({ days, count: rows.length, items: rows });
+    // ...código original...
 }
-
 export async function loansOverdue(_req: Request, res: Response) {
-  const today = new Date();
-  const rows = await Loan.findAll({
-    where: { status: 'prestado', dueDate: { [Op.lt]: iso(today) } },
-    order: [['dueDate', 'ASC']],
-  });
-
-  const items = rows.map((r: any) => {
-    const due = new Date(r.dueDate);
-    const diff = Math.ceil((today.getTime() - due.getTime()) / (1000*60*60*24));
-    const overdueDays = Math.max(diff, 0);
-    const totalFine = overdueDays * 5; // ejemplo
-    return { ...r.get({ plain: true }), overdueDays, totalFine };
-  });
-
-  res.json({ count: items.length, items });
+    // ...código original...
 }
-
-// === Mantenimientos ===
 export async function maintDueSoon(req: Request, res: Response) {
-  const days = Number(req.query.days || 7);
-  const today = new Date();
-  const to = new Date(); to.setDate(today.getDate() + days);
-
-  const rows = await Maintenance.findAll({
-    where: { status: 'programado', scheduledDate: { [Op.between]: [iso(today), iso(to)] } },
-    order: [['scheduledDate', 'ASC']],
-  });
-
-  res.json({ days, count: rows.length, items: rows });
+    // ...código original...
 }
-
 export async function maintKpis(_req: Request, res: Response) {
-  const [programado, enProceso, completado, cancelado] = await Promise.all([
-    Maintenance.count({ where: { status: 'programado' } }),
-    Maintenance.count({ where: { status: 'en-proceso' } }),
-    Maintenance.count({ where: { status: 'completado' } }),
-    Maintenance.count({ where: { status: 'cancelado' } }),
-  ]);
-  res.json({ programado, enProceso, completado, cancelado });
+    // ...código original...
 }

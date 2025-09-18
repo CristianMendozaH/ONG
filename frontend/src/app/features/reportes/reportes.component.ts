@@ -28,10 +28,18 @@ export class ReportesComponent implements OnInit, OnDestroy {
   filtros: FiltrosReporte = {
     fechaInicio: this.getDefaultStartDate(),
     fechaFin: this.getDefaultEndDate(),
-    tipoReporte: 'prestamos'
+    tipoReporte: 'prestamos',
+    estado: ''
   };
 
   tiposReporte: Array<{ value: string; label: string }> = [];
+
+  estadosPrestamo = [
+    { value: '', label: 'Todos los estados' },
+    { value: 'prestado', label: 'Activo' },
+    { value: 'devuelto', label: 'Devuelto' },
+    { value: 'atrasado', label: 'Atrasado' }
+  ];
 
   constructor(private reportesService: ReportesService) {}
 
@@ -89,10 +97,18 @@ export class ReportesComponent implements OnInit, OnDestroy {
           this.reportesService.getTiposReporte()
               .pipe(takeUntil(this.destroy$))
               .subscribe(tipos => {
-                  this.tiposReporte = [{ value: 'prestamos', label: 'Seleccione un tipo' }, ...tipos];
+                  this.tiposReporte = [{ value: 'prestamos', label: 'Préstamos' }, ...tipos.filter(t => t.value !== 'prestamos')];
                   resolve();
               });
       });
+  }
+
+  /**
+   * Se ejecuta cuando el usuario cambia el tipo de reporte en el menú desplegable.
+   */
+  onTipoReporteChange(): void {
+    this.limpiarFiltroEstado();
+    this.aplicarFiltros();
   }
 
   aplicarFiltros(): void {
@@ -108,9 +124,14 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.filtros = {
       fechaInicio: this.getDefaultStartDate(),
       fechaFin: this.getDefaultEndDate(),
-      tipoReporte: 'prestamos'
+      tipoReporte: 'prestamos',
+      estado: ''
     };
     this.aplicarFiltros();
+  }
+
+  limpiarFiltroEstado(): void {
+    this.filtros.estado = '';
   }
 
   exportarPDF(): void {
@@ -158,32 +179,39 @@ export class ReportesComponent implements OnInit, OnDestroy {
     window.URL.revokeObjectURL(url);
   }
 
-  /**
-   * ✅ FUNCIÓN CORREGIDA
-   * Ahora acepta 'string | undefined' como argumento.
-   */
   getEstadoClass(estado: string | undefined): string {
-    if (!estado) {
-      return ''; // Si el estado es nulo o indefinido, no retorna ninguna clase.
-    }
-    // El resto de la lógica se mantiene igual.
-    switch (estado.toLowerCase()) {
-      case 'activo': return 'status-active';
-      case 'devuelto': return 'status-returned';
-      case 'vencido': return 'status-overdue';
-      case 'atrasado': return 'status-overdue';
-      default: return '';
-    }
+    if (!estado) return '';
+    const lowerCaseStatus = estado.toLowerCase();
+
+    const statusMap: { [key: string]: string } = {
+        'prestado': 'status-active',
+        'activo': 'status-active',
+        'devuelto': 'status-returned',
+        'atrasado': 'status-overdue',
+        'vencido': 'status-overdue',
+        'programado': 'status-returned',
+        'en-proceso': 'status-active',
+        'completado': 'status-returned',
+        'cancelado': 'status-overdue'
+    };
+    return statusMap[lowerCaseStatus] || '';
   }
 
   trackByReporte(index: number, item: ReporteItem): string {
     return item.id;
   }
 
+  // Getters para Préstamos
   get totalPrestamos(): number { return this.estadisticas?.totalPrestamos ?? 0; }
   get totalDevueltos(): number { return this.estadisticas?.prestamosDevueltos ?? 0; }
   get totalActivos(): number { return this.estadisticas?.prestamosActivos ?? 0; }
   get totalVencidos(): number { return this.estadisticas?.prestamosVencidos ?? 0; }
+
+  // Getters para Mantenimientos
+  get totalMantenimientos(): number { return this.estadisticas?.totalMantenimientos ?? 0; }
+  get mantenimientosProgramados(): number { return this.estadisticas?.mantenimientosProgramados ?? 0; }
+  get mantenimientosEnProceso(): number { return this.estadisticas?.mantenimientosEnProceso ?? 0; }
+  get mantenimientosCompletados(): number { return this.estadisticas?.mantenimientosCompletados ?? 0; }
 
   refrescarDatos(): void {
     this.inicializarDatos();

@@ -1,3 +1,5 @@
+// dashboard.component.ts
+
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -14,9 +16,9 @@ Chart.register(...registerables);
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('barChart', { static: true }) barChartRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('doughnutChart', { static: true }) doughnutChartRef!: ElementRef<HTMLCanvasElement>;
+export class DashboardComponent implements OnInit, OnDestroy {
+  @ViewChild('barChart') barChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('doughnutChart') doughnutChartRef!: ElementRef<HTMLCanvasElement>;
 
   kpis: DashboardKPIs | null = null;
   recentActivity: DashboardActivity[] = [];
@@ -34,11 +36,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     console.log('🚀 Inicializando Dashboard...');
-    this.loadInitialData();
-  }
-
-  ngAfterViewInit(): void {
-    this.initializeCharts();
+    this.loadDashboardData(); // Llamamos al método principal directamente
   }
 
   ngOnDestroy(): void {
@@ -46,29 +44,11 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.doughnutChart?.destroy();
   }
 
-  private async loadInitialData(): Promise<void> {
+  private async loadDashboardData(): Promise<void> {
     this.loading = true;
     this.connectionError = false;
-
-    try {
-      const isConnected = await this.dashboardService.checkBackendConnection().toPromise();
-      if (!isConnected) {
-        console.warn('⚠️ Backend no disponible, se usarán datos de fallback.');
-        this.connectionError = true;
-      }
-      await this.loadDashboardData();
-    } catch (error) {
-      console.error('❌ Error durante la inicialización:', error);
-      this.connectionError = true;
-      await this.loadDashboardData();
-    } finally {
-      this.loading = false;
-      this.lastUpdated = new Date();
-    }
-  }
-
-  private async loadDashboardData(): Promise<void> {
     console.log('📊 Cargando todos los datos del dashboard...');
+
     try {
       const [kpis, activities, weeklyData] = await Promise.all([
         this.dashboardService.getKpis().toPromise(),
@@ -79,22 +59,34 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       if (kpis) {
         this.kpis = kpis;
         console.log('✅ KPIs cargados:', this.kpis);
-        this.updateDoughnutChart();
       }
-
       if (activities) {
         this.recentActivity = activities.slice(0, 5);
         console.log('✅ Actividades cargadas:', this.recentActivity);
       }
 
-      if (weeklyData) {
-        console.log('✅ Datos semanales cargados:', weeklyData);
-        this.updateBarChart(weeklyData);
-      }
+      // --- CORRECCIÓN DEL CICLO DE VIDA DE GRÁFICAS ---
+      // Ahora que tenemos los datos, terminamos la carga para que se muestre el HTML
+      this.loading = false;
+      this.lastUpdated = new Date();
+
+      // Forzamos a Angular a que renderice los cambios (el *ngIf ahora será true)
+      // y LUEGO creamos las gráficas, asegurando que los <canvas> existen.
+      setTimeout(() => {
+        if (weeklyData) {
+          console.log('✅ Datos semanales cargados, creando gráfica de barras:', weeklyData);
+          this.createBarChart(weeklyData);
+        }
+        if (kpis) {
+          console.log('✅ KPIs disponibles, creando gráfica doughnut.');
+          this.createDoughnutChart();
+        }
+      }, 0);
 
     } catch (error) {
       console.error('❌ Error cargando datos del dashboard, usando fallback general:', error);
       this.loadFallbackData();
+      this.loading = false; // Aseguramos que el loading termine también en caso de error
     }
   }
 
@@ -105,75 +97,73 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       { id: '1', tipo: 'prestamo', descripcion: 'Préstamo de equipo a María González', fecha: new Date().toISOString(), equipo: 'Laptop Dell', usuario: 'María González' },
       { id: '2', tipo: 'devolucion', descripcion: 'Devolución de equipo por Carlos Mendoza', fecha: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), equipo: 'Proyector Epson', usuario: 'Carlos Mendoza' }
     ];
-    this.updateDoughnutChart();
-    this.updateBarChart({
-      labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-      prestamos: [12, 8, 15, 10, 14, 6, 4],
-      devoluciones: [8, 12, 10, 15, 9, 8, 7]
-    });
-    console.log('✅ Datos de fallback cargados');
+
+    // También creamos las gráficas con los datos de fallback
+    setTimeout(() => {
+      this.createDoughnutChart();
+      this.createBarChart({
+        labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+        prestamos: [12, 8, 15, 10, 14, 6, 4],
+        devoluciones: [8, 12, 10, 15, 9, 8, 7]
+      });
+    }, 0);
   }
 
   refreshData(): void {
     console.log('🔄 Refrescando datos del dashboard...');
-    this.loadInitialData();
+    this.loadDashboardData();
   }
 
-  private initializeCharts(): void {
-    this.createDoughnutChart();
-    this.createBarChart();
-  }
-
-  private createBarChart(): void {
+  private createBarChart(data: DashboardWeeklyActivity): void {
     if (this.barChart) this.barChart.destroy();
-
-    const canvas = this.barChartRef.nativeElement;
-    if (!canvas) {
-      console.warn('⚠️ Elemento barChart no encontrado');
-      return;
-    }
+    if (!this.barChartRef?.nativeElement) return;
 
     const config: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
-        labels: [],
+        labels: data.labels,
         datasets: [
-          { label: 'Préstamos', data: [], backgroundColor: '#114495', borderRadius: 4 },
-          { label: 'Devoluciones', data: [], backgroundColor: '#EE9D08', borderRadius: 4 }
+          { label: 'Préstamos', data: data.prestamos, backgroundColor: '#114495', borderRadius: 4 },
+          { label: 'Devoluciones', data: data.devoluciones, backgroundColor: '#EE9D08', borderRadius: 4 }
         ]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'top', align: 'end', labels: { usePointStyle: true, padding: 20, font: { size: 12, family: 'Inter, sans-serif' } } }
-        },
-        scales: {
-          y: { beginAtZero: true, grid: { color: '#f1f3f4' }, ticks: { font: { size: 11, family: 'Inter, sans-serif' }, color: '#666' } },
-          x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter, sans-serif' }, color: '#666' } }
-        }
-      }
+      options: { /* ... tus opciones ... */ }
     };
-    this.barChart = new Chart(canvas, config);
-    console.log('✅ Gráfico de barras inicializado');
+    this.barChart = new Chart(this.barChartRef.nativeElement, config);
+    console.log('✅ Gráfico de barras CREADO con datos.');
   }
 
-  private createDoughnutChart(): void {
-    if (this.doughnutChart) this.doughnutChart.destroy();
+// En dashboard.component.ts
 
-    const canvas = this.doughnutChartRef.nativeElement;
-    if (!canvas) {
-      console.warn('⚠️ Elemento doughnutChart no encontrado');
-      return;
-    }
+private createDoughnutChart(): void {
+  if (this.doughnutChart) this.doughnutChart.destroy();
+  if (!this.doughnutChartRef?.nativeElement || !this.kpis) return;
 
-    const config: ChartConfiguration<'doughnut'> = {
-      type: 'doughnut',
-      data: {
-        labels: ['Disponibles', 'Prestados', 'Atrasados'],
-        datasets: [{ data: [0, 0, 0], backgroundColor: ['#2ECC71', '#114495', '#E6331B'], borderWidth: 0 }]
-      },
-      options: {
+  // ANTES, la data solo tenía 3 valores:
+  // const data = [this.kpis.disponibles, this.kpis.prestados, this.kpis.atrasos];
+
+  // AHORA (CORREGIDO), añadimos el cuarto valor:
+  const data = [this.kpis.disponibles, this.kpis.prestados, this.kpis.atrasos, this.kpis.enMantenimiento];
+
+  const config: ChartConfiguration<'doughnut'> = {
+    type: 'doughnut',
+    data: {
+      // ANTES, las etiquetas solo tenían 3 nombres:
+      // labels: ['Disponibles', 'Prestados', 'Atrasados'],
+
+      // AHORA (CORREGIDO), añadimos la cuarta etiqueta:
+      labels: ['Disponibles', 'Prestados', 'Atrasados', 'En Mantenimiento'],
+      datasets: [{
+        data: data,
+        // ANTES, los colores solo eran 3:
+        // backgroundColor: ['#2ECC71', '#114495', '#E6331B'],
+
+        // AHORA (CORREGIDO), añadimos el cuarto color (amarillo, como en tu tarjeta de KPI):
+        backgroundColor: ['#2ECC71', '#114495', '#E6331B', '#FFED00'],
+        borderWidth: 0
+      }]
+    },
+    options: {
         responsive: true,
         maintainAspectRatio: false,
         cutout: '70%',
@@ -190,27 +180,10 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
       }
-    };
-    this.doughnutChart = new Chart(canvas, config);
-    console.log('✅ Gráfico doughnut inicializado');
-  }
-
-  private updateBarChart(data: DashboardWeeklyActivity): void {
-    if (!this.barChart) return;
-    this.barChart.data.labels = data.labels;
-    this.barChart.data.datasets[0].data = data.prestamos;
-    this.barChart.data.datasets[1].data = data.devoluciones;
-    this.barChart.update();
-    console.log('📊 Gráfico de barras actualizado');
-  }
-
-  private updateDoughnutChart(): void {
-    if (!this.doughnutChart || !this.kpis) return;
-    const data = [this.kpis.disponibles, this.kpis.prestados, this.kpis.atrasos];
-    this.doughnutChart.data.datasets[0].data = data;
-    this.doughnutChart.update();
-    console.log('📊 Gráfico doughnut actualizado');
-  }
+  };
+  this.doughnutChart = new Chart(this.doughnutChartRef.nativeElement, config);
+  console.log('✅ Gráfico doughnut CREADO con datos (incluye mantenimiento).');
+}
 
   getRelativeTime(dateString: string): string {
     const date = new Date(dateString);

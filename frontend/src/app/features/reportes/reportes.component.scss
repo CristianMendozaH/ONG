@@ -1,3 +1,4 @@
+@use 'sass:color';
 // Variables
 $primary-color: #114495;
 $secondary-color: #EE9D08;
@@ -199,7 +200,7 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   gap: 8px;
 
   &:hover {
-    background: darken($primary-color, 10%);
+    background: color.adjust($primary-color, $lightness: -10%);
     @include button-hover;
   }
 }
@@ -215,7 +216,7 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   @include transition();
 
   &:hover {
-    background: darken(#6c757d, 10%);
+    background: color.adjust(#6c757d, $lightness: -10%);
   }
 }
 
@@ -264,7 +265,7 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
 
   &:hover {
-    background: darken($danger-color, 10%);
+    background: color.adjust($danger-color, $lightness: -10%);
     @include button-hover;
   }
 }
@@ -285,7 +286,7 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 
   &:hover {
-    background: darken(#28a745, 10%);
+    background: color.adjust(#28a745, $lightness: -10%);
     @include button-hover;
   }
 }
@@ -387,7 +388,7 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     @include transition();
 
     &:hover:not(:disabled) {
-      background: darken($primary-color, 10%);
+      background: color.adjust($primary-color, $lightness: -10%);
     }
 
     &:disabled {

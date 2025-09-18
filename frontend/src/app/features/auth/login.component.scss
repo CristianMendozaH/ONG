@@ -1,3 +1,4 @@
+@use 'sass:color';
 /* login.component.scss */
 
 // Definición de variables de color basadas en tu prototipo para fácil mantenimiento
@@ -235,7 +236,7 @@ $border-color: #e9ecef;
     font-weight: 500;
     transition: color 0.3s ease;
     &:hover {
-      color: darken($accent-color, 10%);
+      color: color.adjust($accent-color, $lightness: -10%);
       text-decoration: underline;
     }
   }

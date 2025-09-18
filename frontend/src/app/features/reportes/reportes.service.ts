@@ -4,7 +4,6 @@ import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
-// Interfaces
 export interface FiltrosReporte {
   fechaInicio?: string;
   fechaFin?: string;
@@ -12,25 +11,19 @@ export interface FiltrosReporte {
   estado?: string;
 }
 
-// ✅ INTERFAZ MEJORADA: Se declaran todas las propiedades posibles como opcionales
 export interface ReporteItem {
   id: string;
   correlativo: number;
   estado?: string;
-
-  // Propiedades comunes y de Préstamos
   equipo?: string;
   usuario?: string;
   fechaPrestamo?: string;
   fechaDevolucion?: string;
-
-  // Propiedades de Mantenimiento
   codigoEquipo?: string;
   tipo?: string;
   tecnico?: string;
   fechaRealizacion?: string;
 }
-
 
 export interface ReporteResponse {
   data: ReporteItem[];
@@ -40,10 +33,16 @@ export interface ReporteResponse {
 }
 
 export interface EstadisticasReporte {
-  totalPrestamos: number;
-  prestamosActivos: number;
-  prestamosDevueltos: number;
-  prestamosVencidos: number;
+  // Stats de Préstamos
+  totalPrestamos?: number;
+  prestamosActivos?: number;
+  prestamosDevueltos?: number;
+  prestamosVencidos?: number;
+  // Stats de Mantenimiento
+  totalMantenimientos?: number;
+  mantenimientosProgramados?: number;
+  mantenimientosEnProceso?: number;
+  mantenimientosCompletados?: number;
 }
 
 export interface ExportOptions {
@@ -70,12 +69,19 @@ export class ReportesService {
     if (filtros.estado) params = params.set('estado', filtros.estado);
 
     return this.http.get<any>(`${this.API_URL}/reports/dynamic`, { params }).pipe(
-      map(response => ({
-        data: response.data || [],
-        total: response.total || 0,
-        page: response.page || page,
-        limit: limit,
-      })),
+      map(response => {
+        // ✅ CORRECCIÓN FINAL: No se necesita transformar los datos porque los nombres
+        // de la vista SQL ya coinciden con los que espera el HTML.
+        // Simplemente nos aseguramos de que la data sea un array.
+        const data = Array.isArray(response.data) ? response.data : [];
+
+        return {
+          data: data,
+          total: response.total || 0,
+          page: response.page || page,
+          limit: limit,
+        };
+      }),
       catchError(error => {
         console.error('Error obteniendo reportes:', error);
         return of({ data: [], total: 0, page: 1, limit });
@@ -85,23 +91,24 @@ export class ReportesService {
 
   getEstadisticasReporte(filtros: FiltrosReporte = {}): Observable<EstadisticasReporte> {
     let params = new HttpParams();
-    if (filtros.fechaInicio) params = params.set('fechaInicio', filtros.fechaInicio);
-    if (filtros.fechaFin) params = params.set('fechaFin', filtros.fechaFin);
+    if (filtros.fechaInicio) params = params.set('fecha_inicio', filtros.fechaInicio);
+    if (filtros.fechaFin) params = params.set('fecha_fin', filtros.fechaFin);
+    if (filtros.tipoReporte) params = params.set('tipoReporte', filtros.tipoReporte);
 
     return this.http.get<EstadisticasReporte>(`${this.API_URL}/reports/estadisticas`, { params }).pipe(
       catchError(error => {
         console.error('Error obteniendo estadísticas:', error);
-        return of({ totalPrestamos: 0, prestamosActivos: 0, prestamosDevueltos: 0, prestamosVencidos: 0 });
+        return of({}); // Devuelve objeto vacío en caso de error
       })
     );
   }
 
   exportarPDF(options: ExportOptions): Observable<Blob> {
-    return this.http.post(`${this.API_URL}/reports/export/pdf`, options, { responseType: 'blob' });
+    return this.http.post(`${this.API_URL}/reports/export/pdf`, { filtros: options.filtros }, { responseType: 'blob' });
   }
 
   exportarExcel(options: ExportOptions): Observable<Blob> {
-    return this.http.post(`${this.API_URL}/reports/export/excel`, options, { responseType: 'blob' });
+    return this.http.post(`${this.API_URL}/reports/export/excel`, { filtros: options.filtros }, { responseType: 'blob' });
   }
 
   getTiposReporte(): Observable<Array<{ value: string; label: string }>> {

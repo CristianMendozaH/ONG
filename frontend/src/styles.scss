@@ -1,12 +1,11 @@
+@use 'sass:color';
+@use 'styles/variables' as *;
+
 /* You can add global styles to this file, and also import other style files */
 // src/styles.scss
 
-// Importar Google Fonts PRIMERO
+// Importar Google Fonts
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-// Importar variables
-@import 'styles/variables';
-
 
 /* styles.scss (GLOBAL) */
 :root {
@@ -162,7 +161,7 @@ body {
     box-shadow: 0 4px 12px rgba(17, 68, 149, 0.3);
 
     &:hover {
-      background: darken($primary-color, 10%);
+      background: color.adjust($primary-color, $lightness: -10%);
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(17, 68, 149, 0.4);
     }
@@ -174,7 +173,7 @@ body {
     box-shadow: 0 4px 12px rgba(238, 157, 8, 0.3);
 
     &:hover {
-      background: darken($secondary-color, 10%);
+      background: color.adjust($secondary-color, $lightness: -10%);
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(238, 157, 8, 0.4);
     }
@@ -185,7 +184,7 @@ body {
     color: white;
 
     &:hover {
-      background: darken($success-color, 10%);
+      background: color.adjust($success-color, $lightness: -10%);
     }
   }
 
@@ -194,7 +193,7 @@ body {
     color: white;
 
     &:hover {
-      background: darken($danger-color, 10%);
+      background: color.adjust($danger-color, $lightness: -10%);
     }
   }
 
@@ -497,7 +496,7 @@ body {
     color: white;
 
     &:hover {
-      background: darken($secondary-color, 10%);
+      background: color.adjust($secondary-color, $lightness: -10%);
     }
   }
 
@@ -506,7 +505,7 @@ body {
     color: white;
 
     &:hover {
-      background: darken($danger-color, 10%);
+      background: color.adjust($danger-color, $lightness: -10%);
     }
   }
 
@@ -515,7 +514,7 @@ body {
     color: white;
 
     &:hover {
-      background: darken($secondary-color, 10%);
+      background: color.adjust($secondary-color, $lightness: -10%);
     }
   }
 
@@ -524,7 +523,7 @@ body {
     color: white;
 
     &:hover {
-      background: darken($success-color, 10%);
+      background: color.adjust($success-color, $lightness: -10%);
     }
   }
 }

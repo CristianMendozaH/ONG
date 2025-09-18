@@ -12,30 +12,19 @@ router.use(authMiddleware);
 // RUTAS PARA EL DASHBOARD
 // ==========================================================
 
-/**
- * KPI: Indicadores clave de rendimiento para el dashboard.
- * VERSIÓN FINAL: Ajustada a los datos reales de Postman.
- */
 router.get('/kpis', async (req, res, next) => {
   try {
-    // PASO 1: Actualizar préstamos vencidos
     await sequelize.query(`
       UPDATE loans
       SET status = 'atrasado'
       WHERE "dueDate" < CURRENT_DATE AND status = 'prestado' AND "returnDate" IS NULL;
     `);
 
-    // PASO 2: Realizar todas las consultas de conteo en paralelo
     const queries = {
-      // Cuenta equipos disponibles
       disponibles: `SELECT COUNT(*) as count FROM equipments WHERE LOWER(status) = 'disponible'`,
-      // ✅ CAMBIO: Ahora cuenta directamente los préstamos activos
       prestados: `SELECT COUNT(*) as count FROM loans WHERE status = 'prestado'`,
-      // ✅ CAMBIO: Ahora busca el estado 'en-proceso' en la tabla de equipos
-      enMantenimiento: `SELECT COUNT(*) as count FROM equipments WHERE LOWER(status) = 'en-proceso'`,
-      // Cuenta préstamos atrasados
+      enMantenimiento: `SELECT COUNT(*) as count FROM equipments WHERE LOWER(status) IN ('en-proceso', 'programado')`,
       atrasados: `SELECT COUNT(*) as count FROM loans WHERE status = 'atrasado'`,
-      // Cuenta el total de equipos para la estadística general
       totalEquipos: `SELECT COUNT(*) as count FROM equipments`
     };
 
@@ -53,7 +42,6 @@ router.get('/kpis', async (req, res, next) => {
       sequelize.query(queries.totalEquipos, { type: QueryTypes.SELECT })
     ]);
 
-    // PASO 3: Construir el objeto de respuesta final
     res.json({
       disponibles: parseInt((disponiblesResult[0] as any).count, 10),
       prestados: parseInt((prestadosResult[0] as any).count, 10),
@@ -68,10 +56,6 @@ router.get('/kpis', async (req, res, next) => {
   }
 });
 
-
-/**
- * ACTIVITY: Devuelve los 5 movimientos más recientes.
- */
 router.get('/activity', async (req, res, next) => {
   try {
     const query = `
@@ -112,10 +96,6 @@ router.get('/activity', async (req, res, next) => {
   }
 });
 
-
-/**
- * WEEKLY-ACTIVITY: Datos para la gráfica de barras de los últimos 7 días.
- */
 router.get('/weekly-activity', async (req, res, next) => {
   try {
     const query = `
@@ -136,11 +116,11 @@ router.get('/weekly-activity', async (req, res, next) => {
         COALESCE(r.count, 0)::INTEGER AS devoluciones
       FROM last_7_days d
       LEFT JOIN (
-        SELECT "loanDate", COUNT(*) as count FROM loans GROUP BY "loanDate"
-      ) p ON d.day = p."loanDate"
+        SELECT "loanDate"::date AS loan_date, COUNT(*) as count FROM loans GROUP BY loan_date
+      ) p ON d.day = p.loan_date
       LEFT JOIN (
-        SELECT "returnDate", COUNT(*) as count FROM loans WHERE "returnDate" IS NOT NULL GROUP BY "returnDate"
-      ) r ON d.day = r."returnDate"
+        SELECT "returnDate"::date AS return_date, COUNT(*) as count FROM loans WHERE "returnDate" IS NOT NULL GROUP BY return_date
+      ) r ON d.day = r.return_date
       ORDER BY d.day;
     `;
 
@@ -159,8 +139,79 @@ router.get('/weekly-activity', async (req, res, next) => {
 
 
 // ==========================================================
-// RUTA PRINCIPAL PARA OBTENER DATOS DE REPORTES (sin cambios)
+// RUTAS PARA LA PÁGINA DE REPORTES
 // ==========================================================
+
+router.get('/estadisticas', async (req, res, next) => {
+  try {
+    const { fecha_inicio, fecha_fin, tipoReporte = 'prestamos' } = req.query;
+
+    let query;
+    const replacements: any = {};
+    
+    if (tipoReporte === 'mantenimiento') {
+      let whereClause = '';
+      if (fecha_inicio) {
+        whereClause += ' WHERE "scheduledDate"::date >= :fecha_inicio';
+        replacements.fecha_inicio = fecha_inicio;
+      }
+      if (fecha_fin) {
+        whereClause += whereClause ? ' AND "scheduledDate"::date <= :fecha_fin' : ' WHERE "scheduledDate"::date <= :fecha_fin';
+        replacements.fecha_fin = fecha_fin;
+      }
+
+      query = `
+        SELECT
+          COUNT(*)::INTEGER AS "totalMantenimientos",
+          COUNT(CASE WHEN status = 'programado' THEN 1 END)::INTEGER AS "mantenimientosProgramados",
+          COUNT(CASE WHEN status = 'en-proceso' THEN 1 END)::INTEGER AS "mantenimientosEnProceso",
+          COUNT(CASE WHEN status = 'completado' THEN 1 END)::INTEGER AS "mantenimientosCompletados"
+        FROM maintenances
+        ${whereClause}
+      `;
+    } else {
+      let whereClause = '';
+      if (fecha_inicio) {
+        whereClause += ' WHERE "loanDate"::date >= :fecha_inicio';
+        replacements.fecha_inicio = fecha_inicio;
+      }
+      if (fecha_fin) {
+        whereClause += whereClause ? ' AND "loanDate"::date <= :fecha_fin' : ' WHERE "loanDate"::date <= :fecha_fin';
+        replacements.fecha_fin = fecha_fin;
+      }
+
+      query = `
+        SELECT
+          COUNT(*)::INTEGER AS "totalPrestamos",
+          COUNT(CASE WHEN status = 'prestado' THEN 1 END)::INTEGER AS "prestamosActivos",
+          COUNT(CASE WHEN status = 'devuelto' THEN 1 END)::INTEGER AS "prestamosDevueltos",
+          COUNT(CASE WHEN status = 'atrasado' THEN 1 END)::INTEGER AS "prestamosVencidos"
+        FROM loans
+        ${whereClause}
+      `;
+    }
+
+    const result = await sequelize.query(query, {
+      replacements,
+      type: QueryTypes.SELECT,
+      plain: true
+    });
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
+    next(error);
+  }
+});
+
+router.get('/tipos', (req, res) => {
+  res.json([
+    { value: 'prestamos', label: 'Préstamos' },
+    { value: 'mantenimiento', label: 'Mantenimiento' }
+  ]);
+});
+
 router.get('/dynamic', async (req, res, next) => {
   try {
     const { 
@@ -180,13 +231,29 @@ router.get('/dynamic', async (req, res, next) => {
 
     switch (tipoReporte) {
       case 'mantenimiento':
+        let maintWhere: string[] = [];
+        
+        // ✅ CORRECCIÓN FINAL: Usamos "fechaRealizacion", la única columna de fecha disponible en la vista.
+        if (fecha_inicio) {
+          maintWhere.push(`v."fechaRealizacion"::DATE >= :fecha_inicio`);
+          replacements.fecha_inicio = fecha_inicio;
+        }
+        if (fecha_fin) {
+          maintWhere.push(`v."fechaRealizacion"::DATE <= :fecha_fin`);
+          replacements.fecha_fin = fecha_fin;
+        }
+
+        const maintWhereClause = maintWhere.length > 0 ? 'WHERE ' + maintWhere.join(' AND ') : '';
+        
+        // Se ajusta el ORDER BY para que coincida con la columna de filtro
         query = `
-          SELECT *, ROW_NUMBER() OVER (ORDER BY "createdAt" DESC NULLS LAST) as correlativo
-          FROM vista_reportes_mantenimiento
-          ORDER BY "createdAt" DESC NULLS LAST
+          SELECT *, ROW_NUMBER() OVER (ORDER BY "fechaRealizacion" DESC NULLS LAST) as correlativo
+          FROM vista_reportes_mantenimiento v
+          ${maintWhereClause}
+          ORDER BY "fechaRealizacion" DESC NULLS LAST
           LIMIT :limit OFFSET :offset
         `;
-        countQuery = `SELECT COUNT(*) as total FROM vista_reportes_mantenimiento`;
+        countQuery = `SELECT COUNT(*) as total FROM vista_reportes_mantenimiento v ${maintWhereClause}`;
         break;
 
       case 'prestamos':
@@ -201,7 +268,7 @@ router.get('/dynamic', async (req, res, next) => {
           replacements.fecha_fin = fecha_fin;
         }
         if (estado && typeof estado === 'string' && estado.trim() !== '') {
-            whereConditions.push(`v.estado = :estado`);
+            whereConditions.push(`LOWER(v.estado) = LOWER(:estado)`);
             replacements.estado = estado;
         }
         const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
@@ -249,7 +316,7 @@ async function getFilteredLoanData(filtros: any) {
     replacements.fecha_fin = filtros.fechaFin;
   }
   if (filtros.tipoReporte === 'prestamos' && filtros.estado) {
-     whereConditions.push(`v.estado = :estado`);
+     whereConditions.push(`LOWER(v.estado) = LOWER(:estado)`);
      replacements.estado = filtros.estado;
   }
 
