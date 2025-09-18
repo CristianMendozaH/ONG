@@ -1,23 +1,66 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import bcryptjs from 'bcryptjs';
+import jwt from 'jsonwebtoken'; // <-- 1. LA IMPORTACIÓN CORRECTA
 import { User } from '../models/User.js';
 import { env } from '../config/env.js';
 
-export async function login(req: Request, res: Response) {
-  const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ message: 'email y password requeridos' });
-
-  const user = await User.findOne({ where: { email, active: true } });
-  if (!user) return res.status(401).json({ message: 'Credenciales inválidas' });
-
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return res.status(401).json({ message: 'Credenciales inválidas' });
-
-  const token = jwt.sign({ sub: user.id, role: user.role }, env.jwtSecret, { expiresIn: process.env.JWT_EXPIRES || '2d' });
-  res.json({ token, user });
+interface AuthenticatedRequest extends Request {
+  user?: { sub: string; role: string; iat: number; exp: number; }
 }
 
-export async function me(_req: Request, res: Response) {
-  res.json({ user: ( _req as any ).user });
+export async function login(req: Request, res: Response) {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'El email y la contraseña son obligatorios.' });
+    }
+
+    const user = await User.findOne({ where: { email, active: true } });
+    if (!user) {
+      return res.status(401).json({ message: 'Credenciales inválidas.' });
+    }
+
+    const isPasswordCorrect = await bcryptjs.compare(password, user.passwordHash);
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ message: 'Credenciales inválidas.' });
+    }
+
+    const jwtPayload = {
+      sub: user.id,
+      role: user.role,
+    };
+
+    // 2. LA LLAMADA CORRECTA (usando el objeto 'jwt')
+    const token = jwt.sign(jwtPayload, env.jwtSecret, {
+      expiresIn: env.jwtExpiresIn || '8h',
+    });
+
+    res.status(200).json({ token, user });
+
+  } catch (error) {
+    console.error('Error en el proceso de login:', error);
+    res.status(500).json({ message: 'Error interno del servidor.' });
+  }
+}
+
+export async function me(req: AuthenticatedRequest, res: Response) {
+  try {
+    const userId = req.user?.sub;
+    if (!userId) {
+      return res.status(401).json({ message: 'Token inválido, no se encontró ID de usuario.' });
+    }
+
+    const user = await User.findByPk(userId);
+
+    if (!user || !user.active) {
+      return res.status(404).json({ message: 'Usuario no encontrado o ha sido desactivado.' });
+    }
+
+    res.status(200).json(user);
+
+  } catch (error) {
+    console.error('Error al obtener el perfil del usuario:', error);
+    res.status(500).json({ message: 'Error interno del servidor.' });
+  }
 }

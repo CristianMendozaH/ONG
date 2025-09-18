@@ -195,23 +195,23 @@
     <div class="modal-body view-body">
       <div class="info-row">
         <span class="info-label">Código:</span>
-        <span class="info-value">{{ equipoSeleccionado?.code || '—' }}</span>
+        <span class="info-value">{{ equipoSeleccionado.code || '—' }}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Nombre:</span>
-        <span class="info-value">{{ equipoSeleccionado?.name }}</span>
+        <span class="info-value">{{ equipoSeleccionado.name }}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Tipo:</span>
-        <span class="info-value">{{ getTypeLabel(equipoSeleccionado?.type || '') }}</span>
+        <span class="info-value">{{ getTypeLabel(equipoSeleccionado.type || '') }}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Estado:</span>
-        <span class="info-value">{{ getStatusLabel(equipoSeleccionado?.status || '') }}</span>
+        <span class="info-value">{{ getStatusLabel(equipoSeleccionado.status || '') }}</span>
       </div>
-      <div class="info-row" *ngIf="equipoSeleccionado?.description">
+      <div class="info-row" *ngIf="equipoSeleccionado.description">
         <span class="info-label">Descripción:</span>
-        <span class="info-value">{{ equipoSeleccionado?.description }}</span>
+        <span class="info-value">{{ equipoSeleccionado.description }}</span>
       </div>
     </div>
 
@@ -235,7 +235,7 @@
 
     <div class="modal-body">
       <p>¿Seguro que quieres eliminar el equipo
-        <strong>{{ equipoSeleccionado?.name }}</strong> ({{ equipoSeleccionado?.code || '—' }})?
+        <strong>{{ equipoSeleccionado.name }}</strong> ({{ equipoSeleccionado.code || '—' }})?
       </p>
     </div>
 
@@ -261,8 +261,8 @@
       <div class="qr-preview" *ngIf="qrUrl; else generatingQR">
         <img [src]="qrUrl" alt="QR" />
         <div class="qr-meta">
-          <div><strong>Equipo:</strong> {{ equipoSeleccionado?.name }}</div>
-          <div><strong>Código:</strong> {{ equipoSeleccionado?.code || '—' }}</div>
+          <div><strong>Equipo:</strong> {{ equipoSeleccionado.name }}</div>
+          <div><strong>Código:</strong> {{ equipoSeleccionado.code || '—' }}</div>
         </div>
       </div>
       <ng-template #generatingQR>

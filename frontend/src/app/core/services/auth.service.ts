@@ -1,3 +1,4 @@
+// src/app/core/services/auth.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -18,6 +19,8 @@ export class AuthService {
   private router = inject(Router);
 
   constructor() {
+    // Tu método para verificar al cargar la app ya es correcto.
+    // Llama a 'me()' si hay un token válido.
     this.checkAuthStatusOnLoad();
   }
 
@@ -38,20 +41,37 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  private me(): Observable<User | null> {
+  /**
+   * MÉTODO CLAVE (AHORA PÚBLICO)
+   * Obtiene los datos del usuario actual desde el backend usando el token guardado.
+   * Si tiene éxito, actualiza el store. Si falla (ej. token expirado), limpia la sesión.
+   */
+  fetchAndSetUser(): Observable<User | null> {
     return this.http.get<User>(`${environment.apiUrl}/auth/me`).pipe(
-      tap(user => this.userStore.setUser(user)),
+      tap(user => {
+        // Si el backend devuelve un usuario, lo guardamos en el store.
+        this.userStore.setUser(user);
+      }),
       catchError(() => {
+        // Si hay un error (ej. 401 Unauthorized), significa que el token no es válido.
+        // Limpiamos la sesión y devolvemos null.
         this.logout();
         return of(null);
       })
     );
   }
 
+  /**
+   * Este método se ejecuta solo una vez cuando el servicio es instanciado.
+   */
   private checkAuthStatusOnLoad(): void {
     if (this.tokenService.isTokenValid()) {
-      this.me().subscribe();
+      // Intentamos obtener los datos del usuario al cargar la app.
+      // No necesitamos hacer nada con la suscripción aquí, el guardián se encargará
+      // del resto si el usuario intenta navegar a una ruta protegida.
+      this.fetchAndSetUser().subscribe();
     } else {
+      // Si el token no es válido o no existe, nos aseguramos de que el store esté limpio.
       this.userStore.clearUser();
     }
   }

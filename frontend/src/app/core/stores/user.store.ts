@@ -13,11 +13,22 @@ export class UserStore {
   currentUser = this._currentUser.asReadonly();
   isAuthenticated = this._isAuthenticated.asReadonly();
 
-  // Computed properties para roles usando 'role'
-  // --- CAMBIO: Se añadió .trim() para eliminar espacios en blanco ---
-  isAdmin = computed(() => this._currentUser()?.role.trim().toLowerCase() === 'admin');
-  isTech = computed(() => this._currentUser()?.role.trim().toLowerCase() === 'tecnico');
-  isUser = computed(() => this._currentUser()?.role.trim().toLowerCase() === 'user');
+  // Computed properties para roles (versión segura y corregida)
+  isAdmin = computed(() => {
+    const role = this._currentUser()?.role;
+    // Comprobación segura y sin errores de tipeo
+    return typeof role === 'string' && role.trim().toLowerCase() === 'admin';
+  });
+
+  isTech = computed(() => {
+    const role = this._currentUser()?.role;
+    return typeof role === 'string' && role.trim().toLowerCase() === 'tecnico';
+  });
+
+  isUser = computed(() => {
+    const role = this._currentUser()?.role;
+    return typeof role === 'string' && role.trim().toLowerCase() === 'user';
+  });
 
   // Computed para mostrar nombre
   userName = computed(() => this._currentUser()?.name || 'Usuario');
@@ -53,23 +64,24 @@ export class UserStore {
    * Verificar si tiene un rol específico
    */
   hasRole(role: string): boolean {
-    // Se añade .trim() aquí también por consistencia
-    return this._currentUser()?.role.trim().toLowerCase() === role.trim().toLowerCase();
+    const userRole = this._currentUser()?.role;
+    return typeof userRole === 'string' && userRole.trim().toLowerCase() === role.trim().toLowerCase();
   }
 
   /**
-   * Verificar si puede acceder a funciones de admin
+   * Verificar si puede acceder a funciones
    */
   canAccess(requiredRole: 'admin' | 'tecnico' | 'user'): boolean {
-    const userRole = this._currentUser()?.role.trim().toLowerCase();
+    const userRole = this._currentUser()?.role;
+    const cleanUserRole = typeof userRole === 'string' ? userRole.trim().toLowerCase() : null;
 
     switch (requiredRole) {
       case 'admin':
-        return userRole === 'admin';
+        return cleanUserRole === 'admin';
       case 'tecnico':
-        return userRole === 'admin' || userRole === 'tecnico';
+        return cleanUserRole === 'admin' || cleanUserRole === 'tecnico';
       case 'user':
-        return true; // Cualquier usuario autenticado
+        return this.isAuthenticated();
       default:
         return false;
     }

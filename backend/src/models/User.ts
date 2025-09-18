@@ -1,6 +1,6 @@
 import { Table, Column, Model, DataType, Default, PrimaryKey } from 'sequelize-typescript';
 
-type Role = 'admin' | 'tech' | 'user';
+type Role = 'admin' | 'tecnico' | 'user';
 
 @Table({ tableName: 'users', timestamps: true })
 export class User extends Model {

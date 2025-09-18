@@ -6,11 +6,12 @@ const PORT = Number(process.env.PORT ?? 4000);
 
 async function bootstrap() {
   try {
-    // Conexión a BD (opcionalmente comenta estas dos líneas si aún no tienes DB lista)
+    // Conexión a la base de datos
     await sequelize.authenticate();
     await sequelize.sync(); // { alter: true } si estás en dev y lo necesitas
     console.log('✅ DB conectada y sincronizada');
 
+    // Inicia el servidor para que escuche peticiones
     app.listen(PORT, () => {
       console.log(`🚀 API escuchando en http://localhost:${PORT}`);
     });

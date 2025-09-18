@@ -16,27 +16,27 @@ export const routes: Routes = [
       // Rutas para Admin y Tecnico
       {
         path: 'dashboard',
-        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
+        data: { roles: ['admin', 'tecnico'] },
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
         path: 'equipos',
-        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
+        data: { roles: ['admin', 'tecnico'] },
         loadComponent: () => import('./features/equipos/equipos.component').then(m => m.EquiposComponent)
       },
       {
         path: 'prestamos',
-        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
+        data: { roles: ['admin', 'tecnico'] },
         loadComponent: () => import('./features/prestamos/prestamos.component').then(m => m.PrestamosComponent)
       },
       {
         path: 'mantenimiento',
-        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
+        data: { roles: ['admin', 'tecnico'] },
         loadComponent: () => import('./features/mantenimiento/mantenimiento.component').then(m => m.MantenimientoComponent)
       },
       {
         path: 'reportes',
-        data: { roles: ['admin', 'tecnico'] }, // <-- CAMBIO REALIZADO AQUÍ
+        data: { roles: ['admin', 'tecnico'] },
         loadComponent: () => import('./features/reportes/reportes.component').then(m => m.ReportesComponent)
       },
 
