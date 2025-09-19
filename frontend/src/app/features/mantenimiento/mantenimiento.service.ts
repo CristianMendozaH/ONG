@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { DataRefreshService } from '../../services/data-refresh.service'; // Asegúrate que la ruta sea correcta
+import { DataRefreshService } from '../../services/data-refresh.service';
 
 export interface AlertaPredictiva {
   tipo: 'critical' | 'warning' | 'info';
@@ -43,17 +43,24 @@ export class MantenimientoService {
 
   constructor(
     private http: HttpClient,
-    private dataRefreshService: DataRefreshService // Inyectar el servicio de notificaciones
+    private dataRefreshService: DataRefreshService
   ) {}
 
-  list(): Observable<Mantenimiento[]> {
-    return this.http.get<Mantenimiento[]>(this.base);
+  list(filters: { status?: string; type?: string } = {}): Observable<Mantenimiento[]> {
+    let params = new HttpParams();
+    if (filters.status) {
+      params = params.set('status', filters.status);
+    }
+    if (filters.type) {
+      params = params.set('type', filters.type);
+    }
+
+    return this.http.get<Mantenimiento[]>(this.base, { params });
   }
 
   create(payload: CrearMantDTO): Observable<Mantenimiento> {
     return this.http.post<Mantenimiento>(this.base, payload).pipe(
       tap(() => {
-        // Notificar que se ha creado un mantenimiento para refrescar las listas
         this.dataRefreshService.notify();
       })
     );
@@ -62,7 +69,6 @@ export class MantenimientoService {
   update(id: string, payload: UpdateMantDTO): Observable<Mantenimiento> {
     return this.http.put<Mantenimiento>(`${this.base}/${id}`, payload).pipe(
       tap(() => {
-        // Notificar después de actualizar por si cambia el estado
         this.dataRefreshService.notify();
       })
     );
@@ -71,7 +77,6 @@ export class MantenimientoService {
   start(id: string): Observable<Mantenimiento> {
     return this.http.post<Mantenimiento>(`${this.base}/${id}/start`, {}).pipe(
       tap(() => {
-        // Notificar que un mantenimiento ha iniciado
         this.dataRefreshService.notify();
       })
     );
@@ -80,7 +85,6 @@ export class MantenimientoService {
   complete(id: string, performedDate: string, notes?: string): Observable<Mantenimiento> {
     return this.http.post<Mantenimiento>(`${this.base}/${id}/complete`, { performedDate, notes }).pipe(
       tap(() => {
-        // Notificar que un mantenimiento se ha completado
         console.log('Mantenimiento completado, enviando notificación de refresco...');
         this.dataRefreshService.notify();
       })

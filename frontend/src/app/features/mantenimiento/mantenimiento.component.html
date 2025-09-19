@@ -51,13 +51,13 @@
       <div class="table-header">
         <h3 class="table-title">Órdenes de Mantenimiento</h3>
         <div class="table-filters">
-          <select class="filter-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+          <select class="filter-select" [(ngModel)]="statusFilter" (change)="load()">
             <option value="">Todos los estados</option>
             <option value="programado">Programado</option>
             <option value="en-proceso">En Proceso</option>
             <option value="completado">Completado</option>
           </select>
-          <select class="filter-select" [(ngModel)]="typeFilter" (change)="applyFilters()">
+          <select class="filter-select" [(ngModel)]="typeFilter" (change)="load()">
             <option value="">Todos los tipos</option>
             <option value="preventivo">Preventivo</option>
             <option value="correctivo">Correctivo</option>
@@ -79,7 +79,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let m of filteredMantenimientos; trackBy: trackByMaintenanceId">
+          <tr *ngFor="let m of mantenimientos; trackBy: trackByMaintenanceId">
             <td>{{ m.displayId }}</td>
             <td>
               <div class="equipment-info">
@@ -117,7 +117,7 @@
               </div>
             </td>
           </tr>
-          <tr *ngIf="filteredMantenimientos.length === 0">
+          <tr *ngIf="mantenimientos.length === 0">
             <td colspan="7" class="empty-state">
               <i class="fas fa-inbox"></i>
               <p>No hay mantenimientos{{ statusFilter || typeFilter ? ' que coincidan con los filtros' : '' }}.</p>

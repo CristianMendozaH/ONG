@@ -36,7 +36,6 @@ export class MantenimientoComponent implements OnInit {
   showNotification = false;
 
   mantenimientos: Mantenimiento[] = [];
-  filteredMantenimientos: Mantenimiento[] = [];
   equipos: Equipo[] = [];
   availableEquipos: Equipo[] = [];
   alertas: AlertaPredictiva[] = [];
@@ -107,7 +106,9 @@ export class MantenimientoComponent implements OnInit {
   load() {
     this.loading = true;
     this.error = '';
-    this.mantSvc.list().subscribe({
+    const currentFilters = { status: this.statusFilter, type: this.typeFilter };
+
+    this.mantSvc.list(currentFilters).subscribe({
       next: (res) => {
         const sortedByCreation = [...res].sort((a, b) =>
           new Date(a.createdAt || a.scheduledDate).getTime() - new Date(b.createdAt || b.scheduledDate).getTime()
@@ -122,7 +123,6 @@ export class MantenimientoComponent implements OnInit {
           new Date(b.createdAt || b.scheduledDate).getTime() - new Date(a.createdAt || a.scheduledDate).getTime()
         );
 
-        this.applyFilters();
         this.generarAlertasDinamicas();
         this.updateAvailableEquipmentList();
         this.loading = false;
@@ -135,11 +135,9 @@ export class MantenimientoComponent implements OnInit {
   }
 
   private updateAvailableEquipmentList() {
-    if (!this.mantenimientos.length || !this.equipos.length) {
-      this.availableEquipos = [...this.equipos];
-      return;
-    }
-
+    // Esta lógica podría necesitar ajustarse o llamarse después de cargar todos los mantenimientos
+    // si se quiere basar en la lista completa y no en la filtrada.
+    // Por ahora, se basa en la lista que está actualmente cargada (`this.mantenimientos`).
     const busyEquipmentIds = new Set(
       this.mantenimientos
         .filter(m => m.status === 'programado' || m.status === 'en-proceso')
@@ -185,35 +183,24 @@ export class MantenimientoComponent implements OnInit {
 
   iniciarMantenimiento(m: Mantenimiento) {
     this.mantSvc.start(m.id).subscribe({
-      next: (updatedMaintenance) => {
-        const index = this.mantenimientos.findIndex(item => item.id === m.id);
-        if (index !== -1) {
-          this.mantenimientos[index] = { ...this.mantenimientos[index], ...updatedMaintenance, displayId: this.mantenimientos[index].displayId };
-        }
-        this.applyFilters();
+      next: () => {
         this.showSuccessMessage('El mantenimiento ha iniciado.');
+        this.load(); // Recargamos para reflejar el cambio de estado
       },
       error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo iniciar el mantenimiento')
     });
   }
 
-  /**
-   * Esta es la función clave que se ejecuta al completar un mantenimiento.
-   * Llama a `mantSvc.complete`, que a su vez se encarga de emitir la notificación
-   * a través de `DataRefreshService`. La implementación es correcta.
-   */
   submitCompletion() {
     if (this.completeForm.invalid || !this.maintenanceToComplete) {
       return;
     }
-
     const { performedDate, completionNotes } = this.completeForm.value;
-
     this.mantSvc.complete(this.maintenanceToComplete.id, performedDate, completionNotes).subscribe({
       next: () => {
         this.showSuccessMessage('Mantenimiento marcado como completado');
         this.closeCompleteModal();
-        this.load(); // Recarga la lista de mantenimientos en este componente.
+        this.load();
       },
       error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo marcar como completado')
     });
@@ -288,14 +275,6 @@ export class MantenimientoComponent implements OnInit {
     this.editingMaintenance = null;
   }
 
-  applyFilters() {
-    this.filteredMantenimientos = this.mantenimientos.filter(m => {
-      const statusMatch = !this.statusFilter || m.status === this.statusFilter;
-      const typeMatch = !this.typeFilter || m.type === this.typeFilter;
-      return statusMatch && typeMatch;
-    });
-  }
-
   getCountByStatus(status: string): number {
     return this.mantenimientos.filter(m => m.status === status).length;
   }
@@ -340,7 +319,6 @@ export class MantenimientoComponent implements OnInit {
 
   generarAlertasDinamicas() {
       this.alertas = [];
-
       const preventivosProximos = this.getPreventiveMaintenanceDue();
       if (preventivosProximos > 0) {
         this.alertas.push({
@@ -350,7 +328,6 @@ export class MantenimientoComponent implements OnInit {
           meta: 'Actualizado ahora'
         });
       }
-
       const urgentes = this.mantenimientos.filter(m => m.priority === 'alta' && m.status !== 'completado').length;
       if (urgentes > 0) {
         this.alertas.push({
@@ -360,14 +337,12 @@ export class MantenimientoComponent implements OnInit {
           meta: 'Requiere atención'
         });
       }
-
       const completadosEsteMes = this.mantenimientos.filter(m => {
           if (m.status !== 'completado' || !m.performedDate) return false;
           const fechaRealizado = new Date(m.performedDate);
           const hoy = new Date();
           return fechaRealizado.getMonth() === hoy.getMonth() && fechaRealizado.getFullYear() === hoy.getFullYear();
       }).length;
-
       if (completadosEsteMes > 0) {
          this.alertas.push({
             tipo: 'info',
