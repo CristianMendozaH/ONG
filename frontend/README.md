@@ -527,3 +527,515 @@ ng build --configuration production
 ```bash
 # Agregar PWA
 ng add @angular/pwa
+
+# Build PWA
+ng build --prod
+
+# Servir PWA localmente para testing
+npx http-server -p 8080 -c-1 dist/frontend
+```
+
+### Service Worker Configuration
+
+```typescript
+// app.module.ts
+import { ServiceWorkerModule } from '@angular/service-worker';
+
+@NgModule({
+  imports: [
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: environment.production,
+      registrationStrategy: 'registerWhenStable:30000'
+    })
+  ]
+})
+export class AppModule {}
+```
+
+## 🔧 Configuración Avanzada
+
+### Lazy Loading Modules
+
+```typescript
+// features/users/users-routing.module.ts
+const routes: Routes = [
+  {
+    path: '',
+    component: UsersListComponent
+  },
+  {
+    path: 'create',
+    component: UserCreateComponent,
+    canActivate: [RoleGuard],
+    data: { role: 'admin' }
+  },
+  {
+    path: ':id',
+    component: UserDetailComponent
+  },
+  {
+    path: ':id/edit',
+    component: UserEditComponent,
+    canActivate: [RoleGuard],
+    data: { role: 'admin' }
+  }
+];
+```
+
+### Standalone Components (Angular 15+)
+
+```typescript
+// shared/components/loading/loading.component.ts
+@Component({
+  selector: 'app-loading',
+  standalone: true,
+  imports: [MatProgressSpinnerModule],
+  template: `
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>{{ message() }}</p>
+    </div>
+  `,
+  styleUrls: ['./loading.component.scss']
+})
+export class LoadingComponent {
+  message = input<string>('Cargando...');
+}
+```
+
+### Custom Validators
+
+```typescript
+// shared/validators/custom-validators.ts
+export class CustomValidators {
+  static strongPassword(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    
+    if (!value) return null;
+    
+    const hasNumber = /[0-9]/.test(value);
+    const hasUpper = /[A-Z]/.test(value);
+    const hasLower = /[a-z]/.test(value);
+    const hasSpecial = /[#?!@$%^&*-]/.test(value);
+    const isMinLength = value.length >= 8;
+    
+    const valid = hasNumber && hasUpper && hasLower && hasSpecial && isMinLength;
+    
+    return valid ? null : {
+      strongPassword: {
+        hasNumber,
+        hasUpper,
+        hasLower,
+        hasSpecial,
+        isMinLength
+      }
+    };
+  }
+
+  static matchPassword(controlName: string, matchingControlName: string) {
+    return (formGroup: AbstractControl): ValidationErrors | null => {
+      const control = formGroup.get(controlName);
+      const matchingControl = formGroup.get(matchingControlName);
+
+      if (!control || !matchingControl) return null;
+
+      if (matchingControl.errors && !matchingControl.errors['passwordMismatch']) {
+        return null;
+      }
+
+      if (control.value !== matchingControl.value) {
+        matchingControl.setErrors({ passwordMismatch: true });
+        return { passwordMismatch: true };
+      } else {
+        matchingControl.setErrors(null);
+        return null;
+      }
+    };
+  }
+}
+```
+
+### Form con Reactive Forms y Signals
+
+```typescript
+// features/auth/register/register.component.ts
+@Component({
+  selector: 'app-register',
+  templateUrl: './register.component.html',
+  styleUrls: ['./register.component.scss']
+})
+export class RegisterComponent {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  loading = signal(false);
+  hidePassword = signal(true);
+  hideConfirmPassword = signal(true);
+
+  registerForm = this.fb.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, CustomValidators.strongPassword]],
+    confirmPassword: ['', Validators.required]
+  }, {
+    validators: CustomValidators.matchPassword('password', 'confirmPassword')
+  });
+
+  // Computed properties para validación
+  isFormValid = computed(() => this.registerForm.valid);
+  
+  passwordErrors = computed(() => {
+    const control = this.registerForm.get('password');
+    return control?.errors?.['strongPassword'] || null;
+  });
+
+  onSubmit(): void {
+    if (this.registerForm.valid) {
+      this.loading.set(true);
+      
+      const formValue = this.registerForm.value;
+      
+      this.authService.register(
+        formValue.name!,
+        formValue.email!,
+        formValue.password!
+      ).subscribe({
+        next: () => {
+          this.router.navigate(['/dashboard']);
+        },
+        error: (error) => {
+          console.error('Error en registro:', error);
+          this.loading.set(false);
+        }
+      });
+    }
+  }
+}
+```
+
+## 🎭 Pipes Personalizados
+
+```typescript
+// shared/pipes/role.pipe.ts
+@Pipe({
+  name: 'role',
+  standalone: true
+})
+export class RolePipe implements PipeTransform {
+  transform(role: string): string {
+    const roleNames: Record<string, string> = {
+      'admin': 'Administrador',
+      'tech': 'Técnico',
+      'user': 'Usuario'
+    };
+    
+    return roleNames[role] || role;
+  }
+}
+
+// Uso en template
+// {{ user.role | role }}
+```
+
+## 🔄 State Management Avanzado
+
+### App State Store
+
+```typescript
+// core/stores/app.store.ts
+interface AppState {
+  loading: boolean;
+  error: string | null;
+  theme: 'light' | 'dark';
+  sidenavOpen: boolean;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AppStore {
+  private _state = signal<AppState>({
+    loading: false,
+    error: null,
+    theme: 'light',
+    sidenavOpen: true
+  });
+
+  // Selectores
+  state = this._state.asReadonly();
+  loading = computed(() => this._state().loading);
+  error = computed(() => this._state().error);
+  theme = computed(() => this._state().theme);
+  sidenavOpen = computed(() => this._state().sidenavOpen);
+
+  // Actions
+  setLoading(loading: boolean): void {
+    this._state.update(state => ({ ...state, loading }));
+  }
+
+  setError(error: string | null): void {
+    this._state.update(state => ({ ...state, error }));
+  }
+
+  toggleTheme(): void {
+    this._state.update(state => ({
+      ...state,
+      theme: state.theme === 'light' ? 'dark' : 'light'
+    }));
+  }
+
+  toggleSidenav(): void {
+    this._state.update(state => ({
+      ...state,
+      sidenavOpen: !state.sidenavOpen
+    }));
+  }
+}
+```
+
+## 🌍 Internacionalización (i18n)
+
+```bash
+# Agregar i18n
+ng add @angular/localize
+
+# Marcar textos para traducir
+ng extract-i18n
+
+# Build para diferentes idiomas
+ng build --localize
+```
+
+```typescript
+// Uso en componentes
+import { LOCALE_ID, inject } from '@angular/core';
+
+@Component({
+  // ...
+})
+export class MyComponent {
+  locale = inject(LOCALE_ID);
+  
+  formatDate(date: Date): string {
+    return new Intl.DateTimeFormat(this.locale).format(date);
+  }
+}
+```
+
+## ⚡ Optimización de Performance
+
+### OnPush Change Detection
+
+```typescript
+@Component({
+  selector: 'app-user-card',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ user().name }}</mat-card-title>
+      </mat-card-header>
+    </mat-card>
+  `
+})
+export class UserCardComponent {
+  user = input.required<User>();
+}
+```
+
+### Lazy Loading de Imágenes
+
+```typescript
+// shared/directives/lazy-img.directive.ts
+@Directive({
+  selector: '[appLazyImg]',
+  standalone: true
+})
+export class LazyImgDirective implements OnInit {
+  @Input() appLazyImg!: string;
+  
+  constructor(private el: ElementRef<HTMLImageElement>) {}
+
+  ngOnInit(): void {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.el.nativeElement.src = this.appLazyImg;
+          observer.unobserve(this.el.nativeElement);
+        }
+      });
+    });
+
+    observer.observe(this.el.nativeElement);
+  }
+}
+```
+
+## 📊 Monitoreo y Analytics
+
+### Error Handling Global
+
+```typescript
+// core/services/global-error-handler.service.ts
+@Injectable()
+export class GlobalErrorHandler implements ErrorHandler {
+  constructor(private notificationService: NotificationService) {}
+
+  handleError(error: any): void {
+    console.error('Error global:', error);
+    
+    // Enviar a servicio de logging
+    this.logError(error);
+    
+    // Mostrar notificación al usuario
+    this.notificationService.showError(
+      'Ha ocurrido un error inesperado. Por favor, intenta nuevamente.'
+    );
+  }
+
+  private logError(error: any): void {
+    // Implementar envío a servicio de logging
+    // (Sentry, LogRocket, etc.)
+  }
+}
+
+// app.module.ts
+providers: [
+  { provide: ErrorHandler, useClass: GlobalErrorHandler }
+]
+```
+
+## 🔒 Seguridad
+
+### Content Security Policy
+
+```html
+<!-- index.html -->
+<meta http-equiv="Content-Security-Policy" 
+      content="default-src 'self'; 
+               script-src 'self' 'unsafe-inline'; 
+               style-src 'self' 'unsafe-inline' fonts.googleapis.com;
+               font-src 'self' fonts.gstatic.com;
+               img-src 'self' data: https:;">
+```
+
+### Sanitización de HTML
+
+```typescript
+import { DomSanitizer } from '@angular/platform-browser';
+
+@Component({
+  // ...
+})
+export class SafeHtmlComponent {
+  constructor(private sanitizer: DomSanitizer) {}
+
+  getSafeHtml(html: string) {
+    return this.sanitizer.sanitize(SecurityContext.HTML, html);
+  }
+}
+```
+
+## 📱 Responsive Design
+
+### Angular Flex Layout
+
+```bash
+npm install @angular/flex-layout
+```
+
+```html
+<div fxLayout="row" fxLayout.xs="column" fxLayoutGap="16px">
+  <div fxFlex="30" fxFlex.xs="100">Sidebar</div>
+  <div fxFlex="70" fxFlex.xs="100">Content</div>
+</div>
+```
+
+### Angular CDK Layout
+
+```typescript
+import { BreakpointObserver } from '@angular/cdk/layout';
+
+@Component({
+  // ...
+})
+export class ResponsiveComponent {
+  isHandset = this.breakpointObserver.isMatched('(max-width: 768px)');
+
+  constructor(private breakpointObserver: BreakpointObserver) {}
+}
+```
+
+## 🚀 Comandos de Producción
+
+```bash
+# Build optimizado para producción
+ng build --prod --build-optimizer --vendor-chunk --common-chunk
+
+# Análisis del bundle
+ng build --prod --stats-json
+npx webpack-bundle-analyzer dist/frontend/stats.json
+
+# Testing en producción
+ng build --prod && npx http-server dist/frontend -p 8080
+
+# Deploy a Firebase Hosting
+npm install -g firebase-tools
+firebase init hosting
+ng build --prod
+firebase deploy
+
+# Deploy a Netlify
+ng build --prod
+# Subir carpeta dist/frontend a Netlify
+```
+
+## 🔧 Troubleshooting
+
+### Problemas Comunes
+
+1. **Error de Memory Heap:**
+   ```bash
+   node --max_old_space_size=8192 node_modules/@angular/cli/bin/ng build --prod
+   ```
+
+2. **Error de Signals en Tests:**
+   ```typescript
+   // Usar TestBed.runInInjectionContext para signals
+   TestBed.runInInjectionContext(() => {
+     const result = computed(() => someSignal());
+     expect(result()).toBe(expectedValue);
+   });
+   ```
+
+3. **Error de Angular Material Theme:**
+   ```scss
+   // Asegurar importación correcta en styles.scss
+   @import '~@angular/material/prebuilt-themes/indigo-pink.css';
+   ```
+
+## 📚 Recursos Adicionales
+
+- [Angular Documentation](https://angular.io/docs)
+- [Angular Material](https://material.angular.io/)
+- [Angular Signals Guide](https://angular.io/guide/signals)
+- [RxJS Documentation](https://rxjs.dev/)
+- [Angular Testing Guide](https://angular.io/guide/testing)
+
+## 🏆 Best Practices
+
+1. **Usar Signals para estado reactivo**
+2. **Implementar OnPush change detection**
+3. **Lazy loading de módulos y componentes**
+4. **Standalone components cuando sea posible**
+5. **Testing exhaustivo de componentes y servicios**
+6. **Seguir Angular Style Guide**
+7. **Usar TypeScript estricto**
+8. **Implementar proper error handling**
+
+## 👨‍💻 Desarrollado por
+
+**Cristian Daniel Mendoza Hernández**
+- Email: cristian.mendoza@example.com
+- Rol: Admin del Sistema
