@@ -22,7 +22,8 @@ export const routes: Routes = [
       {
         path: 'equipos',
         data: { roles: ['admin', 'tecnico'] },
-        loadComponent: () => import('./features/equipos/equipos.component').then(m => m.EquiposComponent)
+        // AHORA USAMOS loadChildren para cargar el conjunto de rutas
+        loadChildren: () => import('./features/equipos/equipos.routes').then(m => m.EQUIPOS_ROUTES)
       },
       {
         path: 'prestamos',

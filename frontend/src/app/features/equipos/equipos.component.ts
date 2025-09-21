@@ -1,17 +1,23 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router'; // ✅ IMPORTADO Router
 import { EquiposService, Equipo } from './equipos.service';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
-import { DataRefreshService } from '../../services/data-refresh.service'; // Asegúrate que la ruta sea correcta
+import { DataRefreshService } from '../../services/data-refresh.service';
+
+interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'error';
+}
 
 @Component({
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './equipos.component.html',
-  styleUrl: './equipos.component.scss'
+  styleUrls: ['./equipos.component.scss'] // Corregido a styleUrls
 })
 export class EquiposComponent implements OnInit, OnDestroy {
   equipos: Equipo[] = [];
@@ -28,6 +34,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
   showViewModal = false;
   showDeleteModal = false;
   showQRModal = false;
+  showPrintModal = false; // ✅ AÑADIDO: Estado para el modal de impresión
 
   // Estados del modal
   isEditMode = false;
@@ -41,11 +48,10 @@ export class EquiposComponent implements OnInit, OnDestroy {
     code: '',
     name: '',
     type: '',
-    status: 'disponible' as any, // Se usa 'any' para compatibilidad con estados de mantenimiento
+    status: 'disponible' as any,
     description: ''
   };
 
-  // Tipos disponibles
   availableTypes = [
     { value: 'laptop', label: 'Laptop' },
     { value: 'projector', label: 'Proyector' },
@@ -55,7 +61,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     { value: 'printer', label: 'Impresora' }
   ];
 
-  // Estados disponibles para el filtro
   availableStatuses = [
     { value: 'disponible', label: 'Disponible' },
     { value: 'prestado', label: 'Prestado' },
@@ -63,24 +68,20 @@ export class EquiposComponent implements OnInit, OnDestroy {
     { value: 'dañado', label: 'Dañado' }
   ];
 
-  // Search debouncing
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
+  toasts: Toast[] = [];
 
-  // Mensajería de éxito / error
-  showSuccessMessage = false;
-  successText = '';
-  showErrorMessage = false;
-  errorText = '';
-  private hideTimer?: any;
+  // ✅ AÑADIDO: Set para almacenar los IDs de los equipos a imprimir
+  equiposParaImprimir = new Set<string>();
 
-  // ====== Config correlativo de código ======
   readonly CODE_PREFIX = 'EQ';
   readonly CODE_PAD = 3;
 
   constructor(
     private equiposSvc: EquiposService,
-    private dataRefreshService: DataRefreshService // Inyectar el servicio de refresco
+    private dataRefreshService: DataRefreshService,
+    private router: Router // ✅ INYECTADO Router
   ) {
     this.searchSubject.pipe(
       debounceTime(300),
@@ -92,13 +93,10 @@ export class EquiposComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.load(); // Carga inicial de datos
-
-    // Suscribirse a las notificaciones para recargar la lista cuando sea necesario
+    this.load();
     this.dataRefreshService.refreshNeeded$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        console.log('Notificación recibida: Recargando lista de equipos...');
         this.load();
       });
   }
@@ -109,20 +107,12 @@ export class EquiposComponent implements OnInit, OnDestroy {
     if (this.qrUrl) {
       URL.revokeObjectURL(this.qrUrl);
     }
-    clearTimeout(this.hideTimer);
   }
 
-  // ===== FUNCIONES DE CARGA =====
   load() {
     this.loading = true;
     this.error = '';
-
-    const params = {
-      search: this.search.trim(),
-      status: this.status,
-      type: this.type
-    };
-
+    const params = { search: this.search.trim(), status: this.status, type: this.type };
     this.equiposSvc.list(params).subscribe({
       next: (data) => {
         this.equipos = data;
@@ -131,12 +121,10 @@ export class EquiposComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.error = err?.error?.message || 'No se pudo cargar la lista de equipos';
         this.loading = false;
-        console.error('Error cargando equipos:', err);
       }
     });
   }
 
-  // ===== FUNCIONES DE FILTRADO =====
   onSearchChange() {
     this.searchSubject.next(this.search);
   }
@@ -156,7 +144,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     this.load();
   }
 
-  // ====== Correlativo de código (frontend) ======
   private parseCode(code?: string | null): number | null {
     if (!code) return null;
     const re = new RegExp(`^${this.CODE_PREFIX}(\\d+)$`, 'i');
@@ -186,12 +173,12 @@ export class EquiposComponent implements OnInit, OnDestroy {
     if (exists) this.equipmentForm.code = this.getNextCode();
   }
 
-  // ===== FUNCIONES DE MODAL =====
   closeModal() {
     this.showAddEditModal = false;
     this.showViewModal = false;
     this.showDeleteModal = false;
     this.showQRModal = false;
+    this.showPrintModal = false; // ✅ AÑADIDO: También cierra el modal de impresión
     this.equipoSeleccionado = null;
     this.resetForm();
 
@@ -202,17 +189,9 @@ export class EquiposComponent implements OnInit, OnDestroy {
   }
 
   resetForm() {
-    this.equipmentForm = {
-      id: '',
-      code: '',
-      name: '',
-      type: '',
-      status: 'disponible',
-      description: ''
-    };
+    this.equipmentForm = { id: '', code: '', name: '', type: '', status: 'disponible', description: '' };
   }
 
-  // ===== FUNCIONES DE EQUIPOS =====
   agregarEquipo() {
     this.isEditMode = false;
     this.modalTitle = 'Agregar Nuevo Equipo';
@@ -241,18 +220,13 @@ export class EquiposComponent implements OnInit, OnDestroy {
 
   confirmarEliminacion() {
     if (!this.equipoSeleccionado) return;
-
     this.equiposSvc.remove(this.equipoSeleccionado.id).subscribe({
       next: () => {
         this.showSuccess('Equipo eliminado correctamente');
         this.closeModal();
         this.load();
       },
-      error: (err) => {
-        const errorMessage = err?.error?.message || 'No se pudo eliminar el equipo';
-        this.showError(errorMessage);
-        console.error('Error eliminando equipo:', err);
-      }
+      error: (err) => this.showError(err?.error?.message || 'No se pudo eliminar el equipo')
     });
   }
 
@@ -261,21 +235,14 @@ export class EquiposComponent implements OnInit, OnDestroy {
       this.showError('Por favor complete todos los campos obligatorios');
       return;
     }
-
     if (!this.isEditMode) {
-      if (!this.equipmentForm.code?.trim()) {
-        this.equipmentForm.code = this.getNextCode();
-      } else {
-        this.ensureUniqueCode();
-      }
+      this.equipmentForm.code = this.equipmentForm.code?.trim() ? this.equipmentForm.code : this.getNextCode();
+      this.ensureUniqueCode();
     }
-
     const equipoData: Partial<Equipo> = { ...this.equipmentForm };
-
     const action = this.isEditMode && this.equipoSeleccionado
       ? this.equiposSvc.update(this.equipoSeleccionado.id, equipoData)
       : this.equiposSvc.create(equipoData);
-
     action.subscribe({
       next: () => {
         const message = this.isEditMode ? 'actualizado' : 'creado';
@@ -285,9 +252,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         const message = this.isEditMode ? 'actualizar' : 'crear';
-        const errorMessage = err?.error?.message || `No se pudo ${message} el equipo`;
-        this.showError(errorMessage);
-        console.error(`Error al ${message} equipo:`, err);
+        this.showError(err?.error?.message || `No se pudo ${message} el equipo`);
       }
     });
   }
@@ -300,20 +265,13 @@ export class EquiposComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ===== FUNCIONES DE QR =====
   verQR(equipo: Equipo) {
     this.equipoSeleccionado = equipo;
     this.qrUrl = null;
-
+    this.showQRModal = true; // Mostrar modal inmediatamente
     this.equiposSvc.qr(equipo.id).subscribe({
-      next: (blob) => {
-        this.qrUrl = URL.createObjectURL(blob);
-        this.showQRModal = true;
-      },
-      error: (err) => {
-        this.showError(err?.error?.message || 'No se pudo generar el código QR');
-        console.error('Error generando QR:', err);
-      }
+      next: (blob) => this.qrUrl = URL.createObjectURL(blob),
+      error: (err) => this.showError(err?.error?.message || 'No se pudo generar el código QR')
     });
   }
 
@@ -327,19 +285,47 @@ export class EquiposComponent implements OnInit, OnDestroy {
     document.body.removeChild(link);
   }
 
-  // ===== FUNCIONES DE UTILIDAD =====
-  showSuccess(message: string, seconds = 3) {
-    this.successText = message;
-    this.showSuccessMessage = true;
-    clearTimeout(this.hideTimer);
-    this.hideTimer = setTimeout(() => (this.showSuccessMessage = false), seconds * 1000);
+  // ✅ INICIO: NUEVAS FUNCIONES PARA IMPRESIÓN
+  abrirModalImprimir() {
+    this.equiposParaImprimir.clear();
+    this.showPrintModal = true;
   }
 
-  showError(message: string, seconds = 4) {
-    this.errorText = message;
-    this.showErrorMessage = true;
-    clearTimeout(this.hideTimer);
-    this.hideTimer = setTimeout(() => (this.showErrorMessage = false), seconds * 1000);
+  toggleEquipoParaImprimir(equipoId: string) {
+    if (this.equiposParaImprimir.has(equipoId)) {
+      this.equiposParaImprimir.delete(equipoId);
+    } else {
+      this.equiposParaImprimir.add(equipoId);
+    }
+  }
+
+  generarHojaDeImpresion() {
+    if (this.equiposParaImprimir.size === 0) return;
+    const ids = Array.from(this.equiposParaImprimir).join(',');
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/equipos/print'], { queryParams: { ids } })
+    );
+    window.open(url, '_blank');
+    this.closeModal();
+  }
+  // ✅ FIN: NUEVAS FUNCIONES PARA IMPRESIÓN
+
+  showToast(message: string, type: 'success' | 'error' = 'success', duration: number = 4000) {
+    const id = Date.now();
+    this.toasts.push({ id, message, type });
+    setTimeout(() => this.removeToast(id), duration);
+  }
+
+  removeToast(id: number) {
+    this.toasts = this.toasts.filter(toast => toast.id !== id);
+  }
+
+  showSuccess(message: string) {
+    this.showToast(message, 'success');
+  }
+
+  showError(message: string) {
+    this.showToast(message, 'error', 5000);
   }
 
   trackByEquipo(index: number, equipo: Equipo): string {
@@ -348,36 +334,24 @@ export class EquiposComponent implements OnInit, OnDestroy {
 
   getStatusLabel(status: string): string {
     const statusMap: Record<string, string> = {
-      'disponible': 'Disponible',
-      'prestado': 'Prestado',
-      'dañado': 'Dañado',
-      'mantenimiento': 'Mantenimiento',
-      'programado': 'Mantenimiento',
-      'en-proceso': 'Mantenimiento',
+      'disponible': 'Disponible', 'prestado': 'Prestado', 'dañado': 'Dañado',
+      'mantenimiento': 'Mantenimiento', 'programado': 'Mantenimiento', 'en-proceso': 'Mantenimiento',
     };
     return statusMap[status] || status;
   }
 
   getStatusClass(status: string): string {
     const classMap: Record<string, string> = {
-      'disponible': 'status-disponible',
-      'prestado': 'status-prestado',
-      'dañado': 'status-danado',
-      'mantenimiento': 'status-mantenimiento',
-      'programado': 'status-mantenimiento',
-      'en-proceso': 'status-mantenimiento',
+      'disponible': 'status-disponible', 'prestado': 'status-prestado', 'dañado': 'status-danado',
+      'mantenimiento': 'status-mantenimiento', 'programado': 'status-mantenimiento', 'en-proceso': 'status-mantenimiento',
     };
     return classMap[status] || 'status-disponible';
   }
 
   getTypeLabel(type: string): string {
     const typeMap: Record<string, string> = {
-      'laptop': 'Laptop',
-      'projector': 'Proyector',
-      'tablet': 'Tablet',
-      'camera': 'Cámara',
-      'monitor': 'Monitor',
-      'printer': 'Impresora',
+      'laptop': 'Laptop', 'projector': 'Proyector', 'tablet': 'Tablet',
+      'camera': 'Cámara', 'monitor': 'Monitor', 'printer': 'Impresora',
     };
     return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
   }

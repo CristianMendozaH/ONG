@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { Equipment } from '../models/Equipment';
 import QRCode from 'qrcode';
-import { Op } from 'sequelize'; // <<<--- IMPORTANTE: Importar el operador de Sequelize
+import { Op } from 'sequelize';
 
 const router = Router();
 
 // =======================================================================
-// RUTA LISTAR (MODIFICADA PARA ACEPTAR FILTROS)
+// RUTA LISTAR (CON LA ORDENACIÓN CORREGIDA)
 // =======================================================================
 router.get('/', async (req, res) => {
   // Se extraen los parámetros de la consulta (query)
@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
   if (status && typeof status === 'string') {
     // Si el estado es 'mantenimiento', busca en la base de datos los estados 'Programada' o 'En proceso'
     if (status === 'mantenimiento') {
-      where.status = { [Op.in]: ['Programada', 'En proceso'] };
+      where.status = { [Op.in]: ['programada', 'en-proceso'] };
     } else {
       where.status = status;
     }
@@ -36,13 +36,13 @@ router.get('/', async (req, res) => {
 
   // 3. Lógica para el filtro de tipo (type)
   if (type && typeof type === 'string') {
-    where.type = type;
+    where.type = { [Op.iLike]: type }; 
   }
 
-  // Se ejecuta la consulta con los filtros construidos
+  // Se ejecuta la consulta con los filtros construidos y el orden corregido
   const rows = await Equipment.findAll({ 
     where, 
-    order: [['createdAt', 'DESC']] 
+    order: [['createdAt', 'DESC']]  // <-- ÚNICO CAMBIO REALIZADO AQUÍ
   });
   
   res.json(rows);

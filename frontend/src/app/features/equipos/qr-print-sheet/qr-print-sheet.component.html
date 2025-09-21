@@ -1,0 +1,28 @@
+<header class="print-header">
+  <h1>Hoja de Códigos QR para Equipos</h1>
+  <button class="btn-primary no-print" (click)="imprimir()">
+    <i class="fas fa-print"></i> Imprimir
+  </button>
+</header>
+
+<div class="page-content" *ngIf="loading">Cargando datos...</div>
+<div class="page-content error" *ngIf="!loading && error">{{ error }}</div>
+
+<main class="print-sheet" *ngIf="!loading && !error && equipos.length > 0">
+  <div class="qr-card" *ngFor="let item of equipos">
+    <div *ngIf="!item.error; else qrError">
+      <img *ngIf="item.qrUrl" [src]="item.qrUrl" alt="Código QR de {{ item.details.name }}">
+      <div class="qr-info">
+        <div class="qr-name">{{ item.details.name }}</div>
+        <div class="qr-code">{{ item.details.code }}</div>
+      </div>
+    </div>
+    <ng-template #qrError>
+      <div class="qr-load-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>{{ item.details.name }}</span>
+        <small>{{ item.error }}</small>
+      </div>
+    </ng-template>
+  </div>
+</main>

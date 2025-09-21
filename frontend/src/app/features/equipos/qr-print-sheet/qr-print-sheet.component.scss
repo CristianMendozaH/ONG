@@ -1,0 +1,116 @@
+/* Estilos generales para la vista previa en pantalla */
+:host {
+  background-color: #f0f3f7;
+}
+
+.print-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+  h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #33475b;
+  }
+}
+
+.page-content {
+  padding: 1.5rem;
+}
+
+/* Simula una hoja tamaño carta en pantalla */
+.print-sheet {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Dos columnas */
+  gap: 1cm;
+  width: 21.59cm; /* Ancho de hoja carta */
+  min-height: 27.94cm; /* Alto de hoja carta */
+  padding: 1.5cm;
+  margin: 2rem auto;
+  background-color: white;
+  box-shadow: 0 0 15px rgba(0,0,0,0.15);
+  box-sizing: border-box;
+}
+
+.qr-card {
+  width: 7cm;
+  height: 7cm;
+  border: 1px dashed #999; /* Borde para facilitar el corte */
+  padding: 0.5cm;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  page-break-inside: avoid; /* Evita que una tarjeta se corte entre páginas */
+
+  img {
+    max-width: 4cm;
+    max-height: 4cm;
+    display: block;
+  }
+
+  .qr-info {
+    margin-top: 0.5cm;
+
+    .qr-name {
+      font-weight: bold;
+      font-size: 12pt;
+      color: #333;
+    }
+    .qr-code {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11pt;
+      color: #555;
+      margin-top: 4px;
+    }
+  }
+
+  .qr-load-error {
+    color: #b91c1c;
+    // ... estilos para el error
+  }
+}
+
+/* ====== Estilos exclusivos para la impresión ====== */
+@media print {
+  /* Ocultar elementos innecesarios */
+  .no-print, .print-header {
+    display: none !important;
+  }
+
+  /* El cuerpo de la página se ajusta al contenido de impresión */
+  body {
+    background-color: #fff;
+    margin: 0;
+  }
+
+  /* Asegurarse de que la hoja ocupe todo el espacio disponible */
+  .print-sheet {
+    width: 100%;
+    min-height: initial;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    gap: 0; /* Sin gap para maximizar el espacio */
+    padding: 1cm; /* Margen de impresión */
+  }
+
+  .qr-card {
+    margin-bottom: 1cm; // Espacio entre filas
+  }
+}
+
+// Re-uso de tu botón de la app principal
+.btn-primary {
+  border: 0; padding: 10px 14px; border-radius: 10px;
+  font-weight: 600; cursor: pointer; display: inline-flex;
+  align-items: center; gap: 8px; background: #114495; color: #fff;
+  box-shadow: 0 6px 14px rgba(17,68,149,.2);
+  &:hover { background: #0f3f88; }
+}

@@ -9,53 +9,33 @@
   </div>
 </header>
 
-<div class="alert success-message" *ngIf="showSuccessMessage">
-  <i class="fas fa-check-circle"></i>
-  <span>{{ successText }}</span>
-</div>
-
-<div class="alert error-message" *ngIf="showErrorMessage">
-  <i class="fas fa-times-circle"></i>
-  <span>{{ errorText }}</span>
-</div>
-
 <div class="page-content">
-
   <div class="filters-card">
     <div class="filters-row">
       <div class="filter">
         <label>Buscar</label>
-        <input
-          type="text"
-          placeholder="Código, nombre..."
-          [(ngModel)]="search"
-          (ngModelChange)="onSearchChange()"
-        />
+        <input type="text" placeholder="Código, nombre..." [(ngModel)]="search" (ngModelChange)="onSearchChange()" />
       </div>
-
       <div class="filter">
         <label>Estado</label>
         <select [(ngModel)]="status" (change)="onFilterChange()">
           <option value="">Todos</option>
-          <option *ngFor="let s of availableStatuses" [value]="s.value">
-            {{ s.label }}
-          </option>
+          <option *ngFor="let s of availableStatuses" [value]="s.value">{{ s.label }}</option>
         </select>
       </div>
-
       <div class="filter">
         <label>Tipo</label>
         <select [(ngModel)]="type" (change)="onFilterChange()">
           <option value="">Todos</option>
-          <option *ngFor="let t of availableTypes" [value]="t.value">
-            {{ t.label }}
-          </option>
+          <option *ngFor="let t of availableTypes" [value]="t.value">{{ t.label }}</option>
         </select>
       </div>
-
       <div class="filters-actions">
         <button class="btn-secondary" type="button" (click)="clearFilters()">
           <i class="fas fa-eraser"></i> Limpiar
+        </button>
+        <button class="btn-info" type="button" (click)="abrirModalImprimir()">
+          <i class="fas fa-print"></i> Imprimir QRs
         </button>
         <button class="btn-primary" type="button" (click)="agregarEquipo()">
           <i class="fas fa-plus"></i> Nuevo equipo
@@ -75,41 +55,29 @@
           <th>Nombre</th>
           <th style="width: 160px;">Tipo</th>
           <th style="width: 160px;">Estado</th>
-          <th style="width: 220px;">Acciones</th> </tr>
+          <th style="width: 220px;">Acciones</th>
+        </tr>
       </thead>
       <tbody>
         <tr *ngFor="let e of equipos; trackBy: trackByEquipo">
-          <td>
-            <code>{{ e.code || '—' }}</code>
-          </td>
+          <td><code>{{ e.code || '—' }}</code></td>
           <td>
             <div class="name">{{ e.name }}</div>
             <div class="muted" *ngIf="e.description">{{ e.description }}</div>
           </td>
           <td>{{ getTypeLabel(e.type) }}</td>
           <td>
-            <span class="status-badge" [ngClass]="getStatusClass(e.status)">
-              {{ getStatusLabel(e.status) }}
-            </span>
+            <span class="status-badge" [ngClass]="getStatusClass(e.status)">{{ getStatusLabel(e.status) }}</span>
           </td>
           <td class="actions">
-            <button class="btn-ghost" (click)="verEquipo(e)" title="Ver Detalles">
-              <i class="fas fa-eye"></i>
-            </button>
-            <button class="btn-warning" (click)="editarEquipo(e)" title="Editar Equipo">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn-info" (click)="verQR(e)" title="Ver QR">
-              <i class="fas fa-qrcode"></i>
-            </button>
-            <button class="btn-danger" (click)="eliminar(e)" title="Eliminar Equipo">
-              <i class="fas fa-trash"></i>
-            </button>
+            <button class="btn-ghost" (click)="verEquipo(e)" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+            <button class="btn-warning" (click)="editarEquipo(e)" title="Editar Equipo"><i class="fas fa-edit"></i></button>
+            <button class="btn-info" (click)="verQR(e)" title="Ver QR"><i class="fas fa-qrcode"></i></button>
+            <button class="btn-danger" (click)="eliminar(e)" title="Eliminar Equipo"><i class="fas fa-trash"></i></button>
           </td>
         </tr>
       </tbody>
     </table>
-
     <ng-template #emptyList>
       <div class="empty">
         <i class="fas fa-box-open"></i>
@@ -127,29 +95,18 @@
         <i class="fas fa-times"></i>
       </button>
     </div>
-
     <form class="modal-body" (ngSubmit)="guardarEquipo()">
       <div class="form-row">
         <div class="form-group">
           <label>Código</label>
-          <input
-            type="text"
-            [(ngModel)]="equipmentForm.code"
-            name="code"
-            placeholder="EQ0001"
-            readonly
-            autocomplete="off"
-            spellcheck="false"
-          />
+          <input type="text" [(ngModel)]="equipmentForm.code" name="code" placeholder="EQ0001" readonly autocomplete="off" spellcheck="false" />
           <small class="muted">Se asigna automáticamente.</small>
         </div>
-
         <div class="form-group">
           <label>Nombre *</label>
           <input type="text" [(ngModel)]="equipmentForm.name" name="name" required />
         </div>
       </div>
-
       <div class="form-row">
         <div class="form-group">
           <label>Tipo *</label>
@@ -158,7 +115,6 @@
             <option *ngFor="let t of availableTypes" [value]="t.value">{{ t.label }}</option>
           </select>
         </div>
-
         <div class="form-group">
           <label>Estado *</label>
           <select [(ngModel)]="equipmentForm.status" name="status" required>
@@ -166,13 +122,10 @@
           </select>
         </div>
       </div>
-
       <div class="form-group">
         <label>Descripción</label>
-        <textarea rows="3" [(ngModel)]="equipmentForm.description" name="description"
-          placeholder="Notas, especificaciones, etc."></textarea>
+        <textarea rows="3" [(ngModel)]="equipmentForm.description" name="description" placeholder="Notas, especificaciones, etc."></textarea>
       </div>
-
       <div class="modal-footer">
         <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
         <button type="submit" class="btn-primary">
@@ -191,7 +144,6 @@
         <i class="fas fa-times"></i>
       </button>
     </div>
-
     <div class="modal-body view-body">
       <div class="info-row">
         <span class="info-label">Código:</span>
@@ -214,7 +166,6 @@
         <span class="info-value">{{ equipoSeleccionado.description }}</span>
       </div>
     </div>
-
     <div class="modal-footer">
       <button type="button" class="btn-secondary" (click)="closeModal()">Cerrar</button>
       <button type="button" class="btn-warning" (click)="editarDesdeVista()">
@@ -232,13 +183,11 @@
         <i class="fas fa-times"></i>
       </button>
     </div>
-
     <div class="modal-body">
       <p>¿Seguro que quieres eliminar el equipo
         <strong>{{ equipoSeleccionado.name }}</strong> ({{ equipoSeleccionado.code || '—' }})?
       </p>
     </div>
-
     <div class="modal-footer">
       <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
       <button type="button" class="btn-danger" (click)="confirmarEliminacion()">
@@ -256,7 +205,6 @@
         <i class="fas fa-times"></i>
       </button>
     </div>
-
     <div class="modal-body qr-body">
       <div class="qr-preview" *ngIf="qrUrl; else generatingQR">
         <img [src]="qrUrl" alt="QR" />
@@ -269,12 +217,62 @@
         <div class="muted">Generando QR...</div>
       </ng-template>
     </div>
-
     <div class="modal-footer">
       <button type="button" class="btn-secondary" (click)="closeModal()">Cerrar</button>
       <button type="button" class="btn-info" [disabled]="!qrUrl" (click)="descargarQR()">
         <i class="fas fa-download"></i> Descargar
       </button>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showPrintModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Imprimir Códigos QR</h3>
+      <button class="modal-close" (click)="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p>Selecciona los equipos que deseas incluir en la hoja de impresión.</p>
+      <div class="print-selection-list" *ngIf="equipos && equipos.length > 0; else noEquipos">
+        <div *ngFor="let equipo of equipos" class="print-selection-item">
+          <input
+            type="checkbox"
+            [id]="'print-' + equipo.id"
+            [checked]="equiposParaImprimir.has(equipo.id)"
+            (change)="toggleEquipoParaImprimir(equipo.id)"
+          />
+          <label [for]="'print-' + equipo.id">
+            <strong>{{ equipo.code }}</strong> - {{ equipo.name }}
+          </label>
+        </div>
+      </div>
+      <ng-template #noEquipos>
+        <p class="muted">No hay equipos cargados para seleccionar.</p>
+      </ng-template>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
+      <button
+        type="button"
+        class="btn-info"
+        [disabled]="equiposParaImprimir.size === 0"
+        (click)="generarHojaDeImpresion()">
+        <i class="fas fa-file-alt"></i> Generar Hoja ({{ equiposParaImprimir.size }})
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container">
+  <div *ngFor="let toast of toasts" class="toast {{ toast.type }}">
+    <div class="toast-icon">
+      <i *ngIf="toast.type === 'success'" class="fas fa-check-circle"></i>
+      <i *ngIf="toast.type === 'error'" class="fas fa-exclamation-circle"></i>
+    </div>
+    <div class="toast-message">{{ toast.message }}</div>
+    <button class="toast-close" (click)="removeToast(toast.id)">
+      <i class="fas fa-times"></i>
+    </button>
   </div>
 </div>

@@ -8,6 +8,13 @@ import { EquiposService, Equipo } from '../equipos/equipos.service';
 
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 
+// --- NUEVO: INTERFAZ PARA EL TOAST ---
+interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'error';
+}
+
 @Component({
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, DatePipe],
@@ -21,14 +28,15 @@ export class PrestamosComponent implements OnInit, OnDestroy {
   private prestamosSvc = inject(PrestamosService);
   private equiposSvc = inject(EquiposService);
 
+  // --- NUEVO: ARRAY PARA GUARDAR LOS TOASTS ---
+  public toasts: Toast[] = [];
+
   public prestamos: Prestamo[] = [];
   public filteredPrestamos: Prestamo[] = [];
   public overdueLoans: Prestamo[] = [];
   public equipos: Equipo[] = [];
   public loading = false;
   public error = '';
-  public showSuccessMessage = false;
-  public successMessageText = '';
   public qrUrl: string | null = null;
   public isScanning = false;
   public scanSuccess = false;
@@ -83,6 +91,18 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     this.stopScan();
   }
 
+  // --- NUEVO: MÉTODO PARA MOSTRAR TOASTS ---
+  private showToast(message: string, type: 'success' | 'error' = 'success') {
+    const id = Date.now();
+    this.toasts.push({ id, message, type });
+    setTimeout(() => this.removeToast(id), 5000);
+  }
+
+  // --- NUEVO: MÉTODO PARA ELIMINAR TOASTS (DEBE SER PÚBLICO) ---
+  public removeToast(id: number) {
+    this.toasts = this.toasts.filter(toast => toast.id !== id);
+  }
+
   public loadPrestamos() {
     this.loading = true;
     this.error = '';
@@ -103,7 +123,8 @@ export class PrestamosComponent implements OnInit, OnDestroy {
   public loadAllEquipos() {
     this.equiposSvc.list().subscribe({
       next: (data) => { this.equipos = data; },
-      error: () => { this.showErrorMessage('No se pudieron cargar los equipos.'); }
+      // -- CAMBIO: Se usa showToast en lugar de showErrorMessage
+      error: () => { this.showToast('No se pudieron cargar los equipos.', 'error'); }
     });
   }
 
@@ -125,56 +146,44 @@ export class PrestamosComponent implements OnInit, OnDestroy {
       } catch (error: any) {
         console.error('Error detallado al iniciar la cámara:', error);
         this.scannerText = 'Error al escanear';
+        // -- CAMBIO: Se usa showToast en lugar de showErrorMessage
         if (error instanceof NotFoundException) {
-          this.showErrorMessage('Error: No se encontró ninguna cámara de video en este dispositivo.');
+          this.showToast('Error: No se encontró ninguna cámara de video.', 'error');
         } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-          this.showErrorMessage('Permiso para acceder a la cámara denegado.');
+          this.showToast('Permiso para acceder a la cámara denegado.', 'error');
         } else if (error.name === 'NotReadableError') {
-          this.showErrorMessage('La cámara ya está siendo utilizada por otra aplicación.');
+          this.showToast('La cámara ya está siendo utilizada.', 'error');
         } else {
-          this.showErrorMessage('No se pudo acceder a la cámara. Revisa la consola del navegador para ver el error detallado.');
+          this.showToast('No se pudo acceder a la cámara.', 'error');
         }
         this.stopScan();
       }
     }, 100);
   }
 
-  // --- FUNCIÓN CORREGIDA PARA MANEJAR JSON ---
   private processQrCode(qrText: string) {
     this.scanSuccess = true;
     this.scannerText = '¡Código detectado!';
-
     let equipmentIdentifier: string | undefined;
     let identifierForErrorMessage: string = qrText;
-
     try {
-      // 1. Intentamos decodificar el texto como un objeto JSON
       const qrData = JSON.parse(qrText);
-
-      // 2. Si tiene una propiedad 'id' o 'code', la usamos para la búsqueda
       if (qrData && (qrData.id || qrData.code)) {
         equipmentIdentifier = qrData.id || qrData.code;
-        identifierForErrorMessage = qrData.code || qrData.id; // Para un mensaje de error más limpio
+        identifierForErrorMessage = qrData.code || qrData.id;
       }
     } catch (e) {
-      // 3. Si no es un JSON, asumimos que el texto completo es el identificador
       equipmentIdentifier = qrText;
     }
-
-    // 4. Buscamos el equipo usando el identificador que encontramos
-    const foundEquipment = this.equipos.find(
-      (e) => e.id === equipmentIdentifier || e.code === equipmentIdentifier
-    );
-
+    const foundEquipment = this.equipos.find(e => e.id === equipmentIdentifier || e.code === equipmentIdentifier);
     if (foundEquipment) {
       this.scannedEquipment = foundEquipment;
     } else {
-      this.showErrorMessage(`Equipo con código "${identifierForErrorMessage}" no encontrado o no está disponible.`);
+      // -- CAMBIO: Se usa showToast en lugar de showErrorMessage
+      this.showToast(`Equipo con código "${identifierForErrorMessage}" no encontrado.`, 'error');
       this.scannerText = 'Equipo no encontrado';
     }
-
     this.stopScan();
-
     setTimeout(() => {
       this.scanSuccess = false;
       this.scannerText = 'Haz clic para escanear otro código';
@@ -201,7 +210,8 @@ export class PrestamosComponent implements OnInit, OnDestroy {
       if (prestamo) {
         this.returnLoan(prestamo);
       } else {
-        this.showErrorMessage('No se encontró un préstamo activo para este equipo');
+        // -- CAMBIO: Se usa showToast en lugar de showErrorMessage
+        this.showToast('No se encontró un préstamo activo para este equipo', 'error');
       }
     }
   }
@@ -262,9 +272,11 @@ export class PrestamosComponent implements OnInit, OnDestroy {
         this.loadPrestamos();
         this.loadAllEquipos();
         this.closeModal('loan');
-        this.displaySuccessMessage('Préstamo creado exitosamente');
+        // -- CAMBIO: Se usa showToast en lugar de displaySuccessMessage
+        this.showToast('Préstamo creado exitosamente', 'success');
       },
-      error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo crear el préstamo')
+      // -- CAMBIO: Se usa showToast en lugar de showErrorMessage
+      error: (e) => this.showToast(e?.error?.message || 'No se pudo crear el préstamo', 'error')
     });
   }
 
@@ -278,7 +290,7 @@ export class PrestamosComponent implements OnInit, OnDestroy {
 
   public confirmReturn() {
     if (!this.selectedPrestamo || !this.equipmentCondition || !this.returnDate) {
-      return this.showErrorMessage('Por favor complete todos los campos requeridos');
+        return this.showToast('Por favor complete todos los campos requeridos', 'error');
     }
     const returnData = {
       returnDate: this.returnDate,
@@ -290,9 +302,11 @@ export class PrestamosComponent implements OnInit, OnDestroy {
       next: () => {
         this.loadPrestamos();
         this.closeModal('return');
-        this.displaySuccessMessage(`Devolución procesada. Total a pagar: Q ${this.totalFee.toFixed(2)}`);
+        // -- CAMBIO: Se usa showToast en lugar de displaySuccessMessage
+        this.showToast(`Devolución procesada. Total a pagar: Q ${this.totalFee.toFixed(2)}`, 'success');
       },
-      error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo procesar la devolución')
+      // -- CAMBIO: Se usa showToast en lugar de showErrorMessage
+      error: (e) => this.showToast(e?.error?.message || 'No se pudo procesar la devolución', 'error')
     });
   }
 
@@ -322,16 +336,18 @@ export class PrestamosComponent implements OnInit, OnDestroy {
 
   public confirmExtension() {
     if (!this.selectedPrestamo || !this.extendNewDate || !this.extendReason) {
-      return this.showErrorMessage('Por favor complete todos los campos requeridos');
+      return this.showToast('Por favor complete todos los campos requeridos', 'error');
     }
     this.prestamosSvc.extendLoan(this.selectedPrestamo.id, this.extendNewDate).subscribe({
       next: () => {
         this.loadPrestamos();
         this.closeModal('extend');
         const newDate = new Date(this.extendNewDate).toLocaleDateString('es-GT');
-        this.displaySuccessMessage(`Préstamo extendido hasta ${newDate}`);
+        // -- CAMBIO: Se usa showToast en lugar de displaySuccessMessage
+        this.showToast(`Préstamo extendido hasta ${newDate}`, 'success');
       },
-      error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo extender el préstamo')
+      // -- CAMBIO: Se usa showToast en lugar de showErrorMessage
+      error: (e) => this.showToast(e?.error?.message || 'No se pudo extender el préstamo', 'error')
     });
   }
 
@@ -367,7 +383,8 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     this.qrUrl = null;
     this.equiposSvc.qr(eqId).subscribe({
       next: (blob) => { this.qrUrl = URL.createObjectURL(blob); },
-      error: () => { this.showErrorMessage('No se pudo generar el código QR'); }
+       // -- CAMBIO: Se usa showToast en lugar de showErrorMessage
+      error: () => { this.showToast('No se pudo generar el código QR', 'error'); }
     });
   }
 
@@ -438,7 +455,8 @@ export class PrestamosComponent implements OnInit, OnDestroy {
   }
 
   public notifyOverdueUsers() {
-    this.displaySuccessMessage(`Se enviarán notificaciones a ${this.overdueLoans.length} usuario(s).`);
+    // -- CAMBIO: Se usa showToast en lugar de displaySuccessMessage
+    this.showToast(`Notificaciones enviadas a ${this.overdueLoans.length} usuario(s).`, 'success');
   }
 
   public trackByPrestamoId(index: number, prestamo: Prestamo): string {
@@ -509,13 +527,6 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   }
 
-  private displaySuccessMessage(message: string) {
-    this.successMessageText = message;
-    this.showSuccessMessage = true;
-    setTimeout(() => { this.showSuccessMessage = false; }, 3000);
-  }
-
-  private showErrorMessage(message: string) {
-    alert(message);
-  }
+  // --- ELIMINADOS MÉTODOS ANTIGUOS ---
+  // Se quitaron displaySuccessMessage() y showErrorMessage()
 }
