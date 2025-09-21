@@ -2,12 +2,38 @@
 -- PostgreSQL database dump
 --
 
-\restrict hO6g3L2Jphsug5JJPEWQgqwlWSqC2epQhhDTCdYsn1bBfOPVSfpSVaEaKfXeGhq
+\restrict OaNbxRd7cvHT8g6WOiAaTJjkAVj2mjhvePbhjDWH5FleEPoJsINocVIQbuW8ygA
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.6
 
--- Started on 2025-09-20 21:47:33
+-- Started on 2025-09-21 15:08:14
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 5022 (class 1262 OID 16388)
+-- Name: sistema_equipos; Type: DATABASE; Schema: -; Owner: postgres
+--
+
+CREATE DATABASE sistema_equipos WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE_PROVIDER = libc LOCALE = 'English_United States.1252';
+
+
+ALTER DATABASE sistema_equipos OWNER TO postgres;
+
+\unrestrict OaNbxRd7cvHT8g6WOiAaTJjkAVj2mjhvePbhjDWH5FleEPoJsINocVIQbuW8ygA
+\connect sistema_equipos
+\restrict OaNbxRd7cvHT8g6WOiAaTJjkAVj2mjhvePbhjDWH5FleEPoJsINocVIQbuW8ygA
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -26,7 +52,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- TOC entry 229 (class 1259 OID 16604)
+-- TOC entry 218 (class 1259 OID 16389)
 -- Name: activities; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -44,12 +70,96 @@ CREATE TABLE public.activities (
 ALTER TABLE public.activities OWNER TO postgres;
 
 --
--- TOC entry 218 (class 1259 OID 16527)
+-- TOC entry 236 (class 1259 OID 16582)
+-- Name: backup_activities; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.backup_activities (
+    id uuid,
+    tipo character varying(100),
+    descripcion text,
+    fecha timestamp without time zone,
+    "equipmentId" uuid,
+    "loanId" uuid,
+    "createdAt" timestamp without time zone
+);
+
+
+ALTER TABLE public.backup_activities OWNER TO postgres;
+
+--
+-- TOC entry 233 (class 1259 OID 16567)
+-- Name: backup_equipments; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.backup_equipments (
+    id uuid,
+    code character varying(255),
+    name character varying(255),
+    type character varying(255),
+    status character varying(255),
+    description text,
+    "createdAt" timestamp with time zone,
+    "updatedAt" timestamp with time zone
+);
+
+
+ALTER TABLE public.backup_equipments OWNER TO postgres;
+
+--
+-- TOC entry 234 (class 1259 OID 16572)
+-- Name: backup_loans; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.backup_loans (
+    id uuid,
+    "equipmentId" uuid,
+    "borrowerName" character varying(255),
+    "loanDate" date,
+    "dueDate" date,
+    "returnDate" date,
+    status character varying(255),
+    "overdueDays" integer,
+    "totalFine" numeric(10,2),
+    "createdAt" timestamp with time zone,
+    "updatedAt" timestamp with time zone,
+    observations text,
+    borrowerid uuid
+);
+
+
+ALTER TABLE public.backup_loans OWNER TO postgres;
+
+--
+-- TOC entry 235 (class 1259 OID 16577)
+-- Name: backup_maintenances; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.backup_maintenances (
+    id uuid,
+    "equipmentId" uuid,
+    "scheduledDate" date,
+    type character varying(255),
+    priority character varying(255),
+    status character varying(255),
+    technician character varying(255),
+    description text,
+    "createdAt" timestamp with time zone,
+    "updatedAt" timestamp with time zone,
+    technicianid uuid,
+    "performedDate" date
+);
+
+
+ALTER TABLE public.backup_maintenances OWNER TO postgres;
+
+--
+-- TOC entry 219 (class 1259 OID 16397)
 -- Name: equipments; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.equipments (
-    id uuid NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     code character varying(255),
     name character varying(255),
     type character varying(255),
@@ -63,7 +173,7 @@ CREATE TABLE public.equipments (
 ALTER TABLE public.equipments OWNER TO postgres;
 
 --
--- TOC entry 219 (class 1259 OID 16537)
+-- TOC entry 220 (class 1259 OID 16403)
 -- Name: loans; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -87,7 +197,7 @@ CREATE TABLE public.loans (
 ALTER TABLE public.loans OWNER TO postgres;
 
 --
--- TOC entry 220 (class 1259 OID 16552)
+-- TOC entry 221 (class 1259 OID 16411)
 -- Name: maintenances; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -110,7 +220,7 @@ CREATE TABLE public.maintenances (
 ALTER TABLE public.maintenances OWNER TO postgres;
 
 --
--- TOC entry 217 (class 1259 OID 16516)
+-- TOC entry 222 (class 1259 OID 16417)
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -129,7 +239,7 @@ CREATE TABLE public.users (
 ALTER TABLE public.users OWNER TO postgres;
 
 --
--- TOC entry 224 (class 1259 OID 16580)
+-- TOC entry 223 (class 1259 OID 16424)
 -- Name: vista_actividad_mensual; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -151,7 +261,7 @@ CREATE VIEW public.vista_actividad_mensual AS
 ALTER VIEW public.vista_actividad_mensual OWNER TO postgres;
 
 --
--- TOC entry 230 (class 1259 OID 16624)
+-- TOC entry 224 (class 1259 OID 16428)
 -- Name: vista_actividades_recientes; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -172,7 +282,7 @@ CREATE VIEW public.vista_actividades_recientes AS
 ALTER VIEW public.vista_actividades_recientes OWNER TO postgres;
 
 --
--- TOC entry 225 (class 1259 OID 16584)
+-- TOC entry 225 (class 1259 OID 16433)
 -- Name: vista_equipos_populares; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -197,7 +307,7 @@ CREATE VIEW public.vista_equipos_populares AS
 ALTER VIEW public.vista_equipos_populares OWNER TO postgres;
 
 --
--- TOC entry 222 (class 1259 OID 16570)
+-- TOC entry 226 (class 1259 OID 16438)
 -- Name: vista_estadisticas_reportes; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -243,7 +353,7 @@ CREATE VIEW public.vista_estadisticas_reportes AS
 ALTER VIEW public.vista_estadisticas_reportes OWNER TO postgres;
 
 --
--- TOC entry 223 (class 1259 OID 16575)
+-- TOC entry 227 (class 1259 OID 16443)
 -- Name: vista_kpis_reportes; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -276,7 +386,7 @@ CREATE VIEW public.vista_kpis_reportes AS
 ALTER VIEW public.vista_kpis_reportes OWNER TO postgres;
 
 --
--- TOC entry 228 (class 1259 OID 16598)
+-- TOC entry 228 (class 1259 OID 16448)
 -- Name: vista_proximos_vencimientos; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -297,7 +407,7 @@ CREATE VIEW public.vista_proximos_vencimientos AS
 ALTER VIEW public.vista_proximos_vencimientos OWNER TO postgres;
 
 --
--- TOC entry 227 (class 1259 OID 16593)
+-- TOC entry 229 (class 1259 OID 16453)
 -- Name: vista_reportes_estado_equipos; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -326,7 +436,7 @@ CREATE VIEW public.vista_reportes_estado_equipos AS
 ALTER VIEW public.vista_reportes_estado_equipos OWNER TO postgres;
 
 --
--- TOC entry 231 (class 1259 OID 16639)
+-- TOC entry 230 (class 1259 OID 16458)
 -- Name: vista_reportes_mantenimiento; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -345,7 +455,7 @@ CREATE VIEW public.vista_reportes_mantenimiento AS
 ALTER VIEW public.vista_reportes_mantenimiento OWNER TO postgres;
 
 --
--- TOC entry 221 (class 1259 OID 16565)
+-- TOC entry 231 (class 1259 OID 16462)
 -- Name: vista_reportes_prestamos; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -378,7 +488,7 @@ CREATE VIEW public.vista_reportes_prestamos AS
 ALTER VIEW public.vista_reportes_prestamos OWNER TO postgres;
 
 --
--- TOC entry 226 (class 1259 OID 16589)
+-- TOC entry 232 (class 1259 OID 16467)
 -- Name: vista_reportes_usuarios; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -403,7 +513,7 @@ CREATE VIEW public.vista_reportes_usuarios AS
 ALTER VIEW public.vista_reportes_usuarios OWNER TO postgres;
 
 --
--- TOC entry 4806 (class 2606 OID 16613)
+-- TOC entry 4843 (class 2606 OID 16472)
 -- Name: activities activities_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -412,7 +522,7 @@ ALTER TABLE ONLY public.activities
 
 
 --
--- TOC entry 4798 (class 2606 OID 16536)
+-- TOC entry 4845 (class 2606 OID 16474)
 -- Name: equipments equipments_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -421,7 +531,7 @@ ALTER TABLE ONLY public.equipments
 
 
 --
--- TOC entry 4800 (class 2606 OID 16534)
+-- TOC entry 4847 (class 2606 OID 16476)
 -- Name: equipments equipments_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -430,7 +540,7 @@ ALTER TABLE ONLY public.equipments
 
 
 --
--- TOC entry 4802 (class 2606 OID 16546)
+-- TOC entry 4849 (class 2606 OID 16478)
 -- Name: loans loans_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -439,7 +549,7 @@ ALTER TABLE ONLY public.loans
 
 
 --
--- TOC entry 4804 (class 2606 OID 16559)
+-- TOC entry 4851 (class 2606 OID 16480)
 -- Name: maintenances maintenances_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -448,7 +558,7 @@ ALTER TABLE ONLY public.maintenances
 
 
 --
--- TOC entry 4794 (class 2606 OID 16526)
+-- TOC entry 4853 (class 2606 OID 16482)
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -457,7 +567,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 4796 (class 2606 OID 16524)
+-- TOC entry 4855 (class 2606 OID 16484)
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -466,7 +576,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 4811 (class 2606 OID 16614)
+-- TOC entry 4856 (class 2606 OID 16485)
 -- Name: activities fk_activities_equipment; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -475,7 +585,7 @@ ALTER TABLE ONLY public.activities
 
 
 --
--- TOC entry 4812 (class 2606 OID 16619)
+-- TOC entry 4857 (class 2606 OID 16490)
 -- Name: activities fk_activities_loan; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -484,7 +594,7 @@ ALTER TABLE ONLY public.activities
 
 
 --
--- TOC entry 4809 (class 2606 OID 16634)
+-- TOC entry 4860 (class 2606 OID 16495)
 -- Name: maintenances fk_technician; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -493,7 +603,7 @@ ALTER TABLE ONLY public.maintenances
 
 
 --
--- TOC entry 4807 (class 2606 OID 16629)
+-- TOC entry 4858 (class 2606 OID 16500)
 -- Name: loans fk_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -502,7 +612,7 @@ ALTER TABLE ONLY public.loans
 
 
 --
--- TOC entry 4808 (class 2606 OID 16547)
+-- TOC entry 4859 (class 2606 OID 16505)
 -- Name: loans loans_equipmentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -511,7 +621,7 @@ ALTER TABLE ONLY public.loans
 
 
 --
--- TOC entry 4810 (class 2606 OID 16560)
+-- TOC entry 4861 (class 2606 OID 16510)
 -- Name: maintenances maintenances_equipmentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -519,11 +629,11 @@ ALTER TABLE ONLY public.maintenances
     ADD CONSTRAINT "maintenances_equipmentId_fkey" FOREIGN KEY ("equipmentId") REFERENCES public.equipments(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
--- Completed on 2025-09-20 21:47:33
+-- Completed on 2025-09-21 15:08:15
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hO6g3L2Jphsug5JJPEWQgqwlWSqC2epQhhDTCdYsn1bBfOPVSfpSVaEaKfXeGhq
+\unrestrict OaNbxRd7cvHT8g6WOiAaTJjkAVj2mjhvePbhjDWH5FleEPoJsINocVIQbuW8ygA
 
