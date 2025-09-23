@@ -7,6 +7,13 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MantenimientoService, Mantenimiento, CrearMantDTO, AlertaPredictiva, UpdateMantDTO } from './mantenimiento.service';
 import { EquiposService, Equipo } from '../equipos/equipos.service';
 
+// Interfaz para la estructura del objeto Toast
+interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'error';
+}
+
 @Pipe({
   name: 'nl2br',
   standalone: true
@@ -31,9 +38,8 @@ export class MantenimientoComponent implements OnInit {
   private mantSvc = inject(MantenimientoService);
   private equiposSvc = inject(EquiposService);
 
-  notificationMessage = '';
-  notificationType: 'success' | 'error' = 'success';
-  showNotification = false;
+  // Arreglo para guardar los toasts activos
+  toasts: Toast[] = [];
 
   mantenimientos: Mantenimiento[] = [];
   equipos: Equipo[] = [];
@@ -88,6 +94,18 @@ export class MantenimientoComponent implements OnInit {
     });
   }
 
+  // Métodos para gestionar los toasts
+  private showToast(message: string, type: 'success' | 'error') {
+    const id = Date.now();
+    this.toasts.push({ id, message, type });
+    // El toast desaparece después de 5 segundos
+    setTimeout(() => this.removeToast(id), 5000);
+  }
+
+  removeToast(id: number) {
+    this.toasts = this.toasts.filter(toast => toast.id !== id);
+  }
+
   private setDefaultDate() {
     const today = new Date().toISOString().slice(0, 10);
     this.form.patchValue({ scheduledDate: today });
@@ -99,7 +117,7 @@ export class MantenimientoComponent implements OnInit {
         this.equipos = equipos;
         this.updateAvailableEquipmentList();
       },
-      error: (error) => this.showErrorMessage('No se pudieron cargar los equipos.')
+      error: (error) => this.showToast('No se pudieron cargar los equipos.', 'error')
     });
   }
 
@@ -135,9 +153,6 @@ export class MantenimientoComponent implements OnInit {
   }
 
   private updateAvailableEquipmentList() {
-    // Esta lógica podría necesitar ajustarse o llamarse después de cargar todos los mantenimientos
-    // si se quiere basar en la lista completa y no en la filtrada.
-    // Por ahora, se basa en la lista que está actualmente cargada (`this.mantenimientos`).
     const busyEquipmentIds = new Set(
       this.mantenimientos
         .filter(m => m.status === 'programado' || m.status === 'en-proceso')
@@ -168,15 +183,15 @@ export class MantenimientoComponent implements OnInit {
 
     operation.subscribe({
       next: () => {
-        const message = this.editingMaintenance ? 'Mantenimiento actualizado exitosamente' : 'Mantenimiento programado exitosamente';
-        this.showSuccessMessage(message);
+        const message = this.editingMaintenance ? 'Mantenimiento actualizado' : 'Mantenimiento programado';
+        this.showToast(`${message} exitosamente.`, 'success');
         this.closeModal();
         this.load();
       },
       error: (e) => {
         this.saving = false;
         const message = this.editingMaintenance ? 'No se pudo actualizar' : 'No se pudo crear';
-        this.showErrorMessage(e?.error?.message || `${message} el mantenimiento`);
+        this.showToast(e?.error?.message || `${message} el mantenimiento.`, 'error');
       }
     });
   }
@@ -184,10 +199,10 @@ export class MantenimientoComponent implements OnInit {
   iniciarMantenimiento(m: Mantenimiento) {
     this.mantSvc.start(m.id).subscribe({
       next: () => {
-        this.showSuccessMessage('El mantenimiento ha iniciado.');
-        this.load(); // Recargamos para reflejar el cambio de estado
+        this.showToast('El mantenimiento ha iniciado.', 'success');
+        this.load();
       },
-      error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo iniciar el mantenimiento')
+      error: (e) => this.showToast(e?.error?.message || 'No se pudo iniciar el mantenimiento.', 'error')
     });
   }
 
@@ -198,11 +213,11 @@ export class MantenimientoComponent implements OnInit {
     const { performedDate, completionNotes } = this.completeForm.value;
     this.mantSvc.complete(this.maintenanceToComplete.id, performedDate, completionNotes).subscribe({
       next: () => {
-        this.showSuccessMessage('Mantenimiento marcado como completado');
+        this.showToast('Mantenimiento marcado como completado.', 'success');
         this.closeCompleteModal();
         this.load();
       },
-      error: (e) => this.showErrorMessage(e?.error?.message || 'No se pudo marcar como completado')
+      error: (e) => this.showToast(e?.error?.message || 'No se pudo marcar como completado.', 'error')
     });
   }
 
@@ -351,20 +366,5 @@ export class MantenimientoComponent implements OnInit {
             meta: 'Este mes'
         });
       }
-  }
-
-  private showNotificationMessage(message: string, type: 'success' | 'error') {
-    this.notificationMessage = message;
-    this.notificationType = type;
-    this.showNotification = true;
-    setTimeout(() => this.showNotification = false, 3000);
-  }
-
-  private showSuccessMessage(message: string) {
-    this.showNotificationMessage(message, 'success');
-  }
-
-  private showErrorMessage(message: string) {
-    this.showNotificationMessage(message, 'error');
   }
 }
