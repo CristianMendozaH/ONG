@@ -734,3 +734,12 @@ $text-muted: #6c757d;
     margin: 10px;
   }
 }
+
+// --- INICIO: Estilo para alinear las etiquetas de estado ---
+.status-cell-container {
+  display: flex;
+  flex-direction: column; // Apila los elementos verticalmente
+  align-items: flex-start; // Los alinea a la izquierda
+  gap: 4px; // Añade un pequeño espacio entre ellos
+}
+// --- FIN: Estilo para alinear las etiquetas de estado ---

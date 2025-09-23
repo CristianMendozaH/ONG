@@ -56,10 +56,12 @@
           <td>{{ user.email }}</td>
           <td><span class="role-badge" [ngClass]="roleClass(user.role)">{{ roleLabels[user.role] || user.role }}</span></td>
           <td>
-            <span class="status-badge" [ngClass]="statusClass(user.active)">
-              {{ user.active ? 'Activo' : 'Inactivo' }}
-            </span>
-            <span *ngIf="user.passwordReset" class="password-reset-badge">Cambio requerido</span>
+            <div class="status-cell-container">
+              <span class="status-badge" [ngClass]="statusClass(user.active)">
+                {{ user.active ? 'Activo' : 'Inactivo' }}
+              </span>
+              <span *ngIf="user.passwordReset" class="password-reset-badge">Cambio requerido</span>
+            </div>
           </td>
           <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
           <td>

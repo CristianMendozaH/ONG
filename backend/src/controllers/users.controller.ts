@@ -24,30 +24,37 @@ export async function updateUser(req: Request, res: Response) {
   res.json(user);
 }
 
-// --- FUNCIÓN AÑADIDA ---
 export async function deleteUser(req: Request, res: Response) {
-  // Busca el usuario por el ID que viene en la URL
   const user = await User.findByPk(req.params.id);
-
-  // Si no se encuentra el usuario, devuelve un error 404
   if (!user) {
     return res.status(404).json({ message: 'Usuario no encontrado' });
   }
-
-  // Si se encuentra, elimínalo de la base de datos
   await user.destroy();
-
-  // Envía una respuesta de éxito (204 significa "No Content", es estándar para un DELETE exitoso)
   res.sendStatus(204);
 }
-// --- FIN DE LA FUNCIÓN AÑADIDA ---
 
-export async function resetPassword(req: Request, res: Response) {
-  const { password } = req.body;
+// --- FUNCIÓN MODIFICADA ---
+// Renombrada de 'resetPassword' a 'changePassword'
+export async function changePassword(req: Request, res: Response) {
+  // Se obtiene 'newPassword' del body para coincidir con la petición de Angular
+  const { newPassword } = req.body;
+
+  // Se valida que la nueva contraseña exista
+  if (!newPassword) {
+    return res.status(400).json({ message: 'La nueva contraseña es requerida' });
+  }
+
   const user = await User.findByPk(req.params.id);
   if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
   const rounds = Number(process.env.BCRYPT_ROUNDS || 10);
-  const passwordHash = await bcrypt.hash(password, rounds);
-  await user.update({ passwordHash });
-  res.json({ ok: true });
+  // Se usa 'newPassword' para generar el hash
+  const passwordHash = await bcrypt.hash(newPassword, rounds);
+
+  // Aquí podrías agregar lógica adicional, como guardar la opción 'forcePasswordChange'
+  await user.update({ passwordHash /* , passwordReset: req.body.forcePasswordChange */ });
+  
+  // Se envía una respuesta exitosa
+  res.status(200).json({ message: 'Contraseña cambiada correctamente' });
 }
+// --- FIN DE LA FUNCIÓN MODIFICADA ---
