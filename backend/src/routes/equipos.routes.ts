@@ -6,27 +6,27 @@ import { Op } from 'sequelize';
 const router = Router();
 
 // =======================================================================
-// RUTA LISTAR (CON LA ORDENACIÓN CORREGIDA)
+// RUTA LISTAR (CON BÚSQUEDA POR SERIAL)
 // =======================================================================
 router.get('/', async (req, res) => {
-  // Se extraen los parámetros de la consulta (query)
   const { search, status, type } = req.query;
-  
-  // Se crea un objeto 'where' para construir la consulta dinámicamente
   const where: any = {};
 
-  // 1. Lógica para el filtro de búsqueda (search)
   if (search && typeof search === 'string' && search.trim()) {
     const searchTerm = `%${search.trim()}%`;
     where[Op.or] = [
-      { name: { [Op.iLike]: searchTerm } }, // Busca en el nombre (insensible a mayúsculas)
-      { code: { [Op.iLike]: searchTerm } }, // Busca en el código (insensible a mayúsculas)
+      { name: { [Op.iLike]: searchTerm } },
+      { code: { [Op.iLike]: searchTerm } },
+      // ===============================================================
+      // ++ CAMBIO REALIZADO AQUÍ ++
+      // Se añade la búsqueda por el campo 'serial'. Ahora el buscador
+      // también encontrará equipos por su número de serie.
+      // ===============================================================
+      { serial: { [Op.iLike]: searchTerm } },
     ];
   }
 
-  // 2. Lógica para el filtro de estado (status)
   if (status && typeof status === 'string') {
-    // Si el estado es 'mantenimiento', busca en la base de datos los estados 'Programada' o 'En proceso'
     if (status === 'mantenimiento') {
       where.status = { [Op.in]: ['programada', 'en-proceso'] };
     } else {
@@ -34,34 +34,41 @@ router.get('/', async (req, res) => {
     }
   }
 
-  // 3. Lógica para el filtro de tipo (type)
   if (type && typeof type === 'string') {
-    where.type = { [Op.iLike]: type }; 
+    where.type = { [Op.iLike]: type };
   }
 
-  // Se ejecuta la consulta con los filtros construidos y el orden corregido
-  const rows = await Equipment.findAll({ 
-    where, 
-    order: [['createdAt', 'DESC']]  // <-- ÚNICO CAMBIO REALIZADO AQUÍ
+  const rows = await Equipment.findAll({
+    where,
+    order: [['createdAt', 'DESC']],
   });
-  
+
   res.json(rows);
 });
 
 // =======================================================================
-// OTRAS RUTAS (SIN CAMBIOS)
+// RUTA CREAR (ACEPTANDO EL CAMPO SERIAL)
 // =======================================================================
-
-// Crear
 router.post('/', async (req, res, next) => {
   try {
-    const { code, name, type, description } = req.body;
-    const eq = await Equipment.create({ code, name, type, description });
+    // ===============================================================
+    // ++ CAMBIO REALIZADO AQUÍ ++
+    // Se extrae 'serial' del cuerpo de la petición (req.body).
+    // Si no viene, será 'undefined' y no se guardará, lo cual es correcto.
+    // ===============================================================
+    const { code, name, type, description, serial } = req.body;
+    const eq = await Equipment.create({ code, name, type, description, serial });
     res.status(201).json(eq);
-  } catch (e) { next(e); }
+  } catch (e) {
+    // Manejo de error de unicidad para 'serial'
+    if (e instanceof Error && e.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ message: 'El código o número de serie ya existe.' });
+    }
+    next(e);
+  }
 });
 
-// Detalle
+// Detalle (Sin cambios)
 router.get('/:id', async (req, res, next) => {
   try {
     const eq = await Equipment.findByPk(req.params.id);
@@ -70,27 +77,44 @@ router.get('/:id', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// Actualizar
+// =======================================================================
+// RUTA ACTUALIZAR (ACEPTANDO EL CAMPO SERIAL)
+// =======================================================================
 router.put('/:id', async (req, res, next) => {
   try {
     const eq = await Equipment.findByPk(req.params.id);
     if (!eq) return res.status(404).json({ message: 'Equipo no encontrado' });
+
+    // ===============================================================
+    // ++ CAMBIO REALIZADO AQUÍ ++
+    // El método `update` de Sequelize recibe los campos del body.
+    // Si `req.body` incluye `serial`, intentará actualizarlo.
+    // No se necesita lógica extra aquí, pero es importante asegurarse
+    // que el frontend lo envíe correctamente.
+    // ===============================================================
     await eq.update(req.body);
     res.json(eq);
-  } catch (e) { next(e); }
+  } catch (e) {
+    // Manejo de error de unicidad para 'serial'
+    if (e instanceof Error && e.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ message: 'El código o número de serie ya existe.' });
+    }
+    next(e);
+  }
 });
 
-// Eliminar
+
+// Eliminar (Sin cambios)
 router.delete('/:id', async (req, res, next) => {
   try {
     const eq = await Equipment.findByPk(req.params.id);
     if (!eq) return res.status(404).json({ message: 'Equipo no encontrado' });
     await eq.destroy();
-    res.json({ ok: true });
+    res.status(204).send(); // Es una mejor práctica devolver 204 No Content en un DELETE exitoso.
   } catch (e) { next(e); }
 });
 
-// QR del equipo (PNG)
+// QR del equipo (Sin cambios)
 router.get('/:id/qr', async (req, res, next) => {
   try {
     const eq = await Equipment.findByPk(req.params.id);

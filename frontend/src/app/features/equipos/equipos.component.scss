@@ -325,6 +325,11 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .form-row:last-of-type {
+      margin-bottom: 0;
     }
 
     .form-group {

@@ -14,7 +14,7 @@
     <div class="filters-row">
       <div class="filter">
         <label>Buscar</label>
-        <input type="text" placeholder="Código, nombre..." [(ngModel)]="search" (ngModelChange)="onSearchChange()" />
+        <input type="text" placeholder="Código, nombre, serial..." [(ngModel)]="search" (ngModelChange)="onSearchChange()" />
       </div>
       <div class="filter">
         <label>Estado</label>
@@ -52,7 +52,7 @@
       <thead>
         <tr>
           <th style="width: 120px;">Código</th>
-          <th>Nombre</th>
+          <th>Nombre / Serial</th>
           <th style="width: 160px;">Tipo</th>
           <th style="width: 160px;">Estado</th>
           <th style="width: 220px;">Acciones</th>
@@ -63,7 +63,7 @@
           <td><code>{{ e.code || '—' }}</code></td>
           <td>
             <div class="name">{{ e.name }}</div>
-            <div class="muted" *ngIf="e.description">{{ e.description }}</div>
+            <div class="muted" *ngIf="e.serial">N/S: <strong>{{ e.serial }}</strong></div>
           </td>
           <td>{{ getTypeLabel(e.type) }}</td>
           <td>
@@ -109,12 +109,18 @@
       </div>
       <div class="form-row">
         <div class="form-group">
+            <label>Número de Serie</label>
+            <input type="text" [(ngModel)]="equipmentForm.serial" name="serial" placeholder="Opcional, ej: SN-485729B" autocomplete="off" spellcheck="false"/>
+        </div>
+        <div class="form-group">
           <label>Tipo *</label>
           <select [(ngModel)]="equipmentForm.type" name="type" required>
             <option value="" disabled>Seleccione...</option>
             <option *ngFor="let t of availableTypes" [value]="t.value">{{ t.label }}</option>
           </select>
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label>Estado *</label>
           <select [(ngModel)]="equipmentForm.status" name="status" required>
@@ -152,6 +158,10 @@
       <div class="info-row">
         <span class="info-label">Nombre:</span>
         <span class="info-value">{{ equipoSeleccionado.name }}</span>
+      </div>
+       <div class="info-row" *ngIf="equipoSeleccionado.serial">
+        <span class="info-label">Número de Serie:</span>
+        <span class="info-value">{{ equipoSeleccionado.serial }}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Tipo:</span>

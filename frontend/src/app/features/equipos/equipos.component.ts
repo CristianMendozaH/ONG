@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router'; // ✅ IMPORTADO Router
+import { Router, RouterLink } from '@angular/router';
 import { EquiposService, Equipo } from './equipos.service';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
@@ -17,7 +17,7 @@ interface Toast {
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './equipos.component.html',
-  styleUrls: ['./equipos.component.scss'] // Corregido a styleUrls
+  styleUrls: ['./equipos.component.scss']
 })
 export class EquiposComponent implements OnInit, OnDestroy {
   equipos: Equipo[] = [];
@@ -34,7 +34,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
   showViewModal = false;
   showDeleteModal = false;
   showQRModal = false;
-  showPrintModal = false; // ✅ AÑADIDO: Estado para el modal de impresión
+  showPrintModal = false;
 
   // Estados del modal
   isEditMode = false;
@@ -47,6 +47,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
     id: '',
     code: '',
     name: '',
+    serial: '', // ++ AÑADIDO: Campo para el número de serie.
     type: '',
     status: 'disponible' as any,
     description: ''
@@ -72,7 +73,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   toasts: Toast[] = [];
 
-  // ✅ AÑADIDO: Set para almacenar los IDs de los equipos a imprimir
   equiposParaImprimir = new Set<string>();
 
   readonly CODE_PREFIX = 'EQ';
@@ -81,7 +81,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
   constructor(
     private equiposSvc: EquiposService,
     private dataRefreshService: DataRefreshService,
-    private router: Router // ✅ INYECTADO Router
+    private router: Router
   ) {
     this.searchSubject.pipe(
       debounceTime(300),
@@ -178,7 +178,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
     this.showViewModal = false;
     this.showDeleteModal = false;
     this.showQRModal = false;
-    this.showPrintModal = false; // ✅ AÑADIDO: También cierra el modal de impresión
+    this.showPrintModal = false;
     this.equipoSeleccionado = null;
     this.resetForm();
 
@@ -189,7 +189,8 @@ export class EquiposComponent implements OnInit, OnDestroy {
   }
 
   resetForm() {
-    this.equipmentForm = { id: '', code: '', name: '', type: '', status: 'disponible', description: '' };
+    // -- MODIFICADO: Resetea el formulario incluyendo el nuevo campo.
+    this.equipmentForm = { id: '', code: '', name: '', serial: '', type: '', status: 'disponible', description: '' };
   }
 
   agregarEquipo() {
@@ -204,7 +205,8 @@ export class EquiposComponent implements OnInit, OnDestroy {
     this.isEditMode = true;
     this.modalTitle = 'Editar Equipo';
     this.equipoSeleccionado = equipo;
-    this.equipmentForm = { ...equipo, description: equipo.description || '' };
+    // -- MODIFICADO: Mapea el equipo al formulario, asegurando que 'serial' se asigne correctamente.
+    this.equipmentForm = { ...equipo, description: equipo.description || '', serial: equipo.serial || '' };
     this.showAddEditModal = true;
   }
 
@@ -268,7 +270,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
   verQR(equipo: Equipo) {
     this.equipoSeleccionado = equipo;
     this.qrUrl = null;
-    this.showQRModal = true; // Mostrar modal inmediatamente
+    this.showQRModal = true;
     this.equiposSvc.qr(equipo.id).subscribe({
       next: (blob) => this.qrUrl = URL.createObjectURL(blob),
       error: (err) => this.showError(err?.error?.message || 'No se pudo generar el código QR')
@@ -285,7 +287,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     document.body.removeChild(link);
   }
 
-  // ✅ INICIO: NUEVAS FUNCIONES PARA IMPRESIÓN
   abrirModalImprimir() {
     this.equiposParaImprimir.clear();
     this.showPrintModal = true;
@@ -308,7 +309,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     window.open(url, '_blank');
     this.closeModal();
   }
-  // ✅ FIN: NUEVAS FUNCIONES PARA IMPRESIÓN
 
   showToast(message: string, type: 'success' | 'error' = 'success', duration: number = 4000) {
     const id = Date.now();

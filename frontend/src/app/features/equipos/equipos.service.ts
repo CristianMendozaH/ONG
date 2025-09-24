@@ -8,6 +8,7 @@ export interface Equipo {
   id: string;
   code: string;
   name: string;
+  serial?: string; // ++ AÑADIDO: Campo opcional para el número de serie.
   type: string;
   status: 'disponible' | 'prestado' | 'mantenimiento' | 'dañado';
   description?: string;
