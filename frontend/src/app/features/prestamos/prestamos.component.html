@@ -57,11 +57,19 @@
         </div>
       </div>
       <div class="scan-result" [class.show]="scannedEquipment" *ngIf="scannedEquipment">
+        <button class="close-scan-result-btn" (click)="clearScannedData()" title="Cerrar"><i class="fas fa-times"></i></button>
         <h4>Equipo Detectado</h4>
         <p><strong>ID:</strong> {{ scannedEquipment.code }}</p>
         <p><strong>Equipo:</strong> {{ scannedEquipment.name }}</p>
-        <p><strong>Estado:</strong> {{ scannedEquipment.status }}</p>
+        <p><strong>Estado:</strong> {{ getStatusText(scannedEquipment.status) }}</p>
         <p *ngIf="scannedEquipment.description"><strong>Descripción:</strong> {{ scannedEquipment.description }}</p>
+        <div *ngIf="scannedLoanInfo" class="borrower-info">
+          <i class="fas fa-user-check"></i>
+          <div>
+            <p><strong>Prestado a:</strong> {{ scannedLoanInfo.borrowerName }}</p>
+            <p><small>Fecha Límite: {{ scannedLoanInfo.dueDate | date:'dd/MM/yyyy' }}</small></p>
+          </div>
+        </div>
         <div class="scan-result-actions">
           <button *ngIf="scannedEquipment.status === 'disponible'" class="btn-scan-action btn-loan-scan" (click)="createLoanFromScan()"><i class="fas fa-arrow-up"></i> Crear Préstamo</button>
           <button *ngIf="scannedEquipment.status === 'prestado'" class="btn-scan-action btn-return-scan" (click)="createReturnFromScan()"><i class="fas fa-arrow-down"></i> Devolver</button>
@@ -76,7 +84,7 @@
     </div>
   </div>
 
-  <div *ngIf="loading" class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>Cargando préstamos...</p></div>
+  <div *ngIf="loading" class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>Cargando datos...</p></div>
   <div *ngIf="!loading && error" class="error-state"><i class="fas fa-exclamation-triangle"></i><p>{{ error }}</p><button class="btn-retry" (click)="loadPrestamos()">Reintentar</button></div>
 
   <div class="loans-table-container" *ngIf="!loading && !error">
@@ -168,11 +176,11 @@
   </div>
 </div>
 
-<div class="modal-overlay" [class.show]="!!qrUrl" (click)="qrUrl = null">
+<div class="modal-overlay" [class.show]="!!qrUrl" (click)="closeModal('qr')">
   <div class="modal qr-modal" (click)="$event.stopPropagation()">
-    <div class="modal-header"><h3 class="modal-title">Código QR del Equipo</h3><button class="modal-close" (click)="qrUrl = null"><i class="fas fa-times"></i></button></div>
+    <div class="modal-header"><h3 class="modal-title">Código QR del Equipo</h3><button class="modal-close" (click)="closeModal('qr')"><i class="fas fa-times"></i></button></div>
     <div class="modal-body qr-body"><img *ngIf="qrUrl" [src]="qrUrl" alt="QR Code" class="qr-image"></div>
-    <div class="modal-footer"><button type="button" class="btn-cancel" (click)="qrUrl = null">Cerrar</button><button type="button" class="btn-confirm" (click)="downloadQR()" *ngIf="qrUrl"><i class="fas fa-download"></i>Descargar QR</button></div>
+    <div class="modal-footer"><button type="button" class="btn-cancel" (click)="closeModal('qr')">Cerrar</button><button type="button" class="btn-confirm" (click)="downloadQR()" *ngIf="qrUrl"><i class="fas fa-download"></i>Descargar QR</button></div>
   </div>
 </div>
 

@@ -135,8 +135,7 @@ export class PrestamosComponent implements OnInit, OnDestroy {
 
     this.isScanning = true;
     this.scannerText = 'Iniciando cámara...';
-    this.scannedEquipment = null;
-    this.scannedLoanInfo = null;
+    this.clearScannedData();
     this.showCameraPreview = true;
     try {
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -196,6 +195,11 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     this.codeReader.reset();
     this.isScanning = false;
     this.showCameraPreview = false;
+  }
+
+  public clearScannedData() {
+    this.scannedEquipment = null;
+    this.scannedLoanInfo = null;
   }
 
   public createLoanFromScan() {
@@ -277,6 +281,7 @@ export class PrestamosComponent implements OnInit, OnDestroy {
 
   public verQR(prestamo: Prestamo) {
     this.selectedPrestamo = prestamo;
+    this.qrUrl = null;
     const eqId = prestamo.equipment?.id ?? prestamo.equipmentId;
     this.equiposSvc.qr(eqId).subscribe({
       next: (blob) => { this.qrUrl = URL.createObjectURL(blob); },
@@ -314,12 +319,19 @@ export class PrestamosComponent implements OnInit, OnDestroy {
   public updateOverdueLoans() { this.overdueLoans = this.prestamos.filter(p => p.status !== 'devuelto' && new Date() > new Date(p.dueDate)); }
   public getOverdueCount = () => this.overdueLoans.length;
 
-  public closeModal(type: 'loan' | 'return' | 'overdue' | 'details' | 'extend') {
-    const modals: { [key: string]: keyof PrestamosComponent } = { loan: 'showLoanModal', return: 'showReturnModal', overdue: 'showOverdueLoansModal', details: 'showLoanDetailsModal', extend: 'showExtendModal' };
-    (this[modals[type]] as boolean) = false;
+  public closeModal(type: 'loan' | 'return' | 'overdue' | 'details' | 'extend' | 'qr') {
+    const modals: { [key: string]: keyof PrestamosComponent } = {
+      loan: 'showLoanModal', return: 'showReturnModal', overdue: 'showOverdueLoansModal',
+      details: 'showLoanDetailsModal', extend: 'showExtendModal', qr: 'qrUrl'
+    };
+    if (type === 'qr') {
+      this.qrUrl = null;
+    } else {
+      (this[modals[type]] as boolean) = false;
+    }
     if (type === 'loan') this.loanForm.reset();
     if (type === 'return') this.resetReturnForm();
-    if (type === 'details') this.qrUrl = null;
+    if (type === 'details') this.selectedPrestamo = null;
   }
 
   public filterPrestamos() {
@@ -327,7 +339,7 @@ export class PrestamosComponent implements OnInit, OnDestroy {
   }
 
   public getStatusClass = (p: Prestamo) => ({ 'status-prestado': p.status === 'prestado', 'status-devuelto': p.status === 'devuelto', 'status-atrasado': p.status === 'atrasado' });
-  public getStatusText = (s: string) => ({ prestado: 'Prestado', devuelto: 'Devuelto', atrasado: 'Atrasado' }[s] || s);
+  public getStatusText = (s: string) => ({ prestado: 'Prestado', devuelto: 'Devuelto', atrasado: 'Atrasado', disponible: 'Disponible', mantenimiento: 'Mantenimiento' }[s] || s);
 
   public getEquipmentName = (p: Prestamo) => p.equipment?.name || this.equipos.find(e => e.id === p.equipmentId)?.name || 'N/A';
   public getEquipmentCode = (p: Prestamo) => p.equipment?.code || this.equipos.find(e => e.id === p.equipmentId)?.code || 'N/A';
@@ -360,7 +372,12 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     this.damageFee = 0; this.totalFee = 0;
   }
 
-  private resetExtendForm() { /* Lógica para resetear form de extensión */ }
+  private resetExtendForm() {
+    this.selectedPrestamo = null;
+    this.extendNewDate = '';
+    this.extendReason = '';
+    this.extendComments = '';
+  }
 
   public calculateFees() {
     if (!this.selectedPrestamo) return;
