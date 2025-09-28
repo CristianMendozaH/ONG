@@ -10,7 +10,7 @@ export interface Equipo {
   name: string;
   serial?: string; // ++ AÑADIDO: Campo opcional para el número de serie.
   type: string;
-  status: 'disponible' | 'prestado' | 'mantenimiento' | 'dañado';
+  status: 'disponible' | 'prestado' | 'mantenimiento' | 'dañado' | 'asignado';
   description?: string;
   createdAt?: string;
   updatedAt?: string;

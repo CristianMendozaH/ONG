@@ -65,6 +65,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
   availableStatuses = [
     { value: 'disponible', label: 'Disponible' },
     { value: 'prestado', label: 'Prestado' },
+    { value: 'asignado', label: 'Asignado' },
     { value: 'mantenimiento', label: 'Mantenimiento' },
     { value: 'dañado', label: 'Dañado' }
   ];
@@ -115,7 +116,12 @@ export class EquiposComponent implements OnInit, OnDestroy {
     const params = { search: this.search.trim(), status: this.status, type: this.type };
     this.equiposSvc.list(params).subscribe({
       next: (data) => {
-        this.equipos = data;
+        // Ordenamos los datos por fecha de creación descendente
+        this.equipos = data.sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
         this.loading = false;
       },
       error: (err) => {
@@ -189,7 +195,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
   }
 
   resetForm() {
-    // -- MODIFICADO: Resetea el formulario incluyendo el nuevo campo.
     this.equipmentForm = { id: '', code: '', name: '', serial: '', type: '', status: 'disponible', description: '' };
   }
 
@@ -205,7 +210,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     this.isEditMode = true;
     this.modalTitle = 'Editar Equipo';
     this.equipoSeleccionado = equipo;
-    // -- MODIFICADO: Mapea el equipo al formulario, asegurando que 'serial' se asigne correctamente.
     this.equipmentForm = { ...equipo, description: equipo.description || '', serial: equipo.serial || '' };
     this.showAddEditModal = true;
   }
@@ -335,7 +339,8 @@ export class EquiposComponent implements OnInit, OnDestroy {
   getStatusLabel(status: string): string {
     const statusMap: Record<string, string> = {
       'disponible': 'Disponible', 'prestado': 'Prestado', 'dañado': 'Dañado',
-      'mantenimiento': 'Mantenimiento', 'programado': 'Mantenimiento', 'en-proceso': 'Mantenimiento',
+      'asignado': 'Asignado',
+      'mantenimiento': 'Mantenimiento',
     };
     return statusMap[status] || status;
   }
@@ -343,7 +348,8 @@ export class EquiposComponent implements OnInit, OnDestroy {
   getStatusClass(status: string): string {
     const classMap: Record<string, string> = {
       'disponible': 'status-disponible', 'prestado': 'status-prestado', 'dañado': 'status-danado',
-      'mantenimiento': 'status-mantenimiento', 'programado': 'status-mantenimiento', 'en-proceso': 'status-mantenimiento',
+      'asignado': 'status-asignado',
+      'mantenimiento': 'status-mantenimiento',
     };
     return classMap[status] || 'status-disponible';
   }
