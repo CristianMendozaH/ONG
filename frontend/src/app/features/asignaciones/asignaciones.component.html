@@ -1,0 +1,164 @@
+<header class="header">
+  <div class="header-left">
+    <h1>Asignación de Equipos</h1>
+    <div class="breadcrumb"><a routerLink="/dashboard">Dashboard</a><i class="fas fa-chevron-right"></i><span>Asignaciones</span></div>
+  </div>
+</header>
+
+<div class="loans-content">
+  <div class="toast-container">
+    <div *ngFor="let toast of toasts" class="toast {{ toast.type }}">
+      <div class="toast-icon">
+        <i *ngIf="toast.type === 'success'" class="fas fa-check-circle"></i>
+        <i *ngIf="toast.type === 'error'" class="fas fa-exclamation-circle"></i>
+      </div>
+      <div class="toast-message">{{ toast.message }}</div>
+      <button class="toast-close" (click)="removeToast(toast.id)"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <div class="content-header">
+    <h2 class="content-title">Gestión de Asignaciones</h2>
+    <div class="action-buttons">
+      <button class="btn-new-loan" (click)="openAsignacionModal()"><i class="fas fa-plus"></i> Nueva Asignación</button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>Cargando datos...</p></div>
+  <div *ngIf="!loading && error" class="error-state"><i class="fas fa-exclamation-triangle"></i><p>{{ error }}</p><button class="btn-retry" (click)="cargarTodosLosDatos()">Reintentar</button></div>
+
+  <div class="loans-table-container" *ngIf="!loading && !error">
+    <div class="table-header">
+      <h3 class="table-title">Historial de Asignaciones</h3>
+      <div class="table-filters">
+        <select class="filter-select" [(ngModel)]="statusFilter" (change)="filterAsignaciones()">
+          <option value="">Todos los estados</option>
+          <option value="assigned">Asignado</option>
+          <option value="released">Liberado</option>
+          <option value="donated">Donado</option>
+        </select>
+      </div>
+    </div>
+    <table class="loans-table">
+      <thead><tr><th>ID</th><th>Equipo</th><th>Colaborador</th><th>Fecha Asignación</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let asignacion of filteredAsignaciones; trackBy: trackById">
+          <td>{{ formatId(asignacion.id) }}</td>
+          <td>
+            <div class="equipment-info">
+              <div class="equipment-name">{{ getEquipoNombre(asignacion) }}</div>
+              <div class="equipment-code">{{ getEquipoCodigo(asignacion) }}</div>
+            </div>
+          </td>
+          <td>
+            <div class="equipment-info">
+              <div class="equipment-name">{{ getColaboradorNombre(asignacion) }}</div>
+              <div class="equipment-code">{{ asignacion.collaborator?.program || 'Sin programa' }}</div>
+            </div>
+          </td>
+          <td>{{ asignacion.assignmentDate | date:'dd/MM/yyyy' }}</td>
+          <td><span class="status-badge" [ngClass]="getStatusClass(asignacion.status)">{{ getStatusText(asignacion.status) }}</span></td>
+          <td>
+            <div class="actions-cell">
+              <button class="action-btn btn-view" (click)="verAsignacion(asignacion)" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+              <button class="action-btn btn-extend" *ngIf="asignacion.status === 'assigned'" (click)="editarAsignacion(asignacion)" title="Editar"><i class="fas fa-edit"></i></button>
+              <button class="action-btn btn-return-action" *ngIf="asignacion.status === 'assigned'" (click)="openLiberacionModal(asignacion)" title="Liberar Equipo"><i class="fas fa-undo"></i></button>
+              <button class="action-btn btn-donate" *ngIf="asignacion.status === 'assigned' && asignacion.collaborator?.type === 'Becado'" (click)="donarEquipo(asignacion)" title="Donar Equipo"><i class="fas fa-gift"></i></button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="filteredAsignaciones.length === 0"><td colspan="6" class="no-data"><i class="fas fa-inbox"></i><p>No hay asignaciones registradas</p></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-overlay" [class.show]="showAsignacionModal" (click)="closeModal('asignacion')">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ selectedAsignacion ? 'Editar' : 'Nueva' }} Asignación</h3>
+      <button class="modal-close" (click)="closeModal('asignacion')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="asignacionForm" (ngSubmit)="guardarAsignacion()">
+        <div class="form-group">
+          <label class="form-label">Equipo a Asignar</label>
+          <select class="form-select" formControlName="equipmentId">
+            <option value="">Seleccione un equipo</option>
+            <option *ngIf="selectedAsignacion" [value]="selectedAsignacion.equipmentId">{{ getEquipoCodigo(selectedAsignacion) }} - {{ getEquipoNombre(selectedAsignacion) }}</option>
+            <option *ngFor="let equipo of equiposDisponibles" [value]="equipo.id">{{ equipo.code }} - {{ equipo.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Asignar a Colaborador</label>
+          <select class="form-select" formControlName="collaboratorId">
+            <option value="">Seleccione un colaborador</option>
+            <option *ngFor="let c of colaboradores" [value]="c.id">{{ c.fullName }} ({{ c.program }})</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha de Asignación</label>
+          <input type="date" class="form-input" formControlName="assignmentDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Observaciones (Opcional)</label>
+          <textarea class="form-input" formControlName="observations" rows="3"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeModal('asignacion')">Cancelar</button>
+      <button type="button" class="btn-confirm" [disabled]="asignacionForm.invalid" (click)="guardarAsignacion()"><i class="fas fa-check"></i> {{ selectedAsignacion ? 'Actualizar' : 'Confirmar' }}</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" [class.show]="showLiberacionModal" (click)="closeModal('liberacion')">
+  <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3 class="modal-title">Liberar Equipo</h3><button class="modal-close" (click)="closeModal('liberacion')"><i class="fas fa-times"></i></button></div>
+      <div class="modal-body" *ngIf="selectedAsignacion">
+          <p>Vas a liberar el equipo <strong>{{ getEquipoNombre(selectedAsignacion) }}</strong> asignado a <strong>{{ getColaboradorNombre(selectedAsignacion) }}</strong>.</p>
+          <div class="form-group"><label class="form-label">Fecha de Liberación</label><input type="date" class="form-input" [(ngModel)]="fechaLiberacion"></div>
+          <div class="form-group"><label class="form-label">Estado del Equipo</label><select class="form-select" [(ngModel)]="equipoCondicion"><option value="">Seleccione</option><option value="excelente">Excelente</option><option value="bueno">Bueno</option><option value="regular">Regular</option><option value="dañado">Dañado</option></select></div>
+          <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-input" [(ngModel)]="liberacionObservaciones" rows="3"></textarea></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn-cancel" (click)="closeModal('liberacion')">Cancelar</button><button type="button" class="btn-confirm return" [disabled]="!equipoCondicion" (click)="confirmarLiberacion()"><i class="fas fa-undo"></i> Confirmar</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" [class.show]="showDetallesModal" (click)="closeModal('detalles')">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header"><h3 class="modal-title">Detalles de la Asignación</h3><button class="modal-close" (click)="closeModal('detalles')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-body" *ngIf="selectedAsignacion">
+      <div class="details-section">
+        <h4 class="details-title">Detalles del Equipo</h4>
+        <div class="details-grid">
+          <div class="detail-item"><span class="detail-label">Código</span><span class="detail-value">{{ getEquipoCodigo(selectedAsignacion) }}</span></div>
+          <div class="detail-item"><span class="detail-label">Nombre</span><span class="detail-value">{{ getEquipoNombre(selectedAsignacion) }}</span></div>
+        </div>
+      </div>
+      <div class="details-section">
+        <h4 class="details-title">Información del Colaborador</h4>
+        <div class="details-grid">
+          <div class="detail-item"><span class="detail-label">Nombre</span><span class="detail-value">{{ getColaboradorNombre(selectedAsignacion) }}</span></div>
+          <div class="detail-item"><span class="detail-label">Tipo</span><span class="detail-value">{{ selectedAsignacion.collaborator?.type }}</span></div>
+          <div class="detail-item"><span class="detail-label">Programa</span><span class="detail-value">{{ selectedAsignacion.collaborator?.program }}</span></div>
+          <div class="detail-item"><span class="detail-label">Puesto</span><span class="detail-value">{{ selectedAsignacion.collaborator?.position }}</span></div>
+        </div>
+      </div>
+      <div class="details-section">
+        <h4 class="details-title">Información de la Asignación</h4>
+        <div class="details-grid">
+            <div class="detail-item"><span class="detail-label">ID</span><span class="detail-value">{{ formatId(selectedAsignacion.id) }}</span></div>
+            <div class="detail-item"><span class="detail-label">Fecha Asignación</span><span class="detail-value">{{ selectedAsignacion.assignmentDate | date:'fullDate' }}</span></div>
+            <div class="detail-item"><span class="detail-label">Estado</span><span class="detail-value status-badge" [ngClass]="getStatusClass(selectedAsignacion.status)">{{ getStatusText(selectedAsignacion.status) }}</span></div>
+            <div class="detail-item" *ngIf="selectedAsignacion.status !== 'assigned'"><span class="detail-label">Fecha Cierre</span><span class="detail-value">{{ selectedAsignacion.releaseDate | date:'fullDate' }}</span></div>
+        </div>
+        <div class="summary-observations" *ngIf="selectedAsignacion.observations">
+            <p><strong>Observaciones:</strong> {{ selectedAsignacion.observations }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn-cancel" (click)="closeModal('detalles')">Cerrar</button></div>
+  </div>
+</div>

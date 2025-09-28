@@ -1,3 +1,5 @@
+// src/app/app.routes.ts
+
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -22,7 +24,6 @@ export const routes: Routes = [
       {
         path: 'equipos',
         data: { roles: ['admin', 'tecnico'] },
-        // AHORA USAMOS loadChildren para cargar el conjunto de rutas
         loadChildren: () => import('./features/equipos/equipos.routes').then(m => m.EQUIPOS_ROUTES)
       },
       {
@@ -30,6 +31,13 @@ export const routes: Routes = [
         data: { roles: ['admin', 'tecnico'] },
         loadComponent: () => import('./features/prestamos/prestamos.component').then(m => m.PrestamosComponent)
       },
+      // 👇 AÑADE ESTA NUEVA RUTA AQUÍ 👇
+      {
+        path: 'asignaciones',
+        data: { roles: ['admin', 'tecnico'] },
+        loadComponent: () => import('./features/asignaciones/asignaciones.component').then(m => m.AsignacionesComponent)
+      },
+      // ---------------------------------
       {
         path: 'mantenimiento',
         data: { roles: ['admin', 'tecnico'] },

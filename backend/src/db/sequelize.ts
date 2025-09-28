@@ -6,8 +6,9 @@ import { User } from '../models/User.js';
 import { Equipment } from '../models/Equipment.js';
 import { Loan } from '../models/Loan.js';
 import { Maintenance } from '../models/Maintenance.js';
-import { Config } from '../models/Config.js'; // <-- AÑADIDO
-import { Assignment } from '../models/Assignment.js'; // <-- AÑADIDO
+import { Config } from '../models/Config.js';
+import { Assignment } from '../models/Assignment.js';
+import { Collaborator } from '../models/Collaborator.js'; // ---> NUEVO: Importar el modelo Collaborator
 
 export const sequelize = new Sequelize({
   dialect: 'postgres',
@@ -24,14 +25,23 @@ export const sequelize = new Sequelize({
     Equipment,
     Loan,
     Maintenance,
-    Config,      // <-- AÑADIDO
-    Assignment   // <-- AÑADIDO
+    Config,
+    Assignment,
+    Collaborator // ---> NUEVO: Añadir Collaborator a la lista
   ], 
 });
 
-// Relaciones (si no las pusiste aún)
+// --- Relaciones existentes ---
 Equipment.hasMany(Loan, { foreignKey: 'equipmentId' });
 Loan.belongsTo(Equipment, { foreignKey: 'equipmentId' });
 
 Equipment.hasMany(Maintenance, { foreignKey: 'equipmentId' });
 Maintenance.belongsTo(Equipment, { foreignKey: 'equipmentId' });
+
+
+// ---> NUEVO: Definir las relaciones para Asignaciones ---
+Equipment.hasMany(Assignment, { foreignKey: 'equipmentId' });
+Assignment.belongsTo(Equipment, { foreignKey: 'equipmentId' });
+
+Collaborator.hasMany(Assignment, { foreignKey: 'collaboratorId' });
+Assignment.belongsTo(Collaborator, { foreignKey: 'collaboratorId' });

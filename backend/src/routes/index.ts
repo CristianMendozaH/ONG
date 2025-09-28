@@ -6,7 +6,9 @@ import prestamosRoutes from './prestamos.routes';
 import maintenancesRoutes from './maintenances.routes';
 import reportsRoutes from './reports.routes';
 import configRoutes from './config.routes';
-import healthRoutes from './health.routes'; 
+import healthRoutes from './health.routes';
+import assignmentsRoutes from './assignments.routes';   // ---> NUEVO
+import collaboratorsRoutes from './collaborators.routes'; // ---> NUEVO
 
 const router = Router();
 
@@ -14,6 +16,8 @@ router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
 router.use('/equipos', equiposRoutes);
 router.use('/prestamos', prestamosRoutes);
+router.use('/assignments', assignmentsRoutes);     // ---> NUEVO
+router.use('/collaborators', collaboratorsRoutes); // ---> NUEVO
 
 router.use('/maintenances', maintenancesRoutes);
 router.use('/mantenimientos', maintenancesRoutes); // alias ES

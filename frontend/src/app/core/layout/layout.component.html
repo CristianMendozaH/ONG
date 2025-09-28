@@ -16,6 +16,10 @@
       <a *ngIf="userStore.isAdmin() || userStore.isTech()" routerLink="/prestamos" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-share-nodes"></i><span>Préstamos</span>
       </a>
+
+      <a *ngIf="userStore.isAdmin() || userStore.isTech()" routerLink="/asignaciones" routerLinkActive="active" class="menu-item">
+        <i class="fa-solid fa-user-tag"></i><span>Asignaciones</span>
+      </a>
       <a *ngIf="userStore.isAdmin() || userStore.isTech()" routerLink="/mantenimiento" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-screwdriver-wrench"></i><span>Mantenimiento</span>
       </a>

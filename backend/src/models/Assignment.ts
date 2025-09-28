@@ -1,17 +1,8 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  Default,
-  PrimaryKey,
-  ForeignKey,
-  BelongsTo,
-} from 'sequelize-typescript';
+import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
 import { Equipment } from './Equipment';
-import { User } from './User'; // Asumimos que el asignado es un usuario del sistema
+import { Collaborator } from './Collaborator';
 
-export type AssignmentStatus = 'activa' | 'finalizada';
+export type AssignmentStatus = 'assigned' | 'released';
 
 @Table({ tableName: 'assignments', timestamps: true })
 export class Assignment extends Model {
@@ -20,34 +11,34 @@ export class Assignment extends Model {
   @Column(DataType.UUID)
   id!: string;
 
+  // Correcto: Ambos decoradores van juntos, encima de la propiedad.
   @ForeignKey(() => Equipment)
-  @Column(DataType.UUID)
+  @Column({ field: 'equipment_id', type: DataType.UUID })
   equipmentId!: string;
 
-  @ForeignKey(() => User)
-  @Column(DataType.UUID)
-  userId!: string; // El colaborador al que se le asigna
+  // Correcto: Ambos decoradores van juntos, encima de la propiedad.
+  @ForeignKey(() => Collaborator)
+  @Column({ field: 'collaborator_id', type: DataType.UUID })
+  collaboratorId!: string;
 
   @Default(DataType.NOW)
-  @Column(DataType.DATEONLY)
-  assignmentDate!: string; // Fecha de asignación
+  @Column({ type: DataType.DATEONLY, field: 'assignment_date' }) // También aplica el 'field' aquí por consistencia
+  assignmentDate!: string;
 
-  @Column({ type: DataType.DATEONLY, allowNull: true })
-  returnDate?: string; // Fecha en que se devuelve (cuando finaliza la asignación)
+  @Column({ type: DataType.DATEONLY, allowNull: true, field: 'release_date' }) // Y aquí
+  releaseDate?: string;
 
-  @Default('activa')
+  @Default('assigned')
   @Column(DataType.STRING)
   status!: AssignmentStatus;
 
-  @Column(DataType.TEXT)
-  observations?: string; // Para notas como "Acta de entrega #123 firmada"
+  @Column({ type: DataType.TEXT, allowNull: true })
+  observations?: string;
 
-  // Relaciones para poder hacer `include` en las consultas
+  // Relaciones
   @BelongsTo(() => Equipment)
   equipment?: Equipment;
 
-  @BelongsTo(() => User)
-  user?: User;
+  @BelongsTo(() => Collaborator)
+  collaborator?: Collaborator;
 }
-
-export default Assignment;
