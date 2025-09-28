@@ -4,6 +4,7 @@ import { Equipment } from '../models/Equipment';
 import { Config } from '../models/Config';
 import { sequelize } from '../db/sequelize';
 import { auth } from '../middleware/auth';
+import { User } from '../models/User';
 
 const router = Router();
 
@@ -11,16 +12,8 @@ const router = Router();
  * @route   POST /api/prestamos
  * @desc    Crear un nuevo préstamo
  * @access  Private
- * @body    { 
- * equipmentId: string, 
- * borrowerName: string, 
- * borrowerType: 'Colaborador' | 'Participante', 
- * borrowerContact?: string, 
- * responsiblePartyName?: string, 
- * dueDate: string (YYYY-MM-DD) 
- * }
  */
-router.post('/', auth, async (req, res, next) => {
+router.post('/', auth, async (req: any, res, next) => {
   try {
     const {
       equipmentId,
@@ -44,7 +37,6 @@ router.post('/', auth, async (req, res, next) => {
 
     // 2. Transacción para garantizar la integridad de los datos
     const result = await sequelize.transaction(async (t) => {
-      // Bloqueamos la fila del equipo para evitar que se preste dos veces al mismo tiempo
       const eq = await Equipment.findByPk(equipmentId, { transaction: t, lock: t.LOCK.UPDATE });
       
       if (!eq) {
@@ -54,17 +46,17 @@ router.post('/', auth, async (req, res, next) => {
         throw { status: 409, message: `El equipo no está disponible (estado actual: ${eq.status})` };
       }
 
-      // 3. Creación del registro del préstamo con todos los datos
+      // 3. Creación del registro del préstamo usando req.user.sub
       const loan = await Loan.create({
         equipmentId,
         borrowerName,
         borrowerType,
         borrowerContact,
-        // Si no se especifica un responsable, el solicitante es el responsable
         responsiblePartyName: responsiblePartyName || borrowerName, 
         loanDate,
         dueDate,
-        status: 'prestado', // Estado inicial
+        status: 'prestado',
+        registeredById: req.user.sub, // CORRECCIÓN FINAL: Usamos .sub en lugar de .id
       }, { transaction: t });
 
       // 4. Actualización del estado del equipo
@@ -75,7 +67,6 @@ router.post('/', auth, async (req, res, next) => {
 
     res.status(201).json(result);
   } catch (e: any) {
-    // Manejo centralizado de errores
     if (e?.status) return res.status(e.status).json({ message: e.message });
     console.error("Error al crear préstamo:", e);
     next(e);
@@ -86,17 +77,11 @@ router.post('/', auth, async (req, res, next) => {
  * @route   POST /api/prestamos/:id/return
  * @desc    Procesar la devolución de un préstamo
  * @access  Private
- * @body    { 
- * returnDate?: string (YYYY-MM-DD), 
- * observations?: string,
- * condition: 'excelente' | 'bueno' | 'regular' | 'dañado'
- * }
  */
-router.post('/:id/return', auth, async (req, res, next) => {
+router.post('/:id/return', auth, async (req: any, res, next) => {
   try {
     const { returnDate: returnDateStr, observations, condition } = req.body;
     
-    // La condición del equipo al devolverlo es obligatoria
     if (!condition) {
         return res.status(400).json({ message: 'La condición del equipo es requerida para procesar la devolución.' });
     }
@@ -120,16 +105,14 @@ router.post('/:id/return', auth, async (req, res, next) => {
         throw { status: 404, message: 'El equipo asociado a este préstamo ya no existe' };
       }
 
-      // Lógica para calcular la multa
       const fineConfig = await Config.findOne({ where: { key: 'finePerDay' }, transaction: t });
-      const finePerDay = fineConfig ? Number(fineConfig.value) : 5.00; // Multa por defecto: 5.00
+      const finePerDay = fineConfig ? Number(fineConfig.value) : 5.00;
 
       const dueDate = new Date(loan.dueDate);
       const timeDiff = returnDate.getTime() - dueDate.getTime();
       const overdueDays = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
       const totalFine = overdueDays * finePerDay;
       
-      // El nuevo estado del equipo dependerá de la condición en que se devuelve
       const newEquipmentStatus = (condition === 'dañado' || condition === 'regular') ? 'mantenimiento' : 'disponible';
       
       await loan.update({
@@ -162,7 +145,10 @@ router.post('/:id/return', auth, async (req, res, next) => {
 router.get('/', auth, async (req, res, next) => {
   try {
     const loans = await Loan.findAll({
-      include: [{ model: Equipment, attributes: ['name', 'code'] }], // Incluir solo info relevante del equipo
+      include: [
+        { model: Equipment, attributes: ['name', 'code'] },
+        { model: User, as: 'registrar', attributes: ['id', 'name'] }
+      ],
       order: [['createdAt', 'DESC']],
     });
     res.json(loans);
@@ -178,7 +164,12 @@ router.get('/', auth, async (req, res, next) => {
  */
 router.get('/:id', auth, async (req, res, next) => {
   try {
-    const loan = await Loan.findByPk(req.params.id, { include: [Equipment] });
+    const loan = await Loan.findByPk(req.params.id, { 
+      include: [
+        { model: Equipment },
+        { model: User, as: 'registrar', attributes: ['id', 'name'] }
+      ] 
+    });
     if (!loan) {
       return res.status(404).json({ message: 'Préstamo no encontrado' });
     }
@@ -192,7 +183,6 @@ router.get('/:id', auth, async (req, res, next) => {
  * @route   PATCH /api/prestamos/:id
  * @desc    Extender la fecha de devolución de un préstamo
  * @access  Private
- * @body    { dueDate: string (YYYY-MM-DD) }
  */
 router.patch('/:id', auth, async (req, res, next) => {
   try {

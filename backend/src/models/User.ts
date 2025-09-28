@@ -1,5 +1,6 @@
 import { Table, Column, Model, DataType, Default, PrimaryKey, HasMany } from 'sequelize-typescript';
-import { Equipment } from './Equipment'; // ++ AÑADIDO: Importa el modelo Equipment
+import { Equipment } from './Equipment';
+import { Loan } from './Loan';
 
 type Role = 'admin' | 'tecnico' | 'user';
 
@@ -27,12 +28,13 @@ export class User extends Model {
   @Column(DataType.BOOLEAN)
   active!: boolean;
 
-  // =======================================================================
-  // ++ AÑADIDO: Define la relación "uno a muchos" con Equipment ++
-  // Un usuario puede tener muchos equipos registrados.
-  // =======================================================================
-  @HasMany(() => Equipment)
+  // Relación "uno a muchos" con Equipment
+  @HasMany(() => Equipment, { foreignKey: 'createdBy' }) // Es buena práctica ser explícito aquí también
   equipments!: Equipment[];
+
+  // ++ MODIFICADO: Se especifica la llave foránea para la relación con Loan ++
+  @HasMany(() => Loan, { foreignKey: 'registeredById' })
+  loans!: Loan[];
 
   // Ocultar passwordHash en respuestas JSON
   toJSON() {

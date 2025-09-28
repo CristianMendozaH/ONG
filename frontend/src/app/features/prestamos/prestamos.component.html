@@ -20,7 +20,6 @@
       <button class="toast-close" (click)="removeToast(toast.id)"><i class="fas fa-times"></i></button>
     </div>
   </div>
-
   <div class="content-header">
     <h2 class="content-title">Gestión de Préstamos</h2>
     <div class="action-buttons">
@@ -96,7 +95,18 @@
       </div>
     </div>
     <table class="loans-table">
-      <thead><tr><th>ID Préstamo</th><th>Equipo</th><th>Usuario</th><th>Fecha Préstamo</th><th>Fecha Devolución</th><th>Estado</th><th>Atraso/Multa</th><th>Acciones</th></tr></thead>
+      <thead>
+        <tr>
+          <th>ID Préstamo</th>
+          <th>Equipo</th>
+          <th>Usuario</th>
+          <th>Fecha Préstamo</th>
+          <th>Fecha Devolución</th>
+          <th>Estado</th>
+          <th>Registrado por</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
       <tbody>
         <tr *ngFor="let prestamo of filteredPrestamos; trackBy: trackByPrestamoId">
           <td>{{ formatLoanId(prestamo.id) }}</td>
@@ -106,8 +116,7 @@
           <td>{{ prestamo.dueDate | date:'dd/MM/yyyy' }}</td>
           <td><span class="status-badge" [ngClass]="getStatusClass(prestamo)">{{ getStatusText(prestamo.status) }}</span></td>
           <td>
-            <div *ngIf="prestamo.overdueDays && prestamo.overdueDays > 0" class="overdue-info"><div class="overdue-days">{{ prestamo.overdueDays }} días</div></div>
-            <div *ngIf="prestamo.totalFine && prestamo.totalFine > 0" class="fine-amount">Q {{ prestamo.totalFine | number:'1.2-2' }}</div>
+            {{ prestamo.registrar?.name || 'N/A' }}
           </td>
           <td><div class="actions-cell"><button class="action-btn btn-view" (click)="viewLoan(prestamo)"><i class="fas fa-eye"></i>Ver</button><button class="action-btn btn-return-action" *ngIf="prestamo.status !== 'devuelto'" (click)="returnLoan(prestamo)"><i class="fas fa-undo"></i>Devolver</button><button class="action-btn btn-extend" *ngIf="prestamo.status === 'prestado'" (click)="extendLoan(prestamo)"><i class="fas fa-calendar-plus"></i>Extender</button><button class="action-btn btn-qr" (click)="verQR(prestamo)"><i class="fas fa-qrcode"></i>QR</button></div></td>
         </tr>

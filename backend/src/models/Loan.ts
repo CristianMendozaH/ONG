@@ -1,7 +1,7 @@
 import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
 import { Equipment } from './Equipment';
+import { User } from './User';
 
-// ++ CAMBIO: Alineamos los estados con los usados en el frontend para consistencia.
 export type LoanStatus = 'prestado' | 'devuelto' | 'atrasado';
 
 @Table({ tableName: 'loans', timestamps: true })
@@ -15,18 +15,13 @@ export class Loan extends Model {
   @Column(DataType.UUID)
   equipmentId!: string;
 
-  // ++ CAMBIO: El nombre del usuario final (quien usa el equipo)
   @Column(DataType.STRING)
   borrowerName!: string;
-
-  // =======================================================================
-  // ++ NUEVOS CAMPOS AÑADIDOS ++
-  // =======================================================================
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    defaultValue: 'Participante', // Valor por defecto
+    defaultValue: 'Participante',
   })
   borrowerType!: 'Colaborador' | 'Participante';
 
@@ -34,16 +29,13 @@ export class Loan extends Model {
     type: DataType.STRING,
     allowNull: true,
   })
-  borrowerContact?: string; // Email o teléfono del solicitante
+  borrowerContact?: string;
 
-  // Campos para el responsable (el docente en tu ejemplo)
   @Column({
     type: DataType.STRING,
     allowNull: true,
   })
-  responsiblePartyName?: string; // Nombre del responsable si es diferente al borrower
-
-  // =======================================================================
+  responsiblePartyName?: string;
 
   @Column(DataType.DATEONLY)
   loanDate!: string;
@@ -54,7 +46,6 @@ export class Loan extends Model {
   @Column({ type: DataType.DATEONLY, allowNull: true })
   returnDate?: string;
 
-  // ++ CAMBIO: El estado por defecto ahora es 'prestado'
   @Default('prestado')
   @Column(DataType.STRING)
   status!: LoanStatus;
@@ -70,11 +61,16 @@ export class Loan extends Model {
   @Column(DataType.TEXT)
   observations?: string;
 
-  // ++ NUEVO: Campo para la condición del equipo al ser devuelto
   @Column({ type: DataType.STRING, allowNull: true })
   conditionOnReturn?: 'excelente' | 'bueno' | 'regular' | 'dañado';
 
-  // Relación para incluir el equipo en las consultas
+  @ForeignKey(() => User)
+  @Column(DataType.UUID)
+  registeredById!: string;
+
+  @BelongsTo(() => User, 'registeredById')
+  registrar?: User;
+
   @BelongsTo(() => Equipment)
   equipment?: Equipment;
 }

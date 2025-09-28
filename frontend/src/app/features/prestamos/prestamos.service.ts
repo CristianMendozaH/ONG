@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { Equipo } from '../equipos/equipos.service';
+import { User } from '../../shared/interfaces/models'; // ++ AÑADIDO: Importamos la interfaz User
 
 export interface Prestamo {
   id: string;
@@ -17,7 +17,6 @@ export interface Prestamo {
   overdueDays?: number;
   totalFine?: number;
 
-  // Nuevos campos que vienen del backend
   borrowerType?: 'Colaborador' | 'Estudiante' | 'Tercero';
   borrowerContact?: string;
   responsiblePartyName?: string;
@@ -26,6 +25,9 @@ export interface Prestamo {
   equipment?: Equipo;
   createdAt?: string;
   updatedAt?: string;
+
+  // ++ AÑADIDO: Campo para recibir la información del usuario que registró el préstamo
+  registrar?: User;
 }
 
 export interface CrearPrestamoDTO {
@@ -35,6 +37,9 @@ export interface CrearPrestamoDTO {
   borrowerType: 'Colaborador' | 'Estudiante' | 'Tercero';
   borrowerContact?: string;
   responsiblePartyName?: string;
+
+  // ++ AÑADIDO: Campo para enviar el ID del usuario que registra
+  registeredById?: string;
 }
 
 export interface DevolverPrestamoDTO {
