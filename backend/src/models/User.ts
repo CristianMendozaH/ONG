@@ -1,4 +1,5 @@
-import { Table, Column, Model, DataType, Default, PrimaryKey } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, Default, PrimaryKey, HasMany } from 'sequelize-typescript';
+import { Equipment } from './Equipment'; // ++ AÑADIDO: Importa el modelo Equipment
 
 type Role = 'admin' | 'tecnico' | 'user';
 
@@ -19,12 +20,19 @@ export class User extends Model {
   passwordHash!: string;
 
   @Default('user')
-  @Column(DataType.STRING) // 'admin' | 'tech' | 'user'
+  @Column(DataType.STRING)
   role!: Role;
 
   @Default(true)
   @Column(DataType.BOOLEAN)
   active!: boolean;
+
+  // =======================================================================
+  // ++ AÑADIDO: Define la relación "uno a muchos" con Equipment ++
+  // Un usuario puede tener muchos equipos registrados.
+  // =======================================================================
+  @HasMany(() => Equipment)
+  equipments!: Equipment[];
 
   // Ocultar passwordHash en respuestas JSON
   toJSON() {

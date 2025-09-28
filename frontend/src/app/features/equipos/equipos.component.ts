@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { DataRefreshService } from '../../services/data-refresh.service';
+import { UserStore } from '../../core/stores/user.store';
 
 interface Toast {
   id: number;
@@ -47,7 +48,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
     id: '',
     code: '',
     name: '',
-    serial: '', // ++ AÑADIDO: Campo para el número de serie.
+    serial: '',
     type: '',
     status: 'disponible' as any,
     description: ''
@@ -82,7 +83,8 @@ export class EquiposComponent implements OnInit, OnDestroy {
   constructor(
     private equiposSvc: EquiposService,
     private dataRefreshService: DataRefreshService,
-    private router: Router
+    private router: Router,
+    private userStore: UserStore
   ) {
     this.searchSubject.pipe(
       debounceTime(300),
@@ -116,12 +118,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
     const params = { search: this.search.trim(), status: this.status, type: this.type };
     this.equiposSvc.list(params).subscribe({
       next: (data) => {
-        // Ordenamos los datos por fecha de creación descendente
-        this.equipos = data.sort((a, b) => {
-          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return dateB - dateA;
-        });
+        this.equipos = data;
         this.loading = false;
       },
       error: (err) => {
@@ -241,14 +238,27 @@ export class EquiposComponent implements OnInit, OnDestroy {
       this.showError('Por favor complete todos los campos obligatorios');
       return;
     }
+
+    const equipoData: Partial<Equipo> = { ...this.equipmentForm };
+
     if (!this.isEditMode) {
       this.equipmentForm.code = this.equipmentForm.code?.trim() ? this.equipmentForm.code : this.getNextCode();
       this.ensureUniqueCode();
+
+      const currentUser = this.userStore.currentUser();
+
+      if (!currentUser) {
+        this.showError('No se pudo identificar al usuario. Por favor, inicie sesión de nuevo.');
+        return;
+      }
+
+      equipoData.createdBy = currentUser.id;
     }
-    const equipoData: Partial<Equipo> = { ...this.equipmentForm };
+
     const action = this.isEditMode && this.equipoSeleccionado
       ? this.equiposSvc.update(this.equipoSeleccionado.id, equipoData)
       : this.equiposSvc.create(equipoData);
+
     action.subscribe({
       next: () => {
         const message = this.isEditMode ? 'actualizado' : 'creado';

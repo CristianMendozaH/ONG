@@ -1,8 +1,8 @@
-import { Table, Column, Model, DataType, Default, PrimaryKey } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import { User } from './User';
 
-export type EquipmentStatus = 'disponible' | 'prestado' | 'mantenimiento' | 'dañado';
+export type EquipmentStatus = 'disponible' | 'prestado' | 'mantenimiento' | 'dañado' | 'asignado';
 
-// Cambiado el nombre de la tabla a 'Equipos' para coincidir con tu migración y el estándar del proyecto.
 @Table({ tableName: 'equipments', timestamps: true })
 export class Equipment extends Model {
   @PrimaryKey
@@ -11,25 +11,20 @@ export class Equipment extends Model {
   id!: string;
 
   @Column({ type: DataType.STRING, unique: true })
-  code!: string; // p.ej. EQ001
+  code!: string;
 
   @Column(DataType.STRING)
   name!: string;
 
-  // =======================================================================
-  // ++ CAMBIO REALIZADO AQUÍ ++
-  // Se añade el campo 'serial' para el número de serie del equipo.
-  // Es opcional (allowNull: true), pero si existe, debe ser único (unique: true).
-  // =======================================================================
   @Column({
-    type: DataType.STRING(100), // Se define una longitud máxima
+    type: DataType.STRING(100),
     allowNull: true,
     unique: true,
   })
   serial?: string;
 
   @Column(DataType.STRING)
-  type!: string; // laptop/proyector/tablet/etc
+  type!: string;
 
   @Default('disponible')
   @Column(DataType.STRING)
@@ -37,4 +32,12 @@ export class Equipment extends Model {
 
   @Column(DataType.TEXT)
   description?: string;
+
+  // ++ AÑADIDO: Define la columna y la relación con el usuario ++
+  @ForeignKey(() => User)
+  @Column(DataType.UUID)
+  createdBy!: string;
+
+  @BelongsTo(() => User, 'createdBy')
+  creator!: User;
 }

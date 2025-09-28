@@ -1,14 +1,13 @@
 import { Sequelize } from 'sequelize-typescript';
 import { env } from '../config/env.js';
 
-// ++ PASO 1: Importa los modelos que faltaban
 import { User } from '../models/User.js';
 import { Equipment } from '../models/Equipment.js';
 import { Loan } from '../models/Loan.js';
 import { Maintenance } from '../models/Maintenance.js';
 import { Config } from '../models/Config.js';
 import { Assignment } from '../models/Assignment.js';
-import { Collaborator } from '../models/Collaborator.js'; // ---> NUEVO: Importar el modelo Collaborator
+import { Collaborator } from '../models/Collaborator.js';
 
 export const sequelize = new Sequelize({
   dialect: 'postgres',
@@ -19,7 +18,6 @@ export const sequelize = new Sequelize({
   password: env.db.pass,
   logging: false,
 
-  // ++ PASO 2: Añade los modelos al array
   models: [
     User,
     Equipment,
@@ -27,19 +25,25 @@ export const sequelize = new Sequelize({
     Maintenance,
     Config,
     Assignment,
-    Collaborator // ---> NUEVO: Añadir Collaborator a la lista
+    Collaborator
   ], 
 });
 
-// --- Relaciones existentes ---
+// =======================================================================
+// DEFINICIÓN DE RELACIONES
+// =======================================================================
+
+// -- ELIMINADO: Se quitaron las líneas de User <-> Equipment de aquí
+// porque ya están definidas en los modelos con los decoradores.
+
+// --- Relaciones de Equipos ---
 Equipment.hasMany(Loan, { foreignKey: 'equipmentId' });
 Loan.belongsTo(Equipment, { foreignKey: 'equipmentId' });
 
 Equipment.hasMany(Maintenance, { foreignKey: 'equipmentId' });
 Maintenance.belongsTo(Equipment, { foreignKey: 'equipmentId' });
 
-
-// ---> NUEVO: Definir las relaciones para Asignaciones ---
+// --- Relaciones para Asignaciones ---
 Equipment.hasMany(Assignment, { foreignKey: 'equipmentId' });
 Assignment.belongsTo(Equipment, { foreignKey: 'equipmentId' });
 

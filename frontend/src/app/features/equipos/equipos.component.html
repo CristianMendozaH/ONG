@@ -48,14 +48,17 @@
   <div class="state error" *ngIf="!loading && error">{{ error }}</div>
 
   <div class="table-card" *ngIf="!loading && !error">
-    <table class="equipos-table" *ngIf="equipos?.length; else emptyList">
+    <table class="equipos-table" *ngIf="equipos.length > 0; else emptyList">
       <thead>
         <tr>
           <th style="width: 120px;">Código</th>
           <th>Nombre / Serial</th>
           <th style="width: 160px;">Tipo</th>
           <th style="width: 160px;">Estado</th>
-          <th style="width: 220px;">Acciones</th>
+          <th style="width: 180px;">Registrado por</th>
+          <th style="width: 180px;">Fecha Ingreso</th>
+          <th style="width: 180px;">Últ. Actualización</th>
+          <th style="width: 180px;">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -68,6 +71,15 @@
           <td>{{ getTypeLabel(e.type) }}</td>
           <td>
             <span class="status-badge" [ngClass]="getStatusClass(e.status)">{{ getStatusLabel(e.status) }}</span>
+          </td>
+          <td>
+            {{ e.creator?.name || 'N/A' }}
+          </td>
+          <td>
+            {{ e.createdAt | date:'dd/MM/yyyy h:mm a' }}
+          </td>
+          <td>
+            {{ e.updatedAt | date:'dd/MM/yyyy h:mm a' }}
           </td>
           <td class="actions">
             <button class="btn-ghost" (click)="verEquipo(e)" title="Ver Detalles"><i class="fas fa-eye"></i></button>
@@ -82,6 +94,7 @@
       <div class="empty">
         <i class="fas fa-box-open"></i>
         <p>No hay equipos para mostrar.</p>
+        <p *ngIf="search || status || type">Intenta ajustar los filtros de búsqueda.</p>
       </div>
     </ng-template>
   </div>
@@ -99,7 +112,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Código</label>
-          <input type="text" [(ngModel)]="equipmentForm.code" name="code" placeholder="EQ0001" readonly autocomplete="off" spellcheck="false" />
+          <input type="text" [(ngModel)]="equipmentForm.code" name="code" placeholder="EQ001" readonly autocomplete="off" spellcheck="false" />
           <small class="muted">Se asigna automáticamente.</small>
         </div>
         <div class="form-group">
@@ -175,6 +188,18 @@
         <span class="info-label">Descripción:</span>
         <span class="info-value">{{ equipoSeleccionado.description }}</span>
       </div>
+      <div class="info-row" *ngIf="equipoSeleccionado.creator">
+        <span class="info-label">Registrado por:</span>
+        <span class="info-value">{{ equipoSeleccionado.creator.name }}</span>
+      </div>
+      <div class="info-row" *ngIf="equipoSeleccionado.createdAt">
+        <span class="info-label">Fecha de Ingreso:</span>
+        <span class="info-value">{{ equipoSeleccionado.createdAt | date:'dd/MM/yyyy h:mm a' }}</span>
+      </div>
+      <div class="info-row" *ngIf="equipoSeleccionado.updatedAt">
+        <span class="info-label">Última Actualización:</span>
+        <span class="info-value">{{ equipoSeleccionado.updatedAt | date:'dd/MM/yyyy h:mm a' }}</span>
+      </div>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn-secondary" (click)="closeModal()">Cerrar</button>
@@ -197,6 +222,7 @@
       <p>¿Seguro que quieres eliminar el equipo
         <strong>{{ equipoSeleccionado.name }}</strong> ({{ equipoSeleccionado.code || '—' }})?
       </p>
+      <p class="muted">Esta acción no se puede deshacer.</p>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>

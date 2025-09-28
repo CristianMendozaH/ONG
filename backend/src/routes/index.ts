@@ -14,7 +14,7 @@ const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
-router.use('/equipos', equiposRoutes);
+router.use('/equipments', equiposRoutes); // <-- CAMBIO AQUÍ
 router.use('/prestamos', prestamosRoutes);
 router.use('/assignments', assignmentsRoutes);     // ---> NUEVO
 router.use('/collaborators', collaboratorsRoutes); // ---> NUEVO

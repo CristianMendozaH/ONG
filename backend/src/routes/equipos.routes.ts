@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { Equipment } from '../models/Equipment';
+import { User } from '../models/User'; // ++ AÑADIDO: Importa el modelo de Usuario
 import QRCode from 'qrcode';
 import { Op } from 'sequelize';
 
 const router = Router();
 
 // =======================================================================
-// RUTA LISTAR (CON BÚSQUEDA POR SERIAL)
+// RUTA LISTAR (CON BÚSQUEDA Y DATOS DEL CREADOR)
 // =======================================================================
 router.get('/', async (req, res) => {
   const { search, status, type } = req.query;
@@ -17,11 +18,6 @@ router.get('/', async (req, res) => {
     where[Op.or] = [
       { name: { [Op.iLike]: searchTerm } },
       { code: { [Op.iLike]: searchTerm } },
-      // ===============================================================
-      // ++ CAMBIO REALIZADO AQUÍ ++
-      // Se añade la búsqueda por el campo 'serial'. Ahora el buscador
-      // también encontrará equipos por su número de serie.
-      // ===============================================================
       { serial: { [Op.iLike]: searchTerm } },
     ];
   }
@@ -41,26 +37,33 @@ router.get('/', async (req, res) => {
   const rows = await Equipment.findAll({
     where,
     order: [['createdAt', 'DESC']],
+    // ++ MODIFICADO: Incluye la información del usuario creador
+    include: [{
+      model: User,
+      as: 'creator', // Usa el alias definido en la relación
+      attributes: ['id', 'name']
+    }]
   });
 
   res.json(rows);
 });
 
 // =======================================================================
-// RUTA CREAR (ACEPTANDO EL CAMPO SERIAL)
+// RUTA CREAR (ACEPTANDO 'createdBy')
 // =======================================================================
 router.post('/', async (req, res, next) => {
   try {
-    // ===============================================================
-    // ++ CAMBIO REALIZADO AQUÍ ++
-    // Se extrae 'serial' del cuerpo de la petición (req.body).
-    // Si no viene, será 'undefined' y no se guardará, lo cual es correcto.
-    // ===============================================================
-    const { code, name, type, description, serial } = req.body;
-    const eq = await Equipment.create({ code, name, type, description, serial });
+    // ++ MODIFICADO: Se extrae 'createdBy' del cuerpo de la petición
+    const { code, name, type, description, serial, createdBy } = req.body;
+
+    // Se valida que 'createdBy' no esté vacío
+    if (!createdBy) {
+      return res.status(400).json({ message: 'El campo createdBy es obligatorio.' });
+    }
+
+    const eq = await Equipment.create({ code, name, type, description, serial, createdBy });
     res.status(201).json(eq);
   } catch (e) {
-    // Manejo de error de unicidad para 'serial'
     if (e instanceof Error && e.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ message: 'El código o número de serie ya existe.' });
     }
@@ -68,34 +71,38 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// Detalle (Sin cambios)
+// =======================================================================
+// RUTA DETALLE (CON DATOS DEL CREADOR)
+// =======================================================================
 router.get('/:id', async (req, res, next) => {
   try {
-    const eq = await Equipment.findByPk(req.params.id);
+    const eq = await Equipment.findByPk(req.params.id, {
+      // ++ MODIFICADO: Incluye la información del usuario creador también aquí
+      include: [{
+        model: User,
+        as: 'creator',
+        attributes: ['id', 'name']
+      }]
+    });
     if (!eq) return res.status(404).json({ message: 'Equipo no encontrado' });
     res.json(eq);
   } catch (e) { next(e); }
 });
 
 // =======================================================================
-// RUTA ACTUALIZAR (ACEPTANDO EL CAMPO SERIAL)
+// RUTA ACTUALIZAR (PROTEGIDA CONTRA CAMBIOS EN 'createdBy')
 // =======================================================================
 router.put('/:id', async (req, res, next) => {
   try {
     const eq = await Equipment.findByPk(req.params.id);
     if (!eq) return res.status(404).json({ message: 'Equipo no encontrado' });
 
-    // ===============================================================
-    // ++ CAMBIO REALIZADO AQUÍ ++
-    // El método `update` de Sequelize recibe los campos del body.
-    // Si `req.body` incluye `serial`, intentará actualizarlo.
-    // No se necesita lógica extra aquí, pero es importante asegurarse
-    // que el frontend lo envíe correctamente.
-    // ===============================================================
+    // ++ MODIFICADO: Se elimina 'createdBy' del body para evitar que se actualice
+    delete req.body.createdBy;
+
     await eq.update(req.body);
     res.json(eq);
   } catch (e) {
-    // Manejo de error de unicidad para 'serial'
     if (e instanceof Error && e.name === 'SequelizeUniqueConstraintError') {
       return res.status(409).json({ message: 'El código o número de serie ya existe.' });
     }
@@ -103,18 +110,21 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
-
-// Eliminar (Sin cambios)
+// =======================================================================
+// RUTA ELIMINAR (Sin cambios)
+// =======================================================================
 router.delete('/:id', async (req, res, next) => {
   try {
     const eq = await Equipment.findByPk(req.params.id);
     if (!eq) return res.status(404).json({ message: 'Equipo no encontrado' });
     await eq.destroy();
-    res.status(204).send(); // Es una mejor práctica devolver 204 No Content en un DELETE exitoso.
+    res.status(204).send();
   } catch (e) { next(e); }
 });
 
-// QR del equipo (Sin cambios)
+// =======================================================================
+// RUTA QR (Sin cambios)
+// =======================================================================
 router.get('/:id/qr', async (req, res, next) => {
   try {
     const eq = await Equipment.findByPk(req.params.id);
