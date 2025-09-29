@@ -1,9 +1,9 @@
 // dashboard.component.ts
 
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { DashboardService, DashboardKPIs, DashboardActivity, DashboardWeeklyActivity } from './dashboard.service';
+import { Router, RouterLink } from '@angular/router';
+import { DashboardService, DashboardKPIs, DashboardActivity, DashboardWeeklyActivity, DashboardNotification } from './dashboard.service';
 import { UserStore } from '../../core/stores/user.store';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
@@ -17,6 +17,7 @@ Chart.register(...registerables);
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  // --- CORRECCIÓN: Se ha corregido @View-child a @ViewChild ---
   @ViewChild('barChart') barChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('doughnutChart') doughnutChartRef!: ElementRef<HTMLCanvasElement>;
 
@@ -26,22 +27,78 @@ export class DashboardComponent implements OnInit, OnDestroy {
   connectionError = false;
   lastUpdated: Date | null = null;
 
+  public saludo: string = '¡Buen día,';
+  public showUserMenu = false;
+  public showNotifications = false;
+  public notifications: Array<{id: string, message: string, type: string, time: string}> = [];
+
   private barChart: Chart | null = null;
   private doughnutChart: Chart | null = null;
 
   constructor(
     private dashboardService: DashboardService,
-    public userStore: UserStore
+    public userStore: UserStore,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
     console.log('🚀 Inicializando Dashboard...');
-    this.loadDashboardData(); // Llamamos al método principal directamente
+    this.setSaludo();
+    this.loadDashboardData();
+    this.loadNotifications();
   }
 
   ngOnDestroy(): void {
     this.barChart?.destroy();
     this.doughnutChart?.destroy();
+  }
+
+  private setSaludo(): void {
+    const horaActual = new Date().getHours();
+    if (horaActual >= 5 && horaActual < 12) {
+      this.saludo = '¡Buen día,';
+    } else if (horaActual >= 12 && horaActual < 19) {
+      this.saludo = '¡Buenas tardes,';
+    } else {
+      this.saludo = '¡Buenas noches,';
+    }
+  }
+
+  toggleUserMenu(): void {
+    this.showUserMenu = !this.showUserMenu;
+    if (this.showUserMenu) {
+      this.showNotifications = false;
+    }
+  }
+
+  toggleNotifications(): void {
+    this.showNotifications = !this.showNotifications;
+    if (this.showNotifications) {
+      this.showUserMenu = false;
+    }
+  }
+
+  private loadNotifications(): void {
+    this.dashboardService.getNotifications().subscribe({
+      next: (data: DashboardNotification[]) => {
+        this.notifications = data.map(notif => ({
+          id: notif.id,
+          message: notif.message,
+          type: notif.type,
+          time: this.getRelativeTime(notif.createdAt)
+        }));
+        console.log('📋 Notificaciones dinámicas procesadas:', this.notifications);
+      },
+      error: (err) => {
+        console.error('Error al suscribirse a las notificaciones', err);
+        this.notifications = [];
+      }
+    });
+  }
+
+  logout(): void {
+    console.log('Cerrando sesión...');
+    this.router.navigate(['/login']);
   }
 
   private async loadDashboardData(): Promise<void> {
@@ -65,13 +122,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         console.log('✅ Actividades cargadas:', this.recentActivity);
       }
 
-      // --- CORRECCIÓN DEL CICLO DE VIDA DE GRÁFICAS ---
-      // Ahora que tenemos los datos, terminamos la carga para que se muestre el HTML
       this.loading = false;
       this.lastUpdated = new Date();
 
-      // Forzamos a Angular a que renderice los cambios (el *ngIf ahora será true)
-      // y LUEGO creamos las gráficas, asegurando que los <canvas> existen.
       setTimeout(() => {
         if (weeklyData) {
           console.log('✅ Datos semanales cargados, creando gráfica de barras:', weeklyData);
@@ -86,7 +139,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('❌ Error cargando datos del dashboard, usando fallback general:', error);
       this.loadFallbackData();
-      this.loading = false; // Aseguramos que el loading termine también en caso de error
+      this.loading = false;
     }
   }
 
@@ -98,7 +151,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       { id: '2', tipo: 'devolucion', descripcion: 'Devolución de equipo por Carlos Mendoza', fecha: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), equipo: 'Proyector Epson', usuario: 'Carlos Mendoza' }
     ];
 
-    // También creamos las gráficas con los datos de fallback
     setTimeout(() => {
       this.createDoughnutChart();
       this.createBarChart({
@@ -112,6 +164,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   refreshData(): void {
     console.log('🔄 Refrescando datos del dashboard...');
     this.loadDashboardData();
+    this.loadNotifications();
   }
 
   private createBarChart(data: DashboardWeeklyActivity): void {
@@ -133,37 +186,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     console.log('✅ Gráfico de barras CREADO con datos.');
   }
 
-// En dashboard.component.ts
+  private createDoughnutChart(): void {
+    if (this.doughnutChart) this.doughnutChart.destroy();
+    if (!this.doughnutChartRef?.nativeElement || !this.kpis) return;
 
-private createDoughnutChart(): void {
-  if (this.doughnutChart) this.doughnutChart.destroy();
-  if (!this.doughnutChartRef?.nativeElement || !this.kpis) return;
+    const data = [this.kpis.disponibles, this.kpis.prestados, this.kpis.atrasos, this.kpis.enMantenimiento];
 
-  // ANTES, la data solo tenía 3 valores:
-  // const data = [this.kpis.disponibles, this.kpis.prestados, this.kpis.atrasos];
-
-  // AHORA (CORREGIDO), añadimos el cuarto valor:
-  const data = [this.kpis.disponibles, this.kpis.prestados, this.kpis.atrasos, this.kpis.enMantenimiento];
-
-  const config: ChartConfiguration<'doughnut'> = {
-    type: 'doughnut',
-    data: {
-      // ANTES, las etiquetas solo tenían 3 nombres:
-      // labels: ['Disponibles', 'Prestados', 'Atrasados'],
-
-      // AHORA (CORREGIDO), añadimos la cuarta etiqueta:
-      labels: ['Disponibles', 'Prestados', 'Atrasados', 'En Mantenimiento'],
-      datasets: [{
-        data: data,
-        // ANTES, los colores solo eran 3:
-        // backgroundColor: ['#2ECC71', '#114495', '#E6331B'],
-
-        // AHORA (CORREGIDO), añadimos el cuarto color (amarillo, como en tu tarjeta de KPI):
-        backgroundColor: ['#2ECC71', '#114495', '#E6331B', '#FFED00'],
-        borderWidth: 0
-      }]
-    },
-    options: {
+    const config: ChartConfiguration<'doughnut'> = {
+      type: 'doughnut',
+      data: {
+        labels: ['Disponibles', 'Prestados', 'Atrasados', 'En Mantenimiento'],
+        datasets: [{
+          data: data,
+          backgroundColor: ['#2ECC71', '#114495', '#E6331B', '#FFED00'],
+          borderWidth: 0
+        }]
+      },
+      options: {
         responsive: true,
         maintainAspectRatio: false,
         cutout: '70%',
@@ -180,12 +219,13 @@ private createDoughnutChart(): void {
           }
         }
       }
-  };
-  this.doughnutChart = new Chart(this.doughnutChartRef.nativeElement, config);
-  console.log('✅ Gráfico doughnut CREADO con datos (incluye mantenimiento).');
-}
+    };
+    this.doughnutChart = new Chart(this.doughnutChartRef.nativeElement, config);
+    console.log('✅ Gráfico doughnut CREADO con datos (incluye mantenimiento).');
+  }
 
   getRelativeTime(dateString: string): string {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / 60000);

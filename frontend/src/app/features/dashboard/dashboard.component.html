@@ -1,18 +1,53 @@
 <header class="header">
   <div class="header-left">
-    <h1>¡Buen día, {{ userStore.userName() }}!</h1>
+    <h1>{{ saludo }} {{ userStore.userName() }}!</h1>
     <p>Aquí tienes un resumen de la actividad de hoy</p>
   </div>
   <div class="header-right">
-    <div class="notification-bell">
-      <i class="fas fa-bell"></i>
-      <span class="notification-badge">3</span>
+
+    <div class="notification-container">
+      <div class="notification-bell" (click)="toggleNotifications()">
+        <i class="fas fa-bell"></i>
+        <span class="notification-badge" *ngIf="notifications.length > 0">{{ notifications.length }}</span>
+      </div>
+
+      <div class="notifications-panel" *ngIf="showNotifications">
+        <div class="notifications-header">
+          <h4>Notificaciones</h4>
+        </div>
+        <div class="notifications-list" *ngIf="notifications.length > 0; else noNotifications">
+          <div class="notification-item" *ngFor="let notification of notifications">
+            <div class="notification-icon" [ngClass]="'icon-' + notification.type">
+              <i class="fas" [ngClass]="{'fa-exclamation-triangle': notification.type === 'error', 'fa-wrench': notification.type === 'warning', 'fa-info-circle': notification.type === 'info'}"></i>
+            </div>
+            <div class="notification-content">
+              <p>{{ notification.message }}</p>
+              <small>{{ notification.time }}</small>
+            </div>
+          </div>
+        </div>
+        <ng-template #noNotifications>
+          <div class="empty-notifications">
+            <p>No hay notificaciones nuevas</p>
+          </div>
+        </ng-template>
+      </div>
     </div>
-    <div class="user-profile">
-      <div class="user-avatar">{{ userStore.userName().charAt(0) }}</div>
-      <div class="user-info">
-        <h4>{{ userStore.userName() }}</h4>
-        <p>{{ userStore.isAdmin() ? 'Administrador' : userStore.isTech() ? 'Técnico' : 'Usuario' }}</p>
+
+    <div class="user-menu-container">
+      <div class="user-profile" (click)="toggleUserMenu()">
+        <div class="user-avatar">{{ userStore.userName().charAt(0) }}</div>
+        <div class="user-info">
+          <h4>{{ userStore.userName() }}</h4>
+          <p>{{ userStore.isAdmin() ? 'Administrador' : userStore.isTech() ? 'Técnico' : 'Usuario' }}</p>
+        </div>
+      </div>
+
+      <div class="user-dropdown" *ngIf="showUserMenu">
+        <a (click)="logout()" class="dropdown-item">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Salir del sistema</span>
+        </a>
       </div>
     </div>
   </div>

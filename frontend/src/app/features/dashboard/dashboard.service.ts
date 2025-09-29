@@ -29,6 +29,15 @@ export interface DashboardWeeklyActivity {
   devoluciones: number[];
 }
 
+// --- NUEVA INTERFAZ PARA NOTIFICACIONES ---
+export interface DashboardNotification {
+  id: string;
+  message: string;
+  type: 'error' | 'warning' | 'info';
+  createdAt: string;
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -46,9 +55,6 @@ export class DashboardService {
     return this.http.get<any>(`${this.API_URL}/reports/kpis`).pipe(
       tap(response => console.log('✅ Respuesta KPIs del servidor:', response)),
       map(response => {
-        // --- LÓGICA SIMPLIFICADA ---
-        // El backend ahora envía los datos con los nombres correctos.
-        // El mapeo es directo y más limpio.
         const kpis: DashboardKPIs = {
           disponibles: Number(response.disponibles) || 0,
           prestados: Number(response.prestados) || 0,
@@ -62,7 +68,6 @@ export class DashboardService {
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('❌ Error obteniendo KPIs del dashboard:', error);
-        // Los datos de fallback se mantienen en caso de que la API falle.
         const fallbackData: DashboardKPIs = {
           disponibles: 14,
           prestados: 4,
@@ -77,7 +82,7 @@ export class DashboardService {
   }
 
   /**
-   * Obtiene la actividad reciente (sin cambios).
+   * Obtiene la actividad reciente.
    */
   getActivity(): Observable<DashboardActivity[]> {
     console.log('🔍 Solicitando actividad desde:', `${this.API_URL}/reports/activity`);
@@ -109,7 +114,7 @@ export class DashboardService {
   }
 
   /**
-   * Obtiene los datos para la gráfica semanal (sin cambios).
+   * Obtiene los datos para la gráfica semanal.
    */
   getWeeklyActivity(): Observable<DashboardWeeklyActivity> {
     console.log('🔍 Solicitando actividad semanal desde:', `${this.API_URL}/reports/weekly-activity`);
@@ -129,6 +134,25 @@ export class DashboardService {
     );
   }
 
+  // --- 👇 INICIO: NUEVA FUNCIÓN PARA OBTENER NOTIFICACIONES 👇 ---
+  /**
+   * Obtiene las notificaciones del sistema desde el backend.
+   */
+  getNotifications(): Observable<DashboardNotification[]> {
+    const url = `${this.API_URL}/reports/notifications`;
+    console.log('🔍 Solicitando notificaciones desde:', url);
+
+    return this.http.get<DashboardNotification[]>(url).pipe(
+      tap(response => console.log('✅ Notificaciones recibidas del servidor:', response)),
+      catchError((error: HttpErrorResponse) => {
+        console.error('❌ Error obteniendo notificaciones:', error);
+        // Devolvemos un arreglo vacío en caso de error para no romper la UI
+        return of([]);
+      })
+    );
+  }
+  // --- 👆 FIN: NUEVA FUNCIÓN PARA OBTENER NOTIFICACIONES 👆 ---
+
   private normalizeActivityType(type: string): string {
     if (!type) return 'general';
     const normalizedType = type.toLowerCase().trim();
@@ -142,8 +166,6 @@ export class DashboardService {
 
   /**
    * Verifica si el backend está disponible.
-   * Nota: Esta ruta /health-check podría no existir en tu archivo de rutas,
-   * puedes eliminarla si no la necesitas.
    */
   checkBackendConnection(): Observable<boolean> {
     console.log('🔍 Verificando conexión con backend en:', this.API_URL);

@@ -137,6 +137,51 @@ router.get('/weekly-activity', async (req, res, next) => {
   }
 });
 
+// --- 👇 INICIO: NUEVA RUTA PARA NOTIFICACIONES 👇 ---
+router.get('/notifications', async (req, res, next) => {
+  try {
+    let notifications: any[] = [];
+
+    // 1. Query para Préstamos Atrasados
+    const loansQuery = `
+      SELECT 
+        l.id,
+        'La devolución del equipo "' || e.name || '" por "' || l."borrowerName" || '" está atrasada.' as message,
+        'error' as type,
+        l."updatedAt" as "createdAt"
+      FROM loans l
+      JOIN equipments e ON l."equipmentId" = e.id
+      WHERE l.status = 'atrasado'
+    `;
+    const atrasados = await sequelize.query(loansQuery, { type: QueryTypes.SELECT });
+
+    // 2. Query para Mantenimientos Activos (En Proceso o Programado)
+    const maintenanceQuery = `
+      SELECT 
+        m.id,
+        'El equipo "' || e.name || '" tiene un mantenimiento en estado: "' || m.status || '".' as message,
+        'warning' as type,
+        m."createdAt"
+      FROM maintenances m
+      JOIN equipments e ON m."equipmentId" = e.id
+      WHERE m.status IN ('en-proceso', 'programado')
+    `;
+    const mantenimientos = await sequelize.query(maintenanceQuery, { type: QueryTypes.SELECT });
+
+    // 3. Combinar y ordenar los resultados
+    notifications = [...atrasados, ...mantenimientos];
+    notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    res.json(notifications);
+
+  } catch (error) {
+    console.error('Error al generar notificaciones:', error);
+    next(error);
+  }
+});
+// --- 👆 FIN: NUEVA RUTA PARA NOTIFICACIONES 👆 ---
+
+
 // ==========================================================
 // RUTAS PARA LA PÁGINA DE REPORTES
 // ==========================================================
