@@ -26,6 +26,19 @@
         <i class="fas fa-filter"></i>
         Filtros de Búsqueda
       </h3>
+
+      <div class="quick-time-filters">
+        <label class="filter-label">Filtros Rápidos (Año Actual)</label>
+        <div class="filters-section-actions">
+            <button class="btn-clear" (click)="aplicarFiltroPeriodo('T1')">T1</button>
+            <button class="btn-clear" (click)="aplicarFiltroPeriodo('T2')">T2</button>
+            <button class="btn-clear" (click)="aplicarFiltroPeriodo('T3')">T3</button>
+            <button class="btn-clear" (click)="aplicarFiltroPeriodo('T4')">T4</button>
+            <button class="btn-filter" (click)="aplicarFiltroPeriodo('ANIO_COMPLETO')">Año Completo</button>
+        </div>
+      </div>
+      <hr class="filter-divider">
+
       <div class="filters-section-grid">
         <div class="filter-group">
           <label class="filter-label">Fecha de Inicio</label>
@@ -41,6 +54,14 @@
             <option *ngFor="let tipo of tiposReporte" [value]="tipo.value">{{ tipo.label }}</option>
           </select>
         </div>
+
+        <div class="filter-group" *ngIf="filtros.tipoReporte === 'prestamos' || filtros.tipoReporte === 'user_activity' || filtros.tipoReporte === 'equipos_populares'">
+            <label class="filter-label">Tipo de Usuario</label>
+            <select class="filter-select" [(ngModel)]="filtros.borrowerType">
+                <option *ngFor="let tipo of tiposUsuario" [value]="tipo.value">{{ tipo.label }}</option>
+            </select>
+        </div>
+
         <div class="filter-group" *ngIf="filtros.tipoReporte === 'prestamos'">
           <label class="filter-label">Estado</label>
           <select class="filter-select" [(ngModel)]="filtros.estado">
@@ -48,7 +69,7 @@
           </select>
         </div>
       </div>
-      <div class="filters-section-actions">
+      <div class="filters-section-actions main-actions">
         <button class="btn-clear" (click)="limpiarFiltros()"><i class="fas fa-times"></i> Limpiar</button>
         <button class="btn-filter" (click)="aplicarFiltros()"><i class="fas fa-search"></i> Buscar</button>
       </div>
@@ -58,8 +79,8 @@
       <div class="table-header">
         <h3 class="table-header-title">Resultados del Reporte</h3>
         <div class="export-buttons">
-          <button class="btn-export-pdf" (click)="exportarPDF()" [disabled]="reportes.length === 0"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
-          <button class="btn-export-excel" (click)="exportarExcel()" [disabled]="reportes.length === 0"><i class="fas fa-file-excel"></i> Exportar Excel</button>
+          <button class="btn-export-pdf" (click)="exportarPDF()" [disabled]="reportes.length === 0"><i class="fas fa-file-pdf"></i> PDF</button>
+          <button class="btn-export-excel" (click)="exportarExcel()" [disabled]="reportes.length === 0"><i class="fas fa-file-excel"></i> Excel</button>
         </div>
       </div>
 
@@ -84,6 +105,40 @@
               <td>{{ reporte.tecnico || '-' }}</td>
               <td>{{ reporte.fechaRealizacion | date:'yyyy-MM-dd' }}</td>
               <td><span class="status-badge" [ngClass]="getEstadoClass(reporte.estado)">{{ reporte.estado }}</span></td>
+            </tr>
+          </tbody>
+
+          <thead *ngSwitchCase="'equipos_populares'">
+            <tr>
+              <th>#</th>
+              <th>Equipo</th>
+              <th>Categoría</th>
+              <th>Total de Usos</th>
+            </tr>
+          </thead>
+          <tbody *ngSwitchCase="'equipos_populares'">
+            <tr *ngFor="let reporte of reportes; let i = index; trackBy: trackByReporte">
+              <td>{{ i + 1 + ((currentPage - 1) * itemsPerPage) }}</td>
+              <td>{{ reporte.equipo }}</td>
+              <td>{{ reporte.categoria }}</td>
+              <td>{{ reporte.total_usos }}</td>
+            </tr>
+          </tbody>
+
+          <thead *ngSwitchCase="'user_activity'">
+            <tr>
+              <th>#</th>
+              <th>Usuario</th>
+              <th>Tipo de Usuario</th>
+              <th>Total de Préstamos</th>
+            </tr>
+          </thead>
+          <tbody *ngSwitchCase="'user_activity'">
+            <tr *ngFor="let reporte of reportes; let i = index; trackBy: trackByReporte">
+              <td>{{ i + 1 + ((currentPage - 1) * itemsPerPage) }}</td>
+              <td>{{ reporte.usuario }}</td>
+              <td>{{ reporte.tipo_usuario }}</td>
+              <td>{{ reporte.total_prestamos }}</td>
             </tr>
           </tbody>
 
@@ -135,7 +190,7 @@
     <div class="chart-card">
       <h3 class="chart-card-title"><i class="fas fa-chart-bar"></i> Estadísticas Generales</h3>
 
-      <div *ngIf="filtros.tipoReporte === 'prestamos'" class="stats-grid">
+      <div *ngIf="filtros.tipoReporte === 'prestamos' || filtros.tipoReporte === 'equipos_populares' || filtros.tipoReporte === 'user_activity'" class="stats-grid">
         <div class="stat-item">
           <div class="stat-number">{{ totalPrestamos }}</div>
           <div class="stat-label">Total Préstamos</div>
@@ -176,7 +231,7 @@
 
     <div class="chart-card">
       <h3 class="chart-card-title"><i class="fas fa-chart-pie"></i> Distribución por Estado</h3>
-      <div *ngIf="filtros.tipoReporte === 'prestamos'" class="status-distribution">
+      <div *ngIf="filtros.tipoReporte === 'prestamos' || filtros.tipoReporte === 'equipos_populares' || filtros.tipoReporte === 'user_activity'" class="status-distribution">
         <div class="status-item">
           <div class="status-color status-active"></div>
           <span>Activos: {{ totalActivos }}</span>

@@ -137,14 +137,13 @@ router.get('/weekly-activity', async (req, res, next) => {
   }
 });
 
-
 // ==========================================================
 // RUTAS PARA LA PÁGINA DE REPORTES
 // ==========================================================
 
 router.get('/estadisticas', async (req, res, next) => {
   try {
-    const { fecha_inicio, fecha_fin, tipoReporte = 'prestamos' } = req.query;
+    const { fecha_inicio, fecha_fin, tipoReporte = 'prestamos', borrowerType } = req.query;
 
     let query;
     const replacements: any = {};
@@ -170,15 +169,20 @@ router.get('/estadisticas', async (req, res, next) => {
         ${whereClause}
       `;
     } else {
-      let whereClause = '';
+      let whereConditions: string[] = [];
       if (fecha_inicio) {
-        whereClause += ' WHERE "loanDate"::date >= :fecha_inicio';
+        whereConditions.push(`"loanDate"::date >= :fecha_inicio`);
         replacements.fecha_inicio = fecha_inicio;
       }
       if (fecha_fin) {
-        whereClause += whereClause ? ' AND "loanDate"::date <= :fecha_fin' : ' WHERE "loanDate"::date <= :fecha_fin';
+        whereConditions.push(`"loanDate"::date <= :fecha_fin`);
         replacements.fecha_fin = fecha_fin;
       }
+      if (borrowerType && typeof borrowerType === 'string' && borrowerType.trim() !== '') {
+          whereConditions.push(`"borrowerType" = :borrowerType`);
+          replacements.borrowerType = borrowerType;
+      }
+      const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
       query = `
         SELECT
@@ -208,7 +212,9 @@ router.get('/estadisticas', async (req, res, next) => {
 router.get('/tipos', (req, res) => {
   res.json([
     { value: 'prestamos', label: 'Préstamos' },
-    { value: 'mantenimiento', label: 'Mantenimiento' }
+    { value: 'mantenimiento', label: 'Mantenimiento' },
+    { value: 'equipos_populares', label: 'Equipos Más Usados' },
+    { value: 'user_activity', label: 'Usuarios Más Activos' }
   ]);
 });
 
@@ -220,6 +226,7 @@ router.get('/dynamic', async (req, res, next) => {
       fecha_inicio, 
       fecha_fin,
       estado,
+      borrowerType,
       tipoReporte = 'prestamos'
     } = req.query;
 
@@ -228,12 +235,26 @@ router.get('/dynamic', async (req, res, next) => {
     let query = '';
     let countQuery = '';
     const replacements: any = { limit: parseInt(limit as string), offset };
+    let whereConditions: string[] = [];
+
+    if (fecha_inicio) {
+      whereConditions.push(`l."loanDate"::DATE >= :fecha_inicio`);
+      replacements.fecha_inicio = fecha_inicio;
+    }
+    if (fecha_fin) {
+      whereConditions.push(`l."loanDate"::DATE <= :fecha_fin`);
+      replacements.fecha_fin = fecha_fin;
+    }
+    if (borrowerType && typeof borrowerType === 'string' && borrowerType.trim() !== '') {
+        whereConditions.push(`l."borrowerType" = :borrowerType`);
+        replacements.borrowerType = borrowerType;
+    }
+
+    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
     switch (tipoReporte) {
       case 'mantenimiento':
         let maintWhere: string[] = [];
-        
-        // ✅ CORRECCIÓN FINAL: Usamos "fechaRealizacion", la única columna de fecha disponible en la vista.
         if (fecha_inicio) {
           maintWhere.push(`v."fechaRealizacion"::DATE >= :fecha_inicio`);
           replacements.fecha_inicio = fecha_inicio;
@@ -245,7 +266,6 @@ router.get('/dynamic', async (req, res, next) => {
 
         const maintWhereClause = maintWhere.length > 0 ? 'WHERE ' + maintWhere.join(' AND ') : '';
         
-        // Se ajusta el ORDER BY para que coincida con la columna de filtro
         query = `
           SELECT *, ROW_NUMBER() OVER (ORDER BY "fechaRealizacion" DESC NULLS LAST) as correlativo
           FROM vista_reportes_mantenimiento v
@@ -256,30 +276,73 @@ router.get('/dynamic', async (req, res, next) => {
         countQuery = `SELECT COUNT(*) as total FROM vista_reportes_mantenimiento v ${maintWhereClause}`;
         break;
 
+      case 'equipos_populares':
+        query = `
+            SELECT
+                e.name AS equipo,
+                e.type AS categoria,
+                COUNT(l.id) AS total_usos
+            FROM equipments e
+            JOIN loans l ON e.id = l."equipmentId"
+            ${whereClause}
+            GROUP BY e.id, e.name, e.type
+            ORDER BY total_usos DESC
+            LIMIT :limit OFFSET :offset
+        `;
+        countQuery = `
+            SELECT COUNT(*) as total FROM (
+                SELECT e.id
+                FROM equipments e
+                JOIN loans l ON e.id = l."equipmentId"
+                ${whereClause}
+                GROUP BY e.id
+            ) as subquery
+        `;
+        break;
+      
+      case 'user_activity':
+        query = `
+            SELECT
+                l."borrowerName" as usuario,
+                l."borrowerType" as tipo_usuario,
+                COUNT(l.id) as total_prestamos
+            FROM loans l
+            ${whereClause}
+            GROUP BY l."borrowerName", l."borrowerType"
+            ORDER BY total_prestamos DESC
+            LIMIT :limit OFFSET :offset
+        `;
+        countQuery = `
+            SELECT COUNT(*) as total FROM (
+                SELECT l."borrowerName"
+                FROM loans l
+                ${whereClause}
+                GROUP BY l."borrowerName"
+            ) as subquery
+        `;
+        break;
+
       case 'prestamos':
       default:
-        let whereConditions: string[] = [];
-        if (fecha_inicio) {
-          whereConditions.push(`v."fechaPrestamo"::DATE >= :fecha_inicio`);
-          replacements.fecha_inicio = fecha_inicio;
-        }
-        if (fecha_fin) {
-          whereConditions.push(`v."fechaPrestamo"::DATE <= :fecha_fin`);
-          replacements.fecha_fin = fecha_fin;
-        }
+        let prestamosWhere = [...whereConditions];
         if (estado && typeof estado === 'string' && estado.trim() !== '') {
-            whereConditions.push(`LOWER(v.estado) = LOWER(:estado)`);
+            prestamosWhere.push(`LOWER(v.estado) = LOWER(:estado)`);
             replacements.estado = estado;
         }
-        const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+        const prestamosWhereClause = prestamosWhere.length > 0 ? 'WHERE ' + prestamosWhere.join(' AND ') : '';
+
         query = `
           SELECT v.*, ROW_NUMBER() OVER (ORDER BY v."fechaPrestamo" DESC) as correlativo
           FROM vista_reportes_prestamos v
-          ${whereClause}
+          INNER JOIN loans l ON v.id::uuid = l.id
+          ${prestamosWhereClause}
           ORDER BY v."fechaPrestamo" DESC NULLS LAST
           LIMIT :limit OFFSET :offset
         `;
-        countQuery = `SELECT COUNT(*) as total FROM vista_reportes_prestamos v ${whereClause}`;
+        countQuery = `
+          SELECT COUNT(*) as total FROM vista_reportes_prestamos v 
+          INNER JOIN loans l ON v.id::uuid = l.id
+          ${prestamosWhereClause}`;
         break;
     }
 
@@ -298,7 +361,6 @@ router.get('/dynamic', async (req, res, next) => {
     next(error);
   }
 });
-
 
 // ==========================================================
 // RUTAS DE EXPORTACIÓN (PDF Y EXCEL)
@@ -319,9 +381,21 @@ async function getFilteredLoanData(filtros: any) {
      whereConditions.push(`LOWER(v.estado) = LOWER(:estado)`);
      replacements.estado = filtros.estado;
   }
+  
+  // AÑADIDO: Filtro de borrowerType para exportación
+  if (filtros.borrowerType) {
+    whereConditions.push(`l."borrowerType" = :borrowerType`);
+    replacements.borrowerType = filtros.borrowerType;
+  }
 
   const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
-  const query = `SELECT * FROM vista_reportes_prestamos v ${whereClause} ORDER BY v."fechaPrestamo" DESC`;
+  // Se une con la tabla 'loans' para poder filtrar por borrowerType
+  const query = `
+    SELECT v.* FROM vista_reportes_prestamos v
+    INNER JOIN loans l ON v.id::uuid = l.id
+    ${whereClause} 
+    ORDER BY v."fechaPrestamo" DESC
+  `;
   
   return await sequelize.query(query, {
     replacements,

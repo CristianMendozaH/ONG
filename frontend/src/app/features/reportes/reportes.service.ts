@@ -9,6 +9,7 @@ export interface FiltrosReporte {
   fechaFin?: string;
   tipoReporte?: string;
   estado?: string;
+  borrowerType?: string;
 }
 
 export interface ReporteItem {
@@ -23,6 +24,12 @@ export interface ReporteItem {
   tipo?: string;
   tecnico?: string;
   fechaRealizacion?: string;
+  // Para reporte de equipos populares
+  categoria?: string;
+  total_usos?: number;
+  // AÑADIDO: Para reporte de actividad de usuarios
+  tipo_usuario?: string;
+  total_prestamos?: number;
 }
 
 export interface ReporteResponse {
@@ -67,14 +74,11 @@ export class ReportesService {
     if (filtros.fechaFin) params = params.set('fecha_fin', filtros.fechaFin);
     if (filtros.tipoReporte) params = params.set('tipoReporte', filtros.tipoReporte);
     if (filtros.estado) params = params.set('estado', filtros.estado);
+    if (filtros.borrowerType) params = params.set('borrowerType', filtros.borrowerType);
 
     return this.http.get<any>(`${this.API_URL}/reports/dynamic`, { params }).pipe(
       map(response => {
-        // ✅ CORRECCIÓN FINAL: No se necesita transformar los datos porque los nombres
-        // de la vista SQL ya coinciden con los que espera el HTML.
-        // Simplemente nos aseguramos de que la data sea un array.
         const data = Array.isArray(response.data) ? response.data : [];
-
         return {
           data: data,
           total: response.total || 0,
@@ -94,11 +98,12 @@ export class ReportesService {
     if (filtros.fechaInicio) params = params.set('fecha_inicio', filtros.fechaInicio);
     if (filtros.fechaFin) params = params.set('fecha_fin', filtros.fechaFin);
     if (filtros.tipoReporte) params = params.set('tipoReporte', filtros.tipoReporte);
+    if (filtros.borrowerType) params = params.set('borrowerType', filtros.borrowerType);
 
     return this.http.get<EstadisticasReporte>(`${this.API_URL}/reports/estadisticas`, { params }).pipe(
       catchError(error => {
         console.error('Error obteniendo estadísticas:', error);
-        return of({}); // Devuelve objeto vacío en caso de error
+        return of({});
       })
     );
   }

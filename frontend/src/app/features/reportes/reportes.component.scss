@@ -1,4 +1,5 @@
 @use 'sass:color';
+
 // Variables
 $primary-color: #114495;
 $secondary-color: #EE9D08;
@@ -142,9 +143,30 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     gap: 10px;
   }
 
+  .quick-time-filters {
+    margin-bottom: 15px;
+    .filter-label {
+      font-weight: 500;
+      color: $text-color;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      display: block;
+    }
+    .filters-section-actions {
+      justify-content: flex-start;
+    }
+  }
+
+  .filter-divider {
+    border: none;
+    height: 1px;
+    background-color: $border-color;
+    margin: 20px 0;
+  }
+
   &-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
     margin-bottom: 20px;
   }
@@ -153,6 +175,11 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     display: flex;
     gap: 12px;
     justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  &-actions.main-actions {
+    margin-top: 10px;
   }
 
   .filter-group {
@@ -525,10 +552,13 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 @media (max-width: 1200px) {
   .reports-content {
     grid-template-columns: 1fr;
+  }
 
-    .charts-panel {
-      order: -1;
-    }
+  .charts-panel {
+    order: -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
   }
 }
 
@@ -541,6 +571,10 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     &-grid {
       grid-template-columns: 1fr;
     }
+  }
+
+  .charts-panel {
+    grid-template-columns: 1fr;
   }
 
   .export-buttons {

@@ -29,16 +29,24 @@ export class ReportesComponent implements OnInit, OnDestroy {
     fechaInicio: this.getDefaultStartDate(),
     fechaFin: this.getDefaultEndDate(),
     tipoReporte: 'prestamos',
-    estado: ''
+    estado: '',
+    borrowerType: '' // <-- AÑADIDO
   };
 
   tiposReporte: Array<{ value: string; label: string }> = [];
 
   estadosPrestamo = [
     { value: '', label: 'Todos los estados' },
-    { value: 'prestado', label: 'Activo' },
+    { value: 'activo', label: 'Activo' },
     { value: 'devuelto', label: 'Devuelto' },
-    { value: 'atrasado', label: 'Atrasado' }
+    { value: 'vencido', label: 'Vencido' }
+  ];
+
+  // AÑADIDO: Opciones para el filtro de tipo de usuario
+  tiposUsuario = [
+    { value: '', label: 'Todos los usuarios' },
+    { value: 'Participante', label: 'Participantes' },
+    { value: 'Colaborador', label: 'Colaboradores' }
   ];
 
   constructor(private reportesService: ReportesService) {}
@@ -56,12 +64,13 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.hasError = false;
 
-    Promise.all([
-      this.cargarReportes(),
-      this.cargarEstadisticas(),
-      this.cargarTiposReporte()
-    ]).finally(() => {
-      this.isLoading = false;
+    this.cargarTiposReporte().then(() => {
+        Promise.all([
+            this.cargarReportes(),
+            this.cargarEstadisticas()
+        ]).finally(() => {
+            this.isLoading = false;
+        });
     });
   }
 
@@ -97,15 +106,12 @@ export class ReportesComponent implements OnInit, OnDestroy {
           this.reportesService.getTiposReporte()
               .pipe(takeUntil(this.destroy$))
               .subscribe(tipos => {
-                  this.tiposReporte = [{ value: 'prestamos', label: 'Préstamos' }, ...tipos.filter(t => t.value !== 'prestamos')];
+                  this.tiposReporte = tipos; // <-- ACTUALIZADO para recibir los tipos desde el backend
                   resolve();
               });
       });
   }
 
-  /**
-   * Se ejecuta cuando el usuario cambia el tipo de reporte en el menú desplegable.
-   */
   onTipoReporteChange(): void {
     this.limpiarFiltroEstado();
     this.aplicarFiltros();
@@ -125,8 +131,46 @@ export class ReportesComponent implements OnInit, OnDestroy {
       fechaInicio: this.getDefaultStartDate(),
       fechaFin: this.getDefaultEndDate(),
       tipoReporte: 'prestamos',
-      estado: ''
+      estado: '',
+      borrowerType: '' // <-- AÑADIDO
     };
+    this.aplicarFiltros();
+  }
+
+  // AÑADIDO: Nuevo método para filtros rápidos de tiempo
+  aplicarFiltroPeriodo(periodo: string): void {
+    const hoy = new Date();
+    const anio = hoy.getFullYear();
+    let fechaInicio: Date;
+    let fechaFin: Date;
+
+    switch (periodo) {
+      case 'T1':
+        fechaInicio = new Date(anio, 0, 1);
+        fechaFin = new Date(anio, 2, 31);
+        break;
+      case 'T2':
+        fechaInicio = new Date(anio, 3, 1);
+        fechaFin = new Date(anio, 5, 30);
+        break;
+      case 'T3':
+        fechaInicio = new Date(anio, 6, 1);
+        fechaFin = new Date(anio, 8, 30);
+        break;
+      case 'T4':
+        fechaInicio = new Date(anio, 9, 1);
+        fechaFin = new Date(anio, 11, 31);
+        break;
+      case 'ANIO_COMPLETO':
+        fechaInicio = new Date(anio, 0, 1);
+        fechaFin = new Date(anio, 11, 31);
+        break;
+      default:
+        return;
+    }
+
+    this.filtros.fechaInicio = fechaInicio.toISOString().split('T')[0];
+    this.filtros.fechaFin = fechaFin.toISOString().split('T')[0];
     this.aplicarFiltros();
   }
 
@@ -198,7 +242,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   trackByReporte(index: number, item: ReporteItem): string {
-    return item.id;
+    return item.id + (item.correlativo || index).toString();
   }
 
   // Getters para Préstamos
