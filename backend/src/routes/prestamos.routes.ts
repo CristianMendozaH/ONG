@@ -56,7 +56,7 @@ router.post('/', auth, async (req: any, res, next) => {
         loanDate,
         dueDate,
         status: 'prestado',
-        registeredById: req.user.sub, // CORRECCIÓN FINAL: Usamos .sub en lugar de .id
+        registeredById: req.user.sub,
       }, { transaction: t });
 
       // 4. Actualización del estado del equipo
@@ -180,20 +180,21 @@ router.get('/:id', auth, async (req, res, next) => {
 });
 
 /**
- * @route   PATCH /api/prestamos/:id
+ * @route   PATCH /api/prestamos/:id/extend
  * @desc    Extender la fecha de devolución de un préstamo
  * @access  Private
  */
-router.patch('/:id', auth, async (req, res, next) => {
+router.patch('/:id/extend', auth, async (req, res, next) => {
   try {
-    const { dueDate } = req.body;
+    const { newDueDate: dueDate, reason, comments } = req.body;
+
     if (!dueDate) {
-      return res.status(400).json({ message: 'El campo dueDate es requerido' });
+      return res.status(400).json({ message: 'El campo newDueDate es requerido' });
     }
 
-    const newDueDate = new Date(dueDate);
-    if (isNaN(newDueDate.getTime())) {
-      return res.status(400).json({ message: 'Formato de dueDate inválido' });
+    const newDueDateObj = new Date(dueDate);
+    if (isNaN(newDueDateObj.getTime())) {
+      return res.status(400).json({ message: 'Formato de newDueDate inválido' });
     }
 
     const loan = await Loan.findByPk(req.params.id);
@@ -205,11 +206,16 @@ router.patch('/:id', auth, async (req, res, next) => {
     }
 
     const currentDueDate = new Date(loan.dueDate);
-    if (newDueDate <= currentDueDate) {
+    if (newDueDateObj <= currentDueDate) {
       return res.status(400).json({ message: 'La nueva fecha debe ser posterior a la fecha de devolución actual' });
     }
 
-    await loan.update({ dueDate });
+    await loan.update({ 
+        dueDate,
+        // Opcional: Si tu modelo Loan tiene campos para guardar esto, descomenta las líneas.
+        // extensionReason: reason,
+        // extensionComments: comments,
+    });
 
     res.json(loan);
   } catch (e) {

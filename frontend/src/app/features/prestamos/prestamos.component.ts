@@ -3,7 +3,7 @@ import { CommonModule, DatePipe, registerLocaleData } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import localeEsGT from '@angular/common/locales/es-GT';
-import { PrestamosService, Prestamo, DevolverPrestamoDTO, CrearPrestamoDTO } from './prestamos.service';
+import { PrestamosService, Prestamo, DevolverPrestamoDTO, CrearPrestamoDTO, ExtendLoanDTO } from './prestamos.service';
 import { EquiposService, Equipo } from '../equipos/equipos.service';
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { UserStore } from '../../core/stores/user.store';
@@ -65,9 +65,12 @@ export class PrestamosComponent implements OnInit, OnDestroy {
   public overdueDays = 0;
   public damageFee = 0;
   public totalFee = 0;
+
+  public minExtensionDate = '';
   public extendNewDate = '';
   public extendReason = '';
   public extendComments = '';
+  public extensionDays = 0;
 
   public loanForm = this.fb.group({
     equipmentId: ['', Validators.required],
@@ -104,7 +107,18 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     try {
       this.equipos = await this.equiposSvc.list().toPromise() || [];
       const prestamosData = await this.prestamosSvc.list().toPromise();
-      this.prestamos = prestamosData || [];
+
+      if (prestamosData) {
+        this.prestamos = prestamosData.map(p => ({
+          ...p,
+          loanDate: new Date(p.loanDate),
+          dueDate: new Date(p.dueDate),
+          returnDate: p.returnDate ? new Date(p.returnDate) : null
+        }));
+      } else {
+        this.prestamos = [];
+      }
+
       this.filterPrestamos();
       this.updateOverdueLoans();
     } catch (e: any) {
@@ -292,27 +306,20 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     if (printWindow) {
       const receiptContent = document.getElementById('loanReceipt')?.innerHTML;
 
-      // Estilos completos para una impresión profesional
       const styles = `
         <style>
           body { font-family: 'Poppins', sans-serif; margin: 20px; color: #33475b; }
           .no-print { display: none !important; }
-
-          /* Encabezado */
           .receipt-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #114495; padding-bottom: 15px; margin-bottom: 30px; }
           .logo-container { display: flex; align-items: center; gap: 15px; }
           .receipt-logo { max-width: 150px; height: auto; }
           .receipt-header h4 { font-size: 1.2rem; margin: 0; color: #114495; font-weight: 600; }
           .receipt-info p { margin: 0 0 5px 0; text-align: right; font-size: 0.9rem; }
-
-          /* Secciones de Detalles */
           .details-section { margin-bottom: 30px; }
           .details-title { font-size: 1.1rem; font-weight: 600; color: #114495; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; }
           .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
           .detail-item { font-size: 1rem; }
           .detail-label { font-weight: 500; color: #666; font-size: 0.9rem; margin-bottom: 4px; display: block; }
-
-          /* Pie de página con firmas */
           .receipt-footer { display: flex; justify-content: space-around; margin-top: 80px; padding-top: 20px; }
           .signature-box { width: 45%; text-align: center; }
           .signature-line { border-top: 1px solid #333; height: 40px; }
@@ -324,7 +331,7 @@ export class PrestamosComponent implements OnInit, OnDestroy {
       printWindow.document.open();
       printWindow.document.write(
         '<html><head><title>Comprobante de Préstamo</title>' +
-        '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">' + // Importar Poppins
+        '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">' +
         styles +
         `</head><body onload="window.print();window.close()">${receiptContent}</body></html>`
       );
@@ -366,10 +373,62 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     this.showReturnModal = true;
   }
 
-  public extendLoan(prestamo: Prestamo) { this.selectedPrestamo = prestamo; this.showExtendModal = true; }
-  public confirmExtension() { /* Lógica para confirmar extensión */ }
-  public showOverdueModal() { this.updateOverdueLoans(); this.showOverdueLoansModal = true; }
-  public updateOverdueLoans() { this.overdueLoans = this.prestamos.filter(p => p.status !== 'devuelto' && new Date() > new Date(p.dueDate)); }
+  public extendLoan(prestamo: Prestamo) {
+    this.selectedPrestamo = prestamo;
+
+    const currentDueDate = new Date(prestamo.dueDate);
+    const minDate = new Date(currentDueDate.setDate(currentDueDate.getDate() + 1));
+    this.minExtensionDate = minDate.toISOString().split('T')[0];
+
+    const defaultNewDate = new Date(minDate.setDate(minDate.getDate() + 7));
+    this.extendNewDate = defaultNewDate.toISOString().split('T')[0];
+
+    this.showExtendModal = true;
+    this.calculateExtensionSummary();
+  }
+
+  public calculateExtensionSummary() {
+    if (!this.selectedPrestamo || !this.extendNewDate) {
+      this.extensionDays = 0;
+      return;
+    }
+    const currentDueDate = new Date(this.selectedPrestamo.dueDate.toISOString().split('T')[0]);
+    const newDueDate = new Date(this.extendNewDate);
+    const timeDiff = newDueDate.getTime() - currentDueDate.getTime();
+
+    this.extensionDays = timeDiff > 0 ? Math.ceil(timeDiff / (1000 * 60 * 60 * 24)) : 0;
+  }
+
+  public confirmExtension() {
+    if (!this.selectedPrestamo || !this.extendNewDate || !this.extendReason) {
+      return this.showToast('Debes seleccionar una nueva fecha y un motivo.', 'error');
+    }
+
+    const payload: ExtendLoanDTO = {
+      newDueDate: this.extendNewDate,
+      reason: this.extendReason,
+      comments: this.extendComments
+    };
+
+    this.prestamosSvc.extendLoan(this.selectedPrestamo.id, payload).subscribe({
+      next: () => {
+        this.closeModal('extend');
+        this.loadAllData();
+        this.showToast('Préstamo extendido exitosamente', 'success');
+      },
+      error: (e) => this.showToast(e?.error?.message || 'Error al extender el préstamo', 'error')
+    });
+  }
+
+  public showOverdueModal() {
+    this.updateOverdueLoans();
+    this.showOverdueLoansModal = true;
+  }
+
+  public updateOverdueLoans() {
+    this.overdueLoans = this.prestamos.filter(p => p.status !== 'devuelto' && new Date() > new Date(p.dueDate));
+  }
+
   public getOverdueCount = () => this.overdueLoans.length;
 
   public closeModal(type: 'loan' | 'return' | 'overdue' | 'details' | 'extend' | 'qr') {
@@ -385,6 +444,7 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     if (type === 'loan') this.loanForm.reset();
     if (type === 'return') this.resetReturnForm();
     if (type === 'details') this.selectedPrestamo = null;
+    if (type === 'extend') this.resetExtendForm();
   }
 
   public filterPrestamos() {
@@ -400,7 +460,7 @@ export class PrestamosComponent implements OnInit, OnDestroy {
   public getSelectedEquipmentName = () => this.equipos.find(e => e.id === this.loanForm.get('equipmentId')?.value)?.name || '-';
   public getLoanDays = () => '...';
 
-  public calculateDaysLeft(dueDate: string): number {
+  public calculateDaysLeft(dueDate: Date): number {
     const due = new Date(dueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -430,6 +490,8 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     this.extendNewDate = '';
     this.extendReason = '';
     this.extendComments = '';
+    this.minExtensionDate = '';
+    this.extensionDays = 0;
   }
 
   public calculateFees() {

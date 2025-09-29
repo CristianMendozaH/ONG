@@ -118,7 +118,7 @@
           <td>
             {{ prestamo.registrar?.name || 'N/A' }}
           </td>
-          <td><div class="actions-cell"><button class="action-btn btn-view" (click)="viewLoan(prestamo)"><i class="fas fa-eye"></i>Ver</button><button class="action-btn btn-return-action" *ngIf="prestamo.status !== 'devuelto'" (click)="returnLoan(prestamo)"><i class="fas fa-undo"></i>Devolver</button><button class="action-btn btn-extend" *ngIf="prestamo.status === 'prestado'" (click)="extendLoan(prestamo)"><i class="fas fa-calendar-plus"></i>Extender</button><button class="action-btn btn-qr" (click)="verQR(prestamo)"><i class="fas fa-qrcode"></i>QR</button></div></td>
+          <td><div class="actions-cell"><button class="action-btn btn-view" (click)="viewLoan(prestamo)"><i class="fas fa-eye"></i>Ver</button><button class="action-btn btn-return-action" *ngIf="prestamo.status !== 'devuelto'" (click)="returnLoan(prestamo)"><i class="fas fa-undo"></i>Devolver</button><button class="action-btn btn-extend" *ngIf="prestamo.status !== 'devuelto'" (click)="extendLoan(prestamo)"><i class="fas fa-calendar-plus"></i>Extender</button><button class="action-btn btn-qr" (click)="verQR(prestamo)"><i class="fas fa-qrcode"></i>QR</button></div></td>
         </tr>
         <tr *ngIf="filteredPrestamos.length === 0"><td colspan="8" class="no-data"><i class="fas fa-inbox"></i><p>No hay préstamos registrados</p></td></tr>
       </tbody>
@@ -273,11 +273,72 @@
 
 <div class="modal-overlay" [class.show]="showExtendModal" (click)="closeModal('extend')">
   <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header"><h3 class="modal-title">Extender Préstamo</h3><button class="modal-close" (click)="closeModal('extend')"><i class="fas fa-times"></i></button></div>
-    <div class="modal-body" *ngIf="selectedPrestamo">
-      <div class="form-group"><label class="form-label">Nueva Fecha de Devolución</label><input type="date" class="form-input" [(ngModel)]="extendNewDate"></div>
-      <div class="form-group"><label class="form-label">Motivo</label><select class="form-select" [(ngModel)]="extendReason"><option value="">Seleccione</option><option value="proyecto">Proyecto</option></select></div>
+    <div class="modal-header">
+      <h3 class="modal-title">Extender Préstamo</h3>
+      <button class="modal-close" (click)="closeModal('extend')"><i class="fas fa-times"></i></button>
     </div>
-    <div class="modal-footer"><button type="button" class="btn-cancel" (click)="closeModal('extend')">Cancelar</button><button type="button" class="btn-confirm" (click)="confirmExtension()">Confirmar</button></div>
+    <div class="modal-body" *ngIf="selectedPrestamo">
+
+      <div class="details-section" style="margin-bottom: 25px;">
+        <h4 class="details-title" style="font-size: 1rem; color: #114495; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px;">
+          Información del Préstamo
+        </h4>
+        <div class="details-grid" style="grid-template-columns: 1fr 2fr; gap: 8px 15px;">
+          <div class="detail-item"><span class="detail-label" style="font-weight: 500; color: #666; font-size: 0.9rem;">ID Préstamo:</span></div>
+          <div class="detail-item"><span class="detail-value">{{ formatLoanId(selectedPrestamo.id) }}</span></div>
+
+          <div class="detail-item"><span class="detail-label" style="font-weight: 500; color: #666; font-size: 0.9rem;">Equipo:</span></div>
+          <div class="detail-item"><span class="detail-value">{{ getEquipmentName(selectedPrestamo) }}</span></div>
+
+          <div class="detail-item"><span class="detail-label" style="font-weight: 500; color: #666; font-size: 0.9rem;">Usuario:</span></div>
+          <div class="detail-item"><span class="detail-value">{{ selectedPrestamo.borrowerName }}</span></div>
+
+          <div class="detail-item"><span class="detail-label" style="font-weight: 500; color: #666; font-size: 0.9rem;">Fecha actual de devolución:</span></div>
+          <div class="detail-item"><span class="detail-value"><b>{{ selectedPrestamo.dueDate | date:'dd/MM/yyyy' }}</b></span></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nueva Fecha de Devolución</label>
+        <input type="date" class="form-input" [(ngModel)]="extendNewDate" [min]="minExtensionDate" (ngModelChange)="calculateExtensionSummary()">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Motivo de la Extensión</label>
+        <select class="form-select" [(ngModel)]="extendReason">
+          <option value="" disabled>Seleccione un motivo</option>
+          <option value="continuacion_proyecto">Continuación de Proyecto</option>
+          <option value="evento_especial">Evento Especial</option>
+          <option value="retraso_actividad">Retraso en Actividad</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+          <label class="form-label">Comentarios adicionales</label>
+          <textarea class="form-input" [(ngModel)]="extendComments" rows="3" placeholder="Añada más detalles si es necesario..."></textarea>
+      </div>
+
+      <div class="loan-summary" style="margin-top: 25px;">
+        <h4 style="margin-bottom: 15px;">Resumen de Extensión</h4>
+        <div class="summary-row">
+          <span>Días adicionales:</span>
+          <span>{{ extensionDays }} día(s)</span>
+        </div>
+        <div class="summary-row" style="font-size: 1.1rem;">
+          <strong>Nueva fecha límite:</strong>
+          <strong>{{ extendNewDate | date:'dd/MM/yyyy' }}</strong>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeModal('extend')">Cancelar</button>
+      <button type="button" class="btn-confirm"
+              (click)="confirmExtension()"
+              [disabled]="!extendNewDate || !extendReason || extensionDays <= 0">
+              <i class="fas fa-check"></i>Confirmar Extensión
+      </button>
+    </div>
   </div>
 </div>
