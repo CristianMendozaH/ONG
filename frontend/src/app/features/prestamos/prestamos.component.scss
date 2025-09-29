@@ -293,14 +293,89 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   p { margin: 0; font-style: italic; }
 }
 
+// INICIO: Estilos actualizados para el modal de comprobante
 .receipt-modal {
-  .receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
-  .details-title { font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-  .return-details { background-color: #f8f9fa; padding: 15px; border-radius: 8px; }
-  .return-observations blockquote { margin: 0; padding: 10px; background: #fff; border-left: 3px solid $secondary-color; font-style: italic; }
-  .receipt-footer { display: flex; justify-content: space-around; margin-top: 60px; padding-top: 20px; border-top: 1px dashed #ccc; }
-  .signature-box { width: 40%; border-top: 1px solid #333; padding-top: 8px; text-align: center; }
+  .receipt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid $primary-color;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .receipt-logo {
+      max-width: 150px;
+      height: auto;
+    }
+
+    h4 {
+      font-size: 1.2rem;
+      margin: 0;
+      color: $primary-color;
+      font-weight: 600;
+    }
+
+    .receipt-info p {
+      margin: 0 0 5px 0;
+      text-align: right;
+    }
+  }
+
+  .details-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+  }
+
+  .return-details {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+  }
+
+  .return-observations blockquote {
+    margin: 0;
+    padding: 10px;
+    background: #fff;
+    border-left: 3px solid $secondary-color;
+    font-style: italic;
+  }
+
+  .receipt-footer {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 60px;
+    padding-top: 20px;
+  }
+
+  .signature-box {
+    width: 45%;
+    text-align: center;
+
+    .signature-line {
+      border-top: 1px solid #333;
+      height: 40px; // Espacio para la firma
+    }
+    .signature-name {
+      font-weight: 600;
+      margin: 5px 0 0 0;
+      color: $text-color;
+    }
+    .signature-title {
+      font-size: 0.9rem;
+      color: #666;
+      margin: 2px 0 0 0;
+    }
+  }
 }
+// FIN: Estilos actualizados
 
 .scan-result .borrower-info {
   background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 6px;
@@ -340,12 +415,40 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 
 @keyframes scan-anim { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
 
+// INICIO: Bloque de impresión actualizado
 @media print {
-  body * { visibility: hidden; }
-  #loanReceipt, #loanReceipt * { visibility: visible; }
-  #loanReceipt { position: absolute; left: 0; top: 0; width: 100%; }
-  .no-print { display: none !important; }
+  // Oculta todo por defecto
+  body * {
+    visibility: hidden;
+  }
+
+  // Muestra solo el recibo y su contenido
+  #loanReceipt, #loanReceipt * {
+    visibility: visible;
+  }
+
+  // Posiciona el recibo para que ocupe toda la página de impresión
+  #loanReceipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    border-radius: 0;
+    box-shadow: none;
+    max-height: none;
+  }
+
+  .modal-overlay {
+      background: none;
+  }
+
+  // Oculta los botones de "Cerrar" e "Imprimir" en la versión impresa
+  .no-print {
+    display: none !important;
+  }
 }
+// FIN: Bloque de impresión actualizado
 
 @keyframes pulse {
   0% { transform: scale(1); }

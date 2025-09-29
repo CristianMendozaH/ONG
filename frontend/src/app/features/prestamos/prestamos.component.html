@@ -173,18 +173,88 @@
 
 <div class="modal-overlay" [class.show]="showLoanDetailsModal" (click)="closeModal('details')">
   <div id="loanReceipt" class="modal receipt-modal" (click)="$event.stopPropagation()">
-    <div class="modal-header no-print"><h3 class="modal-title">Comprobante de Préstamo</h3><button class="modal-close" (click)="closeModal('details')"><i class="fas fa-times"></i></button></div>
-    <div class="modal-body" *ngIf="selectedPrestamo">
-      <div class="receipt-header"><h4>Amigos de Santa Cruz ONG</h4><div class="receipt-info"><p><strong>ID Préstamo:</strong> {{ formatLoanId(selectedPrestamo.id) }}</p><p><strong>Fecha:</strong> {{ selectedPrestamo.loanDate | date:'fullDate':'':'es-GT' }}</p></div></div>
-      <div class="details-section"><h4 class="details-title">Detalles del Equipo</h4><div class="details-grid"><div class="detail-item"><span class="detail-label">Código</span><span class="detail-value">{{ getEquipmentCode(selectedPrestamo) }}</span></div><div class="detail-item"><span class="detail-label">Nombre</span><span class="detail-value">{{ getEquipmentName(selectedPrestamo) }}</span></div></div></div>
-      <div class="details-section"><h4 class="details-title">Información del Solicitante</h4><div class="details-grid"><div class="detail-item"><span class="detail-label">Usuario</span><span class="detail-value">{{ selectedPrestamo.borrowerName }}</span></div><div class="detail-item"><span class="detail-label">Tipo</span><span class="detail-value">{{ selectedPrestamo.borrowerType || 'N/A' }}</span></div><div class="detail-item"><span class="detail-label">Contacto</span><span class="detail-value">{{ selectedPrestamo.borrowerContact || 'N/A' }}</span></div><div class="detail-item"><span class="detail-label">Fecha Límite</span><span class="detail-value">{{ selectedPrestamo.dueDate | date:'dd/MM/yyyy' }}</span></div></div></div>
-      <div *ngIf="selectedPrestamo.status === 'devuelto'" class="details-section return-details"><h4 class="details-title">Detalles de la Devolución</h4><div class="return-observations" *ngIf="selectedPrestamo.observations"><p><strong>Observaciones de Devolución:</strong></p><blockquote>"{{ selectedPrestamo.observations }}"</blockquote></div><p *ngIf="!selectedPrestamo.observations">No se registraron observaciones.</p></div>
-      <div class="receipt-footer"><div class="signature-box"><p>Firma del Solicitante</p></div><div class="signature-box"><p>Firma del Encargado (ONG)</p></div></div>
+    <div class="modal-header no-print">
+      <h3 class="modal-title">Comprobante de Préstamo</h3>
+      <button class="modal-close" (click)="closeModal('details')"><i class="fas fa-times"></i></button>
     </div>
-    <div class="modal-footer no-print"><button type="button" class="btn-cancel" (click)="closeModal('details')">Cerrar</button><button type="button" class="btn-confirm" (click)="printLoan()"><i class="fas fa-print"></i>Imprimir / Descargar</button></div>
+
+    <div class="modal-body" *ngIf="selectedPrestamo">
+      <div class="receipt-header">
+        <div class="logo-container">
+          <img src="assets/img/logo-ong.png" alt="Logo ONG" class="receipt-logo">
+          <h4>Amigos de Santa Cruz ONG</h4>
+        </div>
+        <div class="receipt-info">
+          <p><strong>ID Préstamo:</strong> {{ formatLoanId(selectedPrestamo.id) }}</p>
+          <p><strong>Fecha:</strong> {{ selectedPrestamo.loanDate | date:'fullDate':'':'es-GT' }}</p>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h4 class="details-title">Detalles del Equipo</h4>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Código</span>
+            <span class="detail-value">{{ getEquipmentCode(selectedPrestamo) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Nombre</span>
+            <span class="detail-value">{{ getEquipmentName(selectedPrestamo) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h4 class="details-title">Información del Solicitante</h4>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Nombre</span>
+            <span class="detail-value">{{ selectedPrestamo.borrowerName }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Tipo</span>
+            <span class="detail-value">{{ selectedPrestamo.borrowerType || 'N/A' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Contacto</span>
+            <span class="detail-value">{{ selectedPrestamo.borrowerContact || 'N/A' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Fecha Límite de Devolución</span>
+            <span class="detail-value">{{ selectedPrestamo.dueDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedPrestamo.status === 'devuelto'" class="details-section return-details">
+        <h4 class="details-title">Detalles de la Devolución</h4>
+        <div class="return-observations" *ngIf="selectedPrestamo.observations">
+          <p><strong>Observaciones de Devolución:</strong></p>
+          <blockquote>"{{ selectedPrestamo.observations }}"</blockquote>
+        </div>
+        <p *ngIf="!selectedPrestamo.observations">No se registraron observaciones.</p>
+      </div>
+
+      <div class="receipt-footer">
+        <div class="signature-box">
+          <p class="signature-line"></p>
+          <p class="signature-name">{{ selectedPrestamo.borrowerName }}</p>
+          <p class="signature-title">Firma del Solicitante</p>
+        </div>
+        <div class="signature-box">
+          <p class="signature-line"></p>
+          <p class="signature-name">{{ selectedPrestamo.registrar?.name || 'N/A' }}</p>
+          <p class="signature-title">Firma del Encargado (ONG)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer no-print">
+      <button type="button" class="btn-cancel" (click)="closeModal('details')">Cerrar</button>
+      <button type="button" class="btn-confirm" (click)="printLoan()"><i class="fas fa-print"></i>Imprimir / Descargar</button>
+    </div>
   </div>
 </div>
-
 <div class="modal-overlay" [class.show]="!!qrUrl" (click)="closeModal('qr')">
   <div class="modal qr-modal" (click)="$event.stopPropagation()">
     <div class="modal-header"><h3 class="modal-title">Código QR del Equipo</h3><button class="modal-close" (click)="closeModal('qr')"><i class="fas fa-times"></i></button></div>

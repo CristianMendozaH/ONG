@@ -291,9 +291,43 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       const receiptContent = document.getElementById('loanReceipt')?.innerHTML;
-      const styles = `<style> body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; } .receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; } .details-section { margin-top: 25px; } .details-title { font-size: 1.1rem; border-bottom: 1px solid #ccc; padding-bottom: 8px; } .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 15px; } .detail-label { color: #555; font-weight: 600; } .return-details { background-color: #f8f9fa; padding: 15px; border-radius: 8px; } .receipt-footer { display: flex; justify-content: space-around; margin-top: 80px; } .signature-box { border-top: 1px solid #000; padding-top: 8px; width: 40%; text-align: center; } .no-print { display: none; } </style>`;
+
+      // Estilos completos para una impresión profesional
+      const styles = `
+        <style>
+          body { font-family: 'Poppins', sans-serif; margin: 20px; color: #33475b; }
+          .no-print { display: none !important; }
+
+          /* Encabezado */
+          .receipt-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #114495; padding-bottom: 15px; margin-bottom: 30px; }
+          .logo-container { display: flex; align-items: center; gap: 15px; }
+          .receipt-logo { max-width: 150px; height: auto; }
+          .receipt-header h4 { font-size: 1.2rem; margin: 0; color: #114495; font-weight: 600; }
+          .receipt-info p { margin: 0 0 5px 0; text-align: right; font-size: 0.9rem; }
+
+          /* Secciones de Detalles */
+          .details-section { margin-bottom: 30px; }
+          .details-title { font-size: 1.1rem; font-weight: 600; color: #114495; margin-bottom: 15px; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; }
+          .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
+          .detail-item { font-size: 1rem; }
+          .detail-label { font-weight: 500; color: #666; font-size: 0.9rem; margin-bottom: 4px; display: block; }
+
+          /* Pie de página con firmas */
+          .receipt-footer { display: flex; justify-content: space-around; margin-top: 80px; padding-top: 20px; }
+          .signature-box { width: 45%; text-align: center; }
+          .signature-line { border-top: 1px solid #333; height: 40px; }
+          .signature-name { font-weight: 600; margin: 5px 0 0 0; }
+          .signature-title { font-size: 0.9rem; color: #666; margin: 2px 0 0 0; }
+        </style>
+      `;
+
       printWindow.document.open();
-      printWindow.document.write(`<html><head><title>Comprobante de Préstamo</title>${styles}</head><body onload="window.print();window.close()">${receiptContent}</body></html>`);
+      printWindow.document.write(
+        '<html><head><title>Comprobante de Préstamo</title>' +
+        '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">' + // Importar Poppins
+        styles +
+        `</head><body onload="window.print();window.close()">${receiptContent}</body></html>`
+      );
       printWindow.document.close();
     }
   }
