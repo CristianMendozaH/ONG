@@ -40,7 +40,7 @@ router.get('/', async (req, res, next) => {
     }
 
     if (type) {
-      where.type = { [Op.iLike]: type };
+      where.type = type;
     }
 
     const rows = await Equipment.findAll({
@@ -132,7 +132,7 @@ router.put(
   '/:id',
   param('id').isUUID().withMessage('El ID proporcionado no es un UUID válido.'),
   body('name').optional().trim().notEmpty().withMessage('El nombre no puede estar vacío.').isLength({ min: 3, max: 100 }),
-  body('type').optional().isIn(allowedTypes).withMessage('El tipo de equipo no es válido.'),
+  body('type').optional().trim().isIn(allowedTypes).withMessage('El tipo de equipo no es válido.'),
   body('status').optional().isIn(['disponible', 'prestado', 'mantenimiento', 'dañado', 'asignado']),
   body('serial').optional({ checkFalsy: true }).trim().isLength({ max: 100 }),
 
@@ -162,6 +162,12 @@ router.put(
       delete req.body.createdBy;
       delete req.body.id;
       delete req.body.code;
+      
+      // ✅ **SOLUCIÓN FINAL:** Si el serial viene como un string vacío, lo convertimos a null
+      // para no violar la restricción UNIQUE de la base de datos.
+      if (req.body.serial !== undefined && req.body.serial.trim() === '') {
+        req.body.serial = null;
+      }
 
       await equipment.update(req.body);
       res.json(equipment);
@@ -217,7 +223,6 @@ router.get(
         return res.status(404).json({ message: 'Equipo no encontrado' });
       }
 
-      // ✅ CORRECCIÓN: Se restaura el contenido del QR a tu formato JSON original
       const qrPayload = JSON.stringify({
         id: equipment.id,
         code: equipment.code,
