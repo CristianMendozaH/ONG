@@ -1,139 +1,240 @@
 import { Router } from 'express';
-import { Equipment } from '../models/Equipment';
-import { User } from '../models/User'; // ++ AÑADIDO: Importa el modelo de Usuario
-import QRCode from 'qrcode';
+import { body, param, validationResult } from 'express-validator';
 import { Op } from 'sequelize';
+import QRCode from 'qrcode';
+
+import { Equipment } from '../models/Equipment';
+import { User } from '../models/User';
+import { auth } from '../middleware/auth'; // Asegúrate de que tu middleware de autenticación esté importado
 
 const router = Router();
 
-// =======================================================================
-// RUTA LISTAR (CON BÚSQUEDA Y DATOS DEL CREADOR)
-// =======================================================================
-router.get('/', async (req, res) => {
-  const { search, status, type } = req.query;
-  const where: any = {};
+// Aplica el middleware de autenticación a todas las rutas de este archivo
+router.use(auth);
 
-  if (search && typeof search === 'string' && search.trim()) {
-    const searchTerm = `%${search.trim()}%`;
-    where[Op.or] = [
-      { name: { [Op.iLike]: searchTerm } },
-      { code: { [Op.iLike]: searchTerm } },
-      { serial: { [Op.iLike]: searchTerm } },
-    ];
-  }
+// Tipos de equipos permitidos (basado en tu frontend)
+const allowedTypes = [
+  'Laptop', 'PC / Gabinete', 'Proyector', 'Tablet', 'Cámara',
+  'Monitor', 'Impresora', 'Equipo de Red', 'UPS / Regulador', 'Otro'
+];
 
-  if (status && typeof status === 'string') {
-    if (status === 'mantenimiento') {
-      where.status = { [Op.in]: ['programada', 'en-proceso'] };
-    } else {
+// =======================================================================
+// RUTA: Listar todos los equipos (GET /)
+// =======================================================================
+router.get('/', async (req, res, next) => {
+  try {
+    const { search, status, type } = req.query as { search?: string, status?: string, type?: string };
+    const where: any = {};
+
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      where[Op.or] = [
+        { name: { [Op.iLike]: searchTerm } },
+        { code: { [Op.iLike]: searchTerm } },
+        { serial: { [Op.iLike]: searchTerm } },
+      ];
+    }
+
+    if (status) {
       where.status = status;
     }
-  }
 
-  if (type && typeof type === 'string') {
-    where.type = { [Op.iLike]: type };
-  }
-
-  const rows = await Equipment.findAll({
-    where,
-    order: [['createdAt', 'DESC']],
-    // ++ MODIFICADO: Incluye la información del usuario creador
-    include: [{
-      model: User,
-      as: 'creator', // Usa el alias definido en la relación
-      attributes: ['id', 'name']
-    }]
-  });
-
-  res.json(rows);
-});
-
-// =======================================================================
-// RUTA CREAR (ACEPTANDO 'createdBy')
-// =======================================================================
-router.post('/', async (req, res, next) => {
-  try {
-    // ++ MODIFICADO: Se extrae 'createdBy' del cuerpo de la petición
-    const { code, name, type, description, serial, createdBy } = req.body;
-
-    // Se valida que 'createdBy' no esté vacío
-    if (!createdBy) {
-      return res.status(400).json({ message: 'El campo createdBy es obligatorio.' });
+    if (type) {
+      where.type = { [Op.iLike]: type };
     }
 
-    const eq = await Equipment.create({ code, name, type, description, serial, createdBy });
-    res.status(201).json(eq);
-  } catch (e) {
-    if (e instanceof Error && e.name === 'SequelizeUniqueConstraintError') {
-      return res.status(409).json({ message: 'El código o número de serie ya existe.' });
-    }
-    next(e);
-  }
-});
-
-// =======================================================================
-// RUTA DETALLE (CON DATOS DEL CREADOR)
-// =======================================================================
-router.get('/:id', async (req, res, next) => {
-  try {
-    const eq = await Equipment.findByPk(req.params.id, {
-      // ++ MODIFICADO: Incluye la información del usuario creador también aquí
+    const rows = await Equipment.findAll({
+      where,
+      order: [['code', 'DESC']],
       include: [{
         model: User,
         as: 'creator',
         attributes: ['id', 'name']
       }]
     });
-    if (!eq) return res.status(404).json({ message: 'Equipo no encontrado' });
-    res.json(eq);
-  } catch (e) { next(e); }
-});
-
-// =======================================================================
-// RUTA ACTUALIZAR (PROTEGIDA CONTRA CAMBIOS EN 'createdBy')
-// =======================================================================
-router.put('/:id', async (req, res, next) => {
-  try {
-    const eq = await Equipment.findByPk(req.params.id);
-    if (!eq) return res.status(404).json({ message: 'Equipo no encontrado' });
-
-    // ++ MODIFICADO: Se elimina 'createdBy' del body para evitar que se actualice
-    delete req.body.createdBy;
-
-    await eq.update(req.body);
-    res.json(eq);
+    res.json(rows);
   } catch (e) {
-    if (e instanceof Error && e.name === 'SequelizeUniqueConstraintError') {
-      return res.status(409).json({ message: 'El código o número de serie ya existe.' });
-    }
     next(e);
   }
 });
 
 // =======================================================================
-// RUTA ELIMINAR (Sin cambios)
+// RUTA: Crear un nuevo equipo (POST /)
 // =======================================================================
-router.delete('/:id', async (req, res, next) => {
-  try {
-    const eq = await Equipment.findByPk(req.params.id);
-    if (!eq) return res.status(404).json({ message: 'Equipo no encontrado' });
-    await eq.destroy();
-    res.status(204).send();
-  } catch (e) { next(e); }
-});
+router.post(
+  '/',
+  body('code').trim().notEmpty().withMessage('El código es obligatorio.'),
+  body('name').trim().notEmpty().withMessage('El nombre es obligatorio.').isLength({ min: 3, max: 100 }).withMessage('El nombre debe tener entre 3 y 100 caracteres.'),
+  body('type').notEmpty().withMessage('El tipo es obligatorio.').isIn(allowedTypes).withMessage('El tipo de equipo no es válido.'),
+  body('serial').optional({ checkFalsy: true }).trim().isLength({ max: 100 }).withMessage('El número de serie no puede exceder los 100 caracteres.'),
+  body('description').optional().trim().isLength({ max: 500 }).withMessage('La descripción no puede exceder los 500 caracteres.'),
+
+  async (req: any, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const { code, name, type, description, serial, status } = req.body;
+      const createdBy = req.user.sub;
+
+      const existingCode = await Equipment.findOne({ where: { code: { [Op.iLike]: code } } });
+      if (existingCode) {
+        return res.status(409).json({ message: `El código '${code}' ya existe.` });
+      }
+      if (serial) {
+        const existingSerial = await Equipment.findOne({ where: { serial: { [Op.iLike]: serial } } });
+        if (existingSerial) {
+          return res.status(409).json({ message: `El número de serie '${serial}' ya existe.` });
+        }
+      }
+
+      const newEquipment = await Equipment.create({ code, name, type, description, serial, createdBy, status });
+      res.status(201).json(newEquipment);
+
+    } catch (e) {
+      next(e);
+    }
+  }
+);
 
 // =======================================================================
-// RUTA QR (Sin cambios)
+// RUTA: Obtener un equipo por ID (GET /:id)
 // =======================================================================
-router.get('/:id/qr', async (req, res, next) => {
-  try {
-    const eq = await Equipment.findByPk(req.params.id);
-    if (!eq) return res.status(404).json({ message: 'Equipo no encontrado' });
-    const qrPayload = JSON.stringify({ id: eq.id, code: eq.code, name: eq.name });
-    const png = await QRCode.toBuffer(qrPayload, { type: 'png', width: 256, errorCorrectionLevel: 'M' });
-    res.setHeader('Content-Type', 'image/png');
-    res.send(png);
-  } catch (e) { next(e); }
-});
+router.get(
+  '/:id',
+  param('id').isUUID().withMessage('El ID proporcionado no es un UUID válido.'),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const equipment = await Equipment.findByPk(req.params.id, {
+        include: [{ model: User, as: 'creator', attributes: ['id', 'name'] }]
+      });
+      if (!equipment) {
+        return res.status(404).json({ message: 'Equipo no encontrado' });
+      }
+      res.json(equipment);
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+// =======================================================================
+// RUTA: Actualizar un equipo (PUT /:id)
+// =======================================================================
+router.put(
+  '/:id',
+  param('id').isUUID().withMessage('El ID proporcionado no es un UUID válido.'),
+  body('name').optional().trim().notEmpty().withMessage('El nombre no puede estar vacío.').isLength({ min: 3, max: 100 }),
+  body('type').optional().isIn(allowedTypes).withMessage('El tipo de equipo no es válido.'),
+  body('status').optional().isIn(['disponible', 'prestado', 'mantenimiento', 'dañado', 'asignado']),
+  body('serial').optional({ checkFalsy: true }).trim().isLength({ max: 100 }),
+
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const equipment = await Equipment.findByPk(req.params.id);
+      if (!equipment) {
+        return res.status(404).json({ message: 'Equipo no encontrado' });
+      }
+      
+      const { serial } = req.body;
+
+      if (serial && serial.toLowerCase() !== (equipment.serial || '').toLowerCase()) {
+        const existingSerial = await Equipment.findOne({
+            where: { serial: { [Op.iLike]: serial }, id: { [Op.ne]: req.params.id } }
+        });
+        if (existingSerial) {
+            return res.status(409).json({ message: `El número de serie '${serial}' ya existe en otro equipo.` });
+        }
+      }
+
+      delete req.body.createdBy;
+      delete req.body.id;
+      delete req.body.code;
+
+      await equipment.update(req.body);
+      res.json(equipment);
+
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+// =======================================================================
+// RUTA: Eliminar un equipo (DELETE /:id)
+// =======================================================================
+router.delete(
+  '/:id',
+  param('id').isUUID().withMessage('El ID proporcionado no es un UUID válido.'),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const equipment = await Equipment.findByPk(req.params.id);
+      if (!equipment) {
+        return res.status(404).json({ message: 'Equipo no encontrado' });
+      }
+
+      await equipment.destroy();
+      res.status(204).send();
+
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+// =======================================================================
+// RUTA: Generar QR de un equipo (GET /:id/qr)
+// =======================================================================
+router.get(
+  '/:id/qr',
+  param('id').isUUID().withMessage('El ID proporcionado no es un UUID válido.'),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const equipment = await Equipment.findByPk(req.params.id);
+      if (!equipment) {
+        return res.status(404).json({ message: 'Equipo no encontrado' });
+      }
+
+      // ✅ CORRECCIÓN: Se restaura el contenido del QR a tu formato JSON original
+      const qrPayload = JSON.stringify({
+        id: equipment.id,
+        code: equipment.code,
+        name: equipment.name
+      });
+
+      const pngBuffer = await QRCode.toBuffer(qrPayload, {
+        type: 'png', width: 256, errorCorrectionLevel: 'M'
+      });
+
+      res.setHeader('Content-Type', 'image/png');
+      res.send(pngBuffer);
+
+    } catch (e) {
+      next(e);
+    }
+  }
+);
 
 export default router;

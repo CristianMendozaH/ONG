@@ -9,7 +9,6 @@ export interface Prestamo {
   id: string;
   equipmentId: string;
   borrowerName: string;
-  // ++ CAMBIO: Las fechas ahora son de tipo Date para un manejo robusto
   loanDate: Date;
   dueDate: Date;
   returnDate?: Date | null;
@@ -25,9 +24,9 @@ export interface Prestamo {
   createdAt?: string;
   updatedAt?: string;
   registrar?: User;
+  accessories?: string[]; // Campo para los accesorios
 }
 
-// ... (el resto del archivo no cambia)
 export interface CrearPrestamoDTO {
   equipmentId: string;
   borrowerName:string;
@@ -36,6 +35,7 @@ export interface CrearPrestamoDTO {
   borrowerContact?: string;
   responsiblePartyName?: string;
   registeredById?: string;
+  accessories?: string[]; // Campo para los accesorios
 }
 
 export interface DevolverPrestamoDTO {
@@ -63,7 +63,6 @@ export class PrestamosService {
 
   constructor(private http: HttpClient) {}
 
-  // ++ CAMBIO: Se especifica que el Observable devuelve el tipo Prestamo con fechas correctas
   list(filters?: PrestamoFilters): Observable<Prestamo[]> {
     let params = new HttpParams();
     if (filters) {

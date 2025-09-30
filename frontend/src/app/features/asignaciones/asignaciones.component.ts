@@ -1,3 +1,5 @@
+// Archivo completo: src/app/features/asignaciones/asignaciones.component.ts
+
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -25,7 +27,8 @@ export class AsignacionesComponent implements OnInit {
   public toasts: Toast[] = [];
   public asignaciones: Asignacion[] = [];
   public filteredAsignaciones: Asignacion[] = [];
-  public equiposDisponibles: Equipo[] = [];
+  public todosLosEquipos: Equipo[] = []; // Almacena la lista completa de equipos
+  public equiposDisponiblesParaFormulario: Equipo[] = []; // Usada en el dropdown del formulario
   public colaboradores: Colaborador[] = [];
   public loading = true;
   public error = '';
@@ -36,11 +39,31 @@ export class AsignacionesComponent implements OnInit {
   public selectedAsignacion: Asignacion | null = null;
   public statusFilter = '';
 
+  public availableAccessories = [
+    { key: 'cargador', label: 'Cargador' },
+    { key: 'mouse', label: 'Mouse' },
+    { key: 'teclado', label: 'Teclado' },
+    { key: 'maletin', label: 'Estuche o Maletín' },
+    { key: 'base', label: 'Base para Laptop' },
+    { key: 'adaptador_video', label: 'Adaptador de Video' },
+    { key: 'otro', label: 'Otro (especificar)' }
+  ];
+
   public asignacionForm = this.fb.group({
     equipmentId: ['', Validators.required],
     collaboratorId: ['', Validators.required],
     assignmentDate: [new Date().toISOString().split('T')[0], Validators.required],
     observations: [''],
+    accessories: this.fb.group({
+      cargador: [false],
+      mouse: [false],
+      teclado: [false],
+      maletin: [false],
+      base: [false],
+      adaptador_video: [false],
+      otro: [false]
+    }),
+    otroAccesorioTexto: ['']
   });
 
   public fechaLiberacion = new Date().toISOString().split('T')[0];
@@ -56,11 +79,11 @@ export class AsignacionesComponent implements OnInit {
     this.error = '';
     try {
       const [equiposData, asignacionesData, colaboradoresData] = await Promise.all([
-        this.equiposSvc.list().toPromise(),
+        this.equiposSvc.list({}).toPromise(),
         this.asignacionesSvc.list().toPromise(),
         this.asignacionesSvc.getColaboradores().toPromise()
       ]);
-      this.equiposDisponibles = (equiposData || []).filter(e => e.status === 'disponible');
+      this.todosLosEquipos = equiposData || [];
       this.asignaciones = asignacionesData || [];
       this.colaboradores = colaboradoresData || [];
       this.filterAsignaciones();
@@ -83,30 +106,46 @@ export class AsignacionesComponent implements OnInit {
       return this.showToast('Completa los campos requeridos', 'error');
     }
 
-    if (this.selectedAsignacion) {
-      // --- Lógica para EDITAR ---
-      this.asignacionesSvc.update(
-        this.selectedAsignacion.id,
-        this.asignacionForm.value as Partial<CrearAsignacionDTO>
-      ).subscribe({
-        next: () => {
-          this.closeModal('asignacion');
-          this.cargarTodosLosDatos();
-          this.showToast('Asignación actualizada con éxito', 'success');
-        },
-        error: (e) => this.showToast(e?.error?.message || 'Error al actualizar la asignación', 'error')
-      });
-    } else {
-      // --- Lógica para CREAR ---
-      this.asignacionesSvc.create(this.asignacionForm.value as any).subscribe({
-        next: () => {
-          this.closeModal('asignacion');
-          this.cargarTodosLosDatos();
-          this.showToast('Asignación creada con éxito', 'success');
-        },
-        error: (e) => this.showToast(e?.error?.message || 'Error al crear la asignación', 'error')
-      });
+    const formValue = this.asignacionForm.value;
+    const selectedAccessories: string[] = [];
+    const accessoriesValue = formValue.accessories as { [key: string]: boolean };
+
+    for (const accesorio of this.availableAccessories) {
+      if (accessoriesValue[accesorio.key]) {
+        if (accesorio.key === 'otro') {
+          if (formValue.otroAccesorioTexto?.trim()) {
+            selectedAccessories.push(formValue.otroAccesorioTexto.trim());
+          }
+        } else {
+          selectedAccessories.push(accesorio.label);
+        }
+      }
     }
+
+    const payload: CrearAsignacionDTO = {
+      equipmentId: formValue.equipmentId!,
+      collaboratorId: formValue.collaboratorId!,
+      assignmentDate: formValue.assignmentDate!,
+      observations: formValue.observations || undefined,
+      accessories: selectedAccessories.length > 0 ? selectedAccessories : undefined
+    };
+
+    const action = this.selectedAsignacion
+      ? this.asignacionesSvc.update(this.selectedAsignacion.id, payload)
+      : this.asignacionesSvc.create(payload);
+
+    action.subscribe({
+      next: () => {
+        const message = this.selectedAsignacion ? 'actualizada' : 'creada';
+        this.closeModal('asignacion');
+        this.cargarTodosLosDatos();
+        this.showToast(`Asignación ${message} con éxito`, 'success');
+      },
+      error: (e) => {
+        const message = this.selectedAsignacion ? 'actualizar' : 'crear';
+        this.showToast(e?.error?.message || `Error al ${message} la asignación`, 'error');
+      }
+    });
   }
 
   public confirmarLiberacion() {
@@ -149,17 +188,38 @@ export class AsignacionesComponent implements OnInit {
     this.asignacionForm.reset({
       assignmentDate: new Date().toISOString().split('T')[0]
     });
+    this.equiposDisponiblesParaFormulario = this.todosLosEquipos.filter(e => e.status === 'disponible');
     this.showAsignacionModal = true;
   }
 
   public editarAsignacion(asignacion: Asignacion) {
     this.selectedAsignacion = asignacion;
+    this.equiposDisponiblesParaFormulario = this.todosLosEquipos.filter(e => e.status === 'disponible' || e.id === asignacion.equipmentId);
+
+    const accessoriesState: { [key: string]: boolean } = {};
+    let otroTexto = '';
+    const standardAccessoryLabels = this.availableAccessories.map(a => a.label);
+
+    if (asignacion.accessories) {
+      for (const accesorio of this.availableAccessories) {
+        accessoriesState[accesorio.key] = asignacion.accessories.includes(accesorio.label);
+      }
+      const otroAccesorio = asignacion.accessories.find(acc => !standardAccessoryLabels.includes(acc));
+      if (otroAccesorio) {
+        accessoriesState['otro'] = true;
+        otroTexto = otroAccesorio;
+      }
+    }
+
     this.asignacionForm.patchValue({
       equipmentId: asignacion.equipmentId,
       collaboratorId: asignacion.collaboratorId,
       assignmentDate: asignacion.assignmentDate,
-      observations: asignacion.observations
+      observations: asignacion.observations,
+      accessories: accessoriesState,
+      otroAccesorioTexto: otroTexto
     });
+
     this.showAsignacionModal = true;
   }
 
@@ -193,9 +253,9 @@ export class AsignacionesComponent implements OnInit {
     this.toasts = this.toasts.filter(toast => toast.id !== id);
   }
 
-  public getEquipoNombre = (a: Asignacion) => a.equipment?.name || '...';
-  public getEquipoCodigo = (a: Asignacion) => a.equipment?.code || '...';
-  public getColaboradorNombre = (a: Asignacion) => a.collaborator?.fullName || '...';
+  public getEquipoNombre = (a: Asignacion) => a.equipment?.name || this.todosLosEquipos.find(e => e.id === a.equipmentId)?.name || '...';
+  public getEquipoCodigo = (a: Asignacion) => a.equipment?.code || this.todosLosEquipos.find(e => e.id === a.equipmentId)?.code || '...';
+  public getColaboradorNombre = (a: Asignacion) => a.collaborator?.fullName || this.colaboradores.find(c => c.id === a.collaboratorId)?.fullName || '...';
 
   public getStatusClass = (status: string) => ({
     'status-prestado': status === 'assigned',

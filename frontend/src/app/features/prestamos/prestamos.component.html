@@ -137,6 +137,23 @@
         <div class="form-group"><label class="form-label">Contacto (Opcional)</label><input class="form-input" formControlName="borrowerContact" placeholder="Email o teléfono"></div>
         <div class="form-group"><label class="form-label">Responsable (Opcional)</label><input class="form-input" formControlName="responsiblePartyName" placeholder="Docente o staff a cargo"></div>
         <div class="form-group"><label class="form-label">Fecha de Devolución</label><input type="date" class="form-input" formControlName="dueDate" [min]="todayDate"></div>
+
+        <div class="form-group">
+          <label class="form-label">Accesorios Incluidos (Opcional)</label>
+          <div class="accessories-grid" formGroupName="accessories">
+            <div *ngFor="let acc of availableAccessories" class="accessory-item">
+              <input type="checkbox" [id]="'acc-' + acc.key" [formControlName]="acc.key">
+              <label [for]="'acc-' + acc.key">{{ acc.label }}</label>
+            </div>
+          </div>
+          <div *ngIf="loanForm.get('accessories.otro')?.value" class="other-accessory-input">
+            <input type="text"
+                   formControlName="otroAccesorioTexto"
+                   class="form-input"
+                   placeholder="Especifique el otro accesorio...">
+          </div>
+        </div>
+
         <div class="loan-summary">
           <h4>Resumen del Préstamo</h4>
           <div *ngIf="selectedEquipmentDescription" class="summary-observations"><i class="fas fa-info-circle"></i><p>{{ selectedEquipmentDescription }}</p></div>
@@ -201,6 +218,13 @@
             <span class="detail-label">Nombre</span>
             <span class="detail-value">{{ getEquipmentName(selectedPrestamo) }}</span>
           </div>
+        </div>
+
+        <div *ngIf="selectedPrestamo.accessories && selectedPrestamo.accessories.length > 0" class="accessories-display">
+          <span class="detail-label">Accesorios Incluidos:</span>
+          <ul>
+            <li *ngFor="let acc of selectedPrestamo.accessories">{{ acc }}</li>
+          </ul>
         </div>
       </div>
 

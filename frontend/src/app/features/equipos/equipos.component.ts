@@ -54,13 +54,19 @@ export class EquiposComponent implements OnInit, OnDestroy {
     description: ''
   };
 
+// src/app/features/equipos/equipos.component.ts
+
   availableTypes = [
-    { value: 'laptop', label: 'Laptop' },
-    { value: 'projector', label: 'Proyector' },
-    { value: 'tablet', label: 'Tablet' },
-    { value: 'camera', label: 'Cámara' },
-    { value: 'monitor', label: 'Monitor' },
-    { value: 'printer', label: 'Impresora' }
+    { value: 'Laptop', label: 'Laptop' },
+    { value: 'PC / Gabinete', label: 'PC / Gabinete' },
+    { value: 'Proyector', label: 'Proyector' },
+    { value: 'Tablet', label: 'Tablet' },
+    { value: 'Cámara', label: 'Cámara' },
+    { value: 'Monitor', label: 'Monitor' },
+    { value: 'Impresora', label: 'Impresora' },
+    { value: 'Equipo de Red', label: 'Equipo de Red' },
+    { value: 'UPS / Regulador', label: 'UPS / Regulador' },
+    { value: 'Otro', label: 'Otro' }
   ];
 
   availableStatuses = [
@@ -115,6 +121,7 @@ export class EquiposComponent implements OnInit, OnDestroy {
   load() {
     this.loading = true;
     this.error = '';
+    // ✅ **CORRECCIÓN:** El objeto de parámetros se construye con los valores actuales de las propiedades del componente.
     const params = { search: this.search.trim(), status: this.status, type: this.type };
     this.equiposSvc.list(params).subscribe({
       next: (data) => {
@@ -137,6 +144,8 @@ export class EquiposComponent implements OnInit, OnDestroy {
   }
 
   aplicarFiltros() {
+    // Esta función llama a load(), que ya utiliza los valores de this.status y this.type
+    // que fueron actualizados por el [(ngModel)] en el HTML.
     this.load();
   }
 
@@ -368,6 +377,8 @@ export class EquiposComponent implements OnInit, OnDestroy {
     const typeMap: Record<string, string> = {
       'laptop': 'Laptop', 'projector': 'Proyector', 'tablet': 'Tablet',
       'camera': 'Cámara', 'monitor': 'Monitor', 'printer': 'Impresora',
+      'network': 'Equipo de Red', 'pc': 'PC / Gabinete', 'other': 'Otro',
+      'ups': 'UPS / Regulador'
     };
     return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
   }

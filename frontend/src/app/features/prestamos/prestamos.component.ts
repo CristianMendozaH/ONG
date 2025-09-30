@@ -1,3 +1,5 @@
+// Archivo completo: src/app/features/prestamos/prestamos.component.ts
+
 import { Component, OnInit, OnDestroy, inject, ViewChild, ElementRef, LOCALE_ID } from '@angular/core';
 import { CommonModule, DatePipe, registerLocaleData } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -72,6 +74,16 @@ export class PrestamosComponent implements OnInit, OnDestroy {
   public extendComments = '';
   public extensionDays = 0;
 
+  public availableAccessories = [
+    { key: 'cargador', label: 'Cargador' },
+    { key: 'mouse', label: 'Mouse' },
+    { key: 'teclado', label: 'Teclado' },
+    { key: 'adaptador', label: 'Adaptador de Video (VGA/HDMI)' },
+    { key: 'estuche', label: 'Estuche o Maletín' },
+    { key: 'cable_poder', label: 'Cable de Poder' },
+    { key: 'otro', label: 'Otro (especificar)' }
+  ];
+
   public loanForm = this.fb.group({
     equipmentId: ['', Validators.required],
     borrowerName: ['', Validators.required],
@@ -79,6 +91,16 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     borrowerType: ['Estudiante' as const, Validators.required],
     borrowerContact: [''],
     responsiblePartyName: [''],
+    accessories: this.fb.group({
+      cargador: [false],
+      mouse: [false],
+      teclado: [false],
+      adaptador: [false],
+      estuche: [false],
+      cable_poder: [false],
+      otro: [false]
+    }),
+    otroAccesorioTexto: ['']
   });
 
   public get availableEquipos(): Equipo[] {
@@ -263,9 +285,31 @@ export class PrestamosComponent implements OnInit, OnDestroy {
       return this.showToast('No se pudo identificar al usuario. Por favor, inicie sesión de nuevo.', 'error');
     }
 
+    const formValue = this.loanForm.value;
+    const selectedAccessories: string[] = [];
+    const accessoriesValue = formValue.accessories as { [key: string]: boolean };
+
+    for (const accesorio of this.availableAccessories) {
+      if (accessoriesValue[accesorio.key]) {
+        if (accesorio.key === 'otro') {
+          if (formValue.otroAccesorioTexto?.trim()) {
+            selectedAccessories.push(formValue.otroAccesorioTexto.trim());
+          }
+        } else {
+          selectedAccessories.push(accesorio.label);
+        }
+      }
+    }
+
     const payload: CrearPrestamoDTO = {
-      ...(this.loanForm.value as CrearPrestamoDTO),
-      registeredById: currentUser.id
+      equipmentId: formValue.equipmentId!,
+      borrowerName: formValue.borrowerName!,
+      dueDate: formValue.dueDate!,
+      borrowerType: formValue.borrowerType!,
+      borrowerContact: formValue.borrowerContact || undefined,
+      responsiblePartyName: formValue.responsiblePartyName || undefined,
+      registeredById: currentUser.id,
+      accessories: selectedAccessories.length > 0 ? selectedAccessories : undefined
     };
 
     this.prestamosSvc.create(payload).subscribe({

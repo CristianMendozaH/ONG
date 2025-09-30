@@ -1,3 +1,5 @@
+// Archivo completo: src/app/features/prestamos/prestamos.component.scss
+
 // Variables
 $primary-color: #114495;
 $secondary-color: #EE9D08;
@@ -467,3 +469,62 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 @media (max-width: 768px) {
   .loans-content { padding: 20px; }
 }
+
+/* INICIO: Estilos para la sección de accesorios */
+.accessories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.accessory-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: $primary-color;
+  }
+
+  label {
+    font-weight: 500;
+    color: #495057;
+    cursor: pointer;
+  }
+}
+
+.other-accessory-input {
+  margin-top: 10px;
+}
+
+.accessories-display {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px dashed #e0e0e0;
+
+  .detail-label {
+    font-weight: 600;
+    color: $text-color;
+    margin-bottom: 8px;
+  }
+
+  ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  li {
+    font-size: 0.9rem;
+  }
+}
+/* FIN: Estilos para la sección de accesorios */

@@ -1,4 +1,4 @@
-// src/app/features/asignaciones/asignaciones.service.ts
+// Archivo completo: src/app/features/asignaciones/asignaciones.service.ts
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -24,6 +24,7 @@ export interface Asignacion {
   observations?: string;
   equipment?: Equipo;
   collaborator?: Colaborador;
+  accessories?: string[]; // <-- AÑADIR ESTA LÍNEA
 }
 
 export interface CrearAsignacionDTO {
@@ -31,6 +32,7 @@ export interface CrearAsignacionDTO {
   collaboratorId: string;
   assignmentDate: string;
   observations?: string;
+  accessories?: string[]; // <-- AÑADIR ESTA LÍNEA
 }
 
 export interface LiberarAsignacionDTO {
