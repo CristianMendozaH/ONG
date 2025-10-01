@@ -247,6 +247,10 @@
             <span class="detail-label">Fecha Límite de Devolución</span>
             <span class="detail-value">{{ selectedPrestamo.dueDate | date:'dd/MM/yyyy' }}</span>
           </div>
+          <div *ngIf="selectedPrestamo.responsiblePartyName" class="detail-item">
+            <span class="detail-label">Responsable</span>
+            <span class="detail-value">{{ selectedPrestamo.responsiblePartyName }}</span>
+          </div>
         </div>
       </div>
 
@@ -265,6 +269,13 @@
           <p class="signature-name">{{ selectedPrestamo.borrowerName }}</p>
           <p class="signature-title">Firma del Solicitante</p>
         </div>
+
+        <div *ngIf="selectedPrestamo.responsiblePartyName" class="signature-box">
+          <p class="signature-line"></p>
+          <p class="signature-name">{{ selectedPrestamo.responsiblePartyName }}</p>
+          <p class="signature-title">Firma del Responsable</p>
+        </div>
+
         <div class="signature-box">
           <p class="signature-line"></p>
           <p class="signature-name">{{ selectedPrestamo.registrar?.name || 'N/A' }}</p>

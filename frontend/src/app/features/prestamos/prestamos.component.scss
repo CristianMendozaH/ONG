@@ -295,7 +295,6 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   p { margin: 0; font-style: italic; }
 }
 
-// INICIO: Estilos actualizados para el modal de comprobante
 .receipt-modal {
   .receipt-header {
     display: flex;
@@ -363,7 +362,7 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 
     .signature-line {
       border-top: 1px solid #333;
-      height: 40px; // Espacio para la firma
+      height: 40px;
     }
     .signature-name {
       font-weight: 600;
@@ -377,7 +376,6 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
   }
 }
-// FIN: Estilos actualizados
 
 .scan-result .borrower-info {
   background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 6px;
@@ -417,60 +415,6 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 
 @keyframes scan-anim { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
 
-// INICIO: Bloque de impresión actualizado
-@media print {
-  // Oculta todo por defecto
-  body * {
-    visibility: hidden;
-  }
-
-  // Muestra solo el recibo y su contenido
-  #loanReceipt, #loanReceipt * {
-    visibility: visible;
-  }
-
-  // Posiciona el recibo para que ocupe toda la página de impresión
-  #loanReceipt {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: auto;
-    border-radius: 0;
-    box-shadow: none;
-    max-height: none;
-  }
-
-  .modal-overlay {
-      background: none;
-  }
-
-  // Oculta los botones de "Cerrar" e "Imprimir" en la versión impresa
-  .no-print {
-    display: none !important;
-  }
-}
-// FIN: Bloque de impresión actualizado
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-@media (max-width: 1200px) {
-  .qr-scanner-section {
-    grid-template-columns: 1fr;
-    .scanner-card { order: 2; }
-    .quick-actions { order: 1; }
-  }
-}
-
-@media (max-width: 768px) {
-  .loans-content { padding: 20px; }
-}
-
-/* INICIO: Estilos para la sección de accesorios */
 .accessories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -503,6 +447,7 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin-top: 10px;
 }
 
+/* INICIO: Estilos para la sección de accesorios y ajuste de firmas en el comprobante */
 .accessories-display {
   margin-top: 15px;
   padding-top: 15px;
@@ -512,6 +457,7 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     font-weight: 600;
     color: $text-color;
     margin-bottom: 8px;
+    display: block;
   }
 
   ul {
@@ -519,12 +465,75 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     padding-left: 20px;
     margin: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 5px 15px;
   }
 
   li {
     font-size: 0.9rem;
+    color: #33475b;
   }
 }
-/* FIN: Estilos para la sección de accesorios */
+
+.receipt-modal .receipt-footer {
+  justify-content: space-between;
+  gap: 20px;
+
+  .signature-box {
+    flex: 1;
+    max-width: 200px;
+  }
+}
+/* FIN: Estilos para la sección de accesorios y ajuste de firmas en el comprobante */
+
+
+/* INICIO: Bloque de impresión actualizado */
+@media print {
+  // Oculta todo por defecto para la impresión
+  body * {
+    visibility: hidden;
+  }
+
+  // Muestra solo el recibo y su contenido
+  #loanReceipt, #loanReceipt * {
+    visibility: visible;
+  }
+
+  // Posiciona el recibo para que ocupe toda la página
+  #loanReceipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    border: none;
+    box-shadow: none;
+    max-height: none;
+  }
+
+  .modal-overlay {
+    background: none;
+  }
+
+  // Oculta los botones que no deben salir en el PDF
+  .no-print {
+    display: none !important;
+  }
+
+  // --- INICIO: ESTILOS AÑADIDOS PARA LAS FIRMAS (MÉTODO DE MARGEN) ---
+  .receipt-footer {
+    display: flex !important; // Mantiene los elementos en una fila
+    page-break-inside: avoid;
+  }
+
+  .signature-box {
+    flex: 1; // Permite que las cajas crezcan flexiblemente
+    margin: 0 15px !important; // Añade margen a los lados de CADA firma
+  }
+
+  .signature-line {
+    border-top: 1px solid #333 !important; // Asegura que la línea sea visible
+  }
+  // --- FIN: ESTILOS AÑADIDOS ---
+}
+/* FIN: Bloque de impresión actualizado */

@@ -270,5 +270,10 @@ export class AsignacionesComponent implements OnInit {
   }[status] || status);
 
   public formatId = (id: string) => `ASG-${id.substring(0, 4).toUpperCase()}`;
+
   public trackById = (index: number, item: Asignacion) => item.id;
+
+  public imprimirComprobante() {
+    window.print();
+  }
 }

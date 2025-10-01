@@ -1,0 +1,42 @@
+# === Global ignore for Docker build contexts ===
+# VCS
+.git
+**/.git
+.gitignore
+**/.gitignore
+
+# Env/secrets (usa variables de entorno en runtime)
+.env
+.env.*
+*.pem
+*.key
+
+# Node / JS artifacts
+node_modules
+**/node_modules
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Builds & caches
+dist
+**/dist
+build
+**/build
+coverage
+**/coverage
+.nyc_output
+.tmp
+.cache
+**/.cache
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+
+# Logs
+logs
+**/logs
+*.log

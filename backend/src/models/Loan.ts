@@ -1,3 +1,5 @@
+// Archivo completo: src/models/Loan.ts (CORREGIDO)
+
 import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
 import { Equipment } from './Equipment';
 import { User } from './User';
@@ -60,6 +62,14 @@ export class Loan extends Model {
 
   @Column(DataType.TEXT)
   observations?: string;
+
+  // --- PROPIEDAD AÑADIDA ---
+  @Column({
+    type: DataType.ARRAY(DataType.TEXT),
+    allowNull: true,
+  })
+  accessories?: string[];
+  // -------------------------
 
   @Column({ type: DataType.STRING, allowNull: true })
   conditionOnReturn?: 'excelente' | 'bueno' | 'regular' | 'dañado';

@@ -1,3 +1,5 @@
+// Archivo completo: src/routes/prestamos.routes.ts (CORREGIDO)
+
 import { Router } from 'express';
 import { Loan } from '../models/Loan';
 import { Equipment } from '../models/Equipment';
@@ -22,6 +24,7 @@ router.post('/', auth, async (req: any, res, next) => {
       borrowerContact,
       responsiblePartyName,
       dueDate,
+      accessories, // <-- 1. LEER accessories DE LA PETICIÓN
     } = req.body;
 
     // 1. Validaciones de campos requeridos
@@ -57,6 +60,7 @@ router.post('/', auth, async (req: any, res, next) => {
         dueDate,
         status: 'prestado',
         registeredById: req.user.sub,
+        accessories, // <-- 2. PASAR accessories AL MÉTODO create
       }, { transaction: t });
 
       // 4. Actualización del estado del equipo
@@ -72,6 +76,10 @@ router.post('/', auth, async (req: any, res, next) => {
     next(e);
   }
 });
+
+
+// --- EL RESTO DE LAS RUTAS PERMANECEN IGUAL ---
+
 
 /**
  * @route   POST /api/prestamos/:id/return

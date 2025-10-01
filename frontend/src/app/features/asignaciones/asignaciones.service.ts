@@ -24,7 +24,8 @@ export interface Asignacion {
   observations?: string;
   equipment?: Equipo;
   collaborator?: Colaborador;
-  accessories?: string[]; // <-- AÑADIR ESTA LÍNEA
+  accessories?: string[];
+  creator?: { name: string }; // ✅ Estructura final para el creador
 }
 
 export interface CrearAsignacionDTO {
@@ -32,7 +33,7 @@ export interface CrearAsignacionDTO {
   collaboratorId: string;
   assignmentDate: string;
   observations?: string;
-  accessories?: string[]; // <-- AÑADIR ESTA LÍNEA
+  accessories?: string[];
 }
 
 export interface LiberarAsignacionDTO {

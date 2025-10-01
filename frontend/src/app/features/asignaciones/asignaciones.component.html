@@ -40,7 +40,7 @@
       </div>
     </div>
     <table class="loans-table">
-      <thead><tr><th>ID</th><th>Equipo</th><th>Colaborador</th><th>Fecha Asignación</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <thead><tr><th>ID</th><th>Equipo</th><th>Colaborador</th><th>Fecha</th><th>Registrado por</th><th>Estado</th><th>Acciones</th></tr></thead>
       <tbody>
         <tr *ngFor="let asignacion of filteredAsignaciones; trackBy: trackById">
           <td>{{ formatId(asignacion.id) }}</td>
@@ -57,6 +57,7 @@
             </div>
           </td>
           <td>{{ asignacion.assignmentDate | date:'dd/MM/yyyy' }}</td>
+          <td>{{ asignacion.creator?.name || 'N/A' }}</td>
           <td><span class="status-badge" [ngClass]="getStatusClass(asignacion.status)">{{ getStatusText(asignacion.status) }}</span></td>
           <td>
             <div class="actions-cell">
@@ -67,19 +68,19 @@
             </div>
           </td>
         </tr>
-        <tr *ngIf="filteredAsignaciones.length === 0"><td colspan="6" class="no-data"><i class="fas fa-inbox"></i><p>No hay asignaciones registradas</p></td></tr>
+        <tr *ngIf="filteredAsignaciones.length === 0"><td colspan="7" class="no-data"><i class="fas fa-inbox"></i><p>No hay asignaciones registradas</p></td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <div class="modal-overlay" [class.show]="showAsignacionModal" (click)="closeModal('asignacion')">
-  <div class="modal" (click)="$event.stopPropagation()">
+  <div class="modal" (click)="$event.stopPropagation()" style="max-width: 600px;">
     <div class="modal-header">
       <h3 class="modal-title">{{ selectedAsignacion ? 'Editar' : 'Nueva' }} Asignación</h3>
       <button class="modal-close" (click)="closeModal('asignacion')"><i class="fas fa-times"></i></button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="padding: 25px;">
       <form [formGroup]="asignacionForm" (ngSubmit)="guardarAsignacion()">
         <div class="form-group">
           <label class="form-label">Equipo a Asignar</label>
@@ -103,7 +104,6 @@
           <label class="form-label">Observaciones (Opcional)</label>
           <textarea class="form-input" formControlName="observations" rows="3" placeholder="Añade notas sobre la asignación o el estado inicial del equipo..."></textarea>
         </div>
-
         <div class="form-group">
           <label class="form-label">Accesorios Incluidos (Opcional)</label>
           <div class="accessories-grid" formGroupName="accessories">
@@ -113,13 +113,9 @@
             </div>
           </div>
           <div *ngIf="asignacionForm.get('accessories.otro')?.value" class="other-accessory-input">
-            <input type="text"
-                   formControlName="otroAccesorioTexto"
-                   class="form-input"
-                   placeholder="Especifique el otro accesorio...">
+            <input type="text" formControlName="otroAccesorioTexto" class="form-input" placeholder="Especifique el otro accesorio...">
           </div>
         </div>
-
       </form>
     </div>
     <div class="modal-footer">
@@ -130,9 +126,9 @@
 </div>
 
 <div class="modal-overlay" [class.show]="showLiberacionModal" (click)="closeModal('liberacion')">
-  <div class="modal" (click)="$event.stopPropagation()">
+  <div class="modal" (click)="$event.stopPropagation()" style="max-width: 600px;">
       <div class="modal-header"><h3 class="modal-title">Liberar Equipo</h3><button class="modal-close" (click)="closeModal('liberacion')"><i class="fas fa-times"></i></button></div>
-      <div class="modal-body" *ngIf="selectedAsignacion">
+      <div class="modal-body" style="padding: 25px;" *ngIf="selectedAsignacion">
           <p>Vas a liberar el equipo <strong>{{ getEquipoNombre(selectedAsignacion) }}</strong> asignado a <strong>{{ getColaboradorNombre(selectedAsignacion) }}</strong>.</p>
           <div class="form-group"><label class="form-label">Fecha de Liberación</label><input type="date" class="form-input" [(ngModel)]="fechaLiberacion"></div>
           <div class="form-group"><label class="form-label">Estado del Equipo al Liberar</label><select class="form-select" [(ngModel)]="equipoCondicion"><option value="">Seleccione</option><option value="excelente">Excelente</option><option value="bueno">Bueno</option><option value="regular">Regular</option><option value="dañado">Dañado</option></select></div>
@@ -144,44 +140,78 @@
 
 <div class="modal-overlay" [class.show]="showDetallesModal" (click)="closeModal('detalles')">
   <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-header"><h3 class="modal-title">Detalles de la Asignación</h3><button class="modal-close" (click)="closeModal('detalles')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-header no-print">
+      <h3 class="modal-title">Comprobante de Asignación</h3>
+      <button class="modal-close" (click)="closeModal('detalles')"><i class="fas fa-times"></i></button>
+    </div>
     <div class="modal-body" *ngIf="selectedAsignacion">
-      <div class="details-section">
-        <h4 class="details-title">Detalles del Equipo</h4>
-        <div class="details-grid">
-          <div class="detail-item"><span class="detail-label">Código</span><span class="detail-value">{{ getEquipoCodigo(selectedAsignacion) }}</span></div>
-          <div class="detail-item"><span class="detail-label">Nombre</span><span class="detail-value">{{ getEquipoNombre(selectedAsignacion) }}</span></div>
+      <div id="comprobanteAsignacion">
+        <div class="receipt-header">
+          <div class="logo-container">
+            <img src="assets/img/logo-ong.png" alt="Logo ONG">
+            <h2>Amigos de Santa Cruz</h2>
+          </div>
+          <div class="receipt-info">
+            <h3>Comprobante de Asignación</h3>
+            <p><strong>ID Asignación:</strong> {{ formatId(selectedAsignacion.id) }}</p>
+            <p><strong>Fecha:</strong> {{ selectedAsignacion.assignmentDate | date:'fullDate':'':'es-GT' }}</p>
+            <p *ngIf="selectedAsignacion.creator?.name"><strong>Registrado por:</strong> {{ selectedAsignacion.creator?.name }}</p>
+          </div>
         </div>
 
-        <div *ngIf="selectedAsignacion.accessories && selectedAsignacion.accessories.length > 0" class="accessories-display">
-          <span class="detail-label">Accesorios Incluidos:</span>
-          <ul>
+        <div class="details-section">
+          <h4 class="details-title">Detalles del Equipo</h4>
+          <div class="details-grid">
+            <div class="detail-item"><span class="detail-label">Código</span><span class="detail-value">{{ getEquipoCodigo(selectedAsignacion) }}</span></div>
+            <div class="detail-item"><span class="detail-label">Nombre</span><span class="detail-value">{{ getEquipoNombre(selectedAsignacion) }}</span></div>
+          </div>
+        </div>
+
+        <div class="details-section" *ngIf="selectedAsignacion.accessories && selectedAsignacion.accessories.length > 0">
+          <h4 class="details-title">Accesorios Incluidos</h4>
+          <ul class="accessories-list">
             <li *ngFor="let acc of selectedAsignacion.accessories">{{ acc }}</li>
           </ul>
         </div>
-      </div>
-      <div class="details-section">
-        <h4 class="details-title">Información del Colaborador</h4>
-        <div class="details-grid">
-          <div class="detail-item"><span class="detail-label">Nombre</span><span class="detail-value">{{ getColaboradorNombre(selectedAsignacion) }}</span></div>
-          <div class="detail-item"><span class="detail-label">Tipo</span><span class="detail-value">{{ selectedAsignacion.collaborator?.type }}</span></div>
-          <div class="detail-item"><span class="detail-label">Programa</span><span class="detail-value">{{ selectedAsignacion.collaborator?.program }}</span></div>
-          <div class="detail-item"><span class="detail-label">Puesto</span><span class="detail-value">{{ selectedAsignacion.collaborator?.position }}</span></div>
+
+        <div class="details-section">
+          <h4 class="details-title">Información del Colaborador</h4>
+          <div class="details-grid">
+            <div class="detail-item"><span class="detail-label">Nombre</span><span class="detail-value">{{ getColaboradorNombre(selectedAsignacion) }}</span></div>
+            <div class="detail-item"><span class="detail-label">Puesto</span><span class="detail-value">{{ selectedAsignacion.collaborator?.position }}</span></div>
+            <div class="detail-item"><span class="detail-label">Tipo</span><span class="detail-value">{{ selectedAsignacion.collaborator?.type }}</span></div>
+            <div class="detail-item"><span class="detail-label">Programa</span><span class="detail-value">{{ selectedAsignacion.collaborator?.program }}</span></div>
+          </div>
         </div>
-      </div>
-      <div class="details-section">
-        <h4 class="details-title">Información de la Asignación</h4>
-        <div class="details-grid">
-            <div class="detail-item"><span class="detail-label">ID</span><span class="detail-value">{{ formatId(selectedAsignacion.id) }}</span></div>
-            <div class="detail-item"><span class="detail-label">Fecha Asignación</span><span class="detail-value">{{ selectedAsignacion.assignmentDate | date:'fullDate' }}</span></div>
-            <div class="detail-item"><span class="detail-label">Estado</span><span class="detail-value status-badge" [ngClass]="getStatusClass(selectedAsignacion.status)">{{ getStatusText(selectedAsignacion.status) }}</span></div>
-            <div class="detail-item" *ngIf="selectedAsignacion.status !== 'assigned'"><span class="detail-label">Fecha Cierre</span><span class="detail-value">{{ selectedAsignacion.releaseDate | date:'fullDate' }}</span></div>
-        </div>
+
         <div class="summary-observations" *ngIf="selectedAsignacion.observations">
             <p><strong>Observaciones de Asignación:</strong> {{ selectedAsignacion.observations }}</p>
         </div>
+
+        <div class="agreement-section">
+          <p>
+            Por este medio, yo, <strong>{{ getColaboradorNombre(selectedAsignacion) }}</strong>,
+            confirmo haber recibido el equipo y los accesorios descritos en este documento en condiciones
+            óptimas para su uso. Me comprometo a cuidar el equipo asignado, utilizarlo exclusivamente
+            para fines laborales y notificar cualquier desperfecto de manera inmediata.
+          </p>
+        </div>
+
+        <div class="receipt-footer">
+          <div class="signature-box">
+            <p class="signature-title">Firma del Colaborador</p>
+            <p class="signature-name">{{ getColaboradorNombre(selectedAsignacion) }}</p>
+          </div>
+          <div class="signature-box">
+            <p class="signature-title">Firma del Encargado (ONG)</p>
+            <p class="signature-name">{{ selectedAsignacion.creator?.name || '(No registrado)' }}</p>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="modal-footer"><button type="button" class="btn-cancel" (click)="closeModal('detalles')">Cerrar</button></div>
+    <div class="modal-footer no-print">
+      <button type="button" class="btn-cancel" (click)="closeModal('detalles')">Cancelar</button>
+      <button type="button" class="btn-confirm btn-print" (click)="imprimirComprobante()"><i class="fas fa-print"></i> Imprimir / Descargar</button>
+    </div>
   </div>
 </div>
