@@ -1,6 +1,6 @@
 import { Router } from 'express';
 // ajusta esta ruta si tu sequelize.ts está en otra carpeta
-import { sequelize } from '../db/sequelize'; 
+import { sequelize } from '../db/sequelize.js'; 
 
 const router = Router();
 

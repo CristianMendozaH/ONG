@@ -12,5 +12,5 @@ export const env = {
   },
   finePerDay: Number(process.env.FINE_PER_DAY ?? 5),
   jwtSecret: process.env.JWT_SECRET ?? 'change-me',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '8h', // <-- LÍNEA AÑADIDA
+  jwtExpiresIn: (process.env.JWT_EXPIRES_IN ?? '8h') as string | number,
 };

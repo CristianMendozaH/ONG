@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Config } from '../models/Config';
+import { Config } from '../models/Config.js';
 
 function parse(v: string) {
   try { return JSON.parse(v); } catch { return v; }

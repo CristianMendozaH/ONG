@@ -1,14 +1,14 @@
 import { Router } from 'express';
-import authRoutes from './auth.routes';
-import usersRoutes from './users.routes';
-import equiposRoutes from './equipos.routes';
-import prestamosRoutes from './prestamos.routes';
-import maintenancesRoutes from './maintenances.routes';
-import reportsRoutes from './reports.routes';
-import configRoutes from './config.routes';
-import healthRoutes from './health.routes';
-import assignmentsRoutes from './assignments.routes';   // ---> NUEVO
-import collaboratorsRoutes from './collaborators.routes'; // ---> NUEVO
+import authRoutes from './auth.routes.js';
+import usersRoutes from './users.routes.js';
+import equiposRoutes from './equipos.routes.js';
+import prestamosRoutes from './prestamos.routes.js';
+import maintenancesRoutes from './maintenances.routes.js';
+import reportsRoutes from './reports.routes.js';
+import configRoutes from './config.routes.js';
+import healthRoutes from './health.routes.js';
+import assignmentsRoutes from './assignments.routes.js';   // ---> NUEVO
+import collaboratorsRoutes from './collaborators.routes.js'; // ---> NUEVO
 
 const router = Router();
 

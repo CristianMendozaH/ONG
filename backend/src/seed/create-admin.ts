@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { sequelize } from '../db/sequelize.js';
 import { User } from '../models/User.js';
 

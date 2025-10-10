@@ -1,8 +1,8 @@
 import { Op } from 'sequelize';
 import { Request, Response } from 'express';
-import { Equipment } from '../models/Equipment';
-import { Loan } from '../models/Loan';
-import { Maintenance } from '../models/Maintenance';
+import { Equipment } from '../models/Equipment.js';
+import { Loan } from '../models/Loan.js';
+import { Maintenance } from '../models/Maintenance.js';
 
 // === NUEVA FUNCIÓN UNIFICADA PARA EL DASHBOARD ===
 

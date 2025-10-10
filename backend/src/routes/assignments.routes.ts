@@ -1,16 +1,14 @@
-// Archivo completo: src/routes/assignments.routes.ts (CORREGIDO)
-
 import { Router, Request } from 'express';
-import { sequelize } from '../db/sequelize';
-import { auth } from '../middleware/auth';
-import { Assignment } from '../models/Assignment';
-import { Equipment } from '../models/Equipment';
-import { Collaborator } from '../models/Collaborator';
-import { User } from '../models/User';
+import { sequelize } from '../db/sequelize.js';
+import { auth } from '../middleware/auth.js';
+import { Assignment } from '../models/Assignment.js';
+import { Equipment } from '../models/Equipment.js';
+import { Collaborator } from '../models/Collaborator.js';
+import { User } from '../models/User.js';
 
 interface AuthRequest extends Request {
   user?: {
-    sub: string; // ID del usuario
+    sub: string;
     name: string;
   };
 }
@@ -25,34 +23,27 @@ const router = Router();
 router.post('/', auth, async (req: AuthRequest, res, next) => {
   try {
     const { equipmentId, collaboratorId, assignmentDate, observations, accessories } = req.body;
-
     if (!equipmentId || !collaboratorId || !assignmentDate) {
       return res.status(400).json({ message: 'Campos requeridos: equipmentId, collaboratorId, assignmentDate' });
     }
-
     const result = await sequelize.transaction(async (t) => {
       const eq = await Equipment.findByPk(equipmentId, { transaction: t, lock: t.LOCK.UPDATE });
       if (!eq) throw { status: 404, message: 'Equipo no encontrado' };
       if (eq.status !== 'disponible') throw { status: 409, message: `El equipo no está disponible (estado actual: ${eq.status})` };
-
       const collaborator = await Collaborator.findByPk(collaboratorId, { transaction: t });
       if (!collaborator || !collaborator.isActive) throw { status: 404, message: 'Colaborador no encontrado o inactivo.' };
-
       const assignment = await Assignment.create({
         equipmentId,
         collaboratorId,
         assignmentDate,
         observations,
         accessories,
-        createdById: req.user!.sub, // <-- ✅ CORRECCIÓN: Usamos '!' para asegurar que req.user existe
+        createdById: req.user!.sub,
         status: 'assigned',
       }, { transaction: t });
-
       await eq.update({ status: 'asignado' }, { transaction: t });
-
       return assignment;
     });
-
     res.status(201).json(result);
   } catch (e: any) {
     if (e?.status) return res.status(e.status).json({ message: e.message });
@@ -69,9 +60,10 @@ router.post('/', auth, async (req: AuthRequest, res, next) => {
 router.get('/', auth, async (req, res, next) => {
   try {
     const assignments = await Assignment.findAll({
+      // CAMBIO: Se añadieron los alias para Equipment y Collaborator
       include: [
-        { model: Equipment, attributes: ['name', 'code'] },
-        { model: Collaborator, attributes: ['fullName', 'program', 'type', 'position'] },
+        { model: Equipment, as: 'assignedEquipment', attributes: ['name', 'code'] },
+        { model: Collaborator, as: 'collaborator', attributes: ['fullName', 'program'] },
         { model: User, as: 'creator', attributes: ['name'] }
       ],
       order: [['createdAt', 'DESC']],
@@ -90,9 +82,10 @@ router.get('/', auth, async (req, res, next) => {
 router.get('/:id', auth, async (req, res, next) => {
   try {
     const assignment = await Assignment.findByPk(req.params.id, {
+        // CAMBIO: Se añadieron los alias para Equipment y Collaborator
         include: [
-          Equipment,
-          Collaborator,
+          { model: Equipment, as: 'assignedEquipment' },
+          { model: Collaborator, as: 'collaborator' },
           { model: User, as: 'creator', attributes: ['name'] }
         ]
     });
@@ -111,24 +104,19 @@ router.get('/:id', auth, async (req, res, next) => {
 router.patch('/:id', auth, async (req, res, next) => {
   try {
     const { equipmentId, collaboratorId, assignmentDate, observations, accessories } = req.body;
-    
     const result = await sequelize.transaction(async (t) => {
         const assignment = await Assignment.findByPk(req.params.id, { transaction: t });
         if (!assignment) throw { status: 404, message: 'Asignación no encontrada' };
-
         if (equipmentId && equipmentId !== assignment.equipmentId) {
             const oldEq = await Equipment.findByPk(assignment.equipmentId, { transaction: t });
             if (oldEq) await oldEq.update({ status: 'disponible' }, { transaction: t });
-
             const newEq = await Equipment.findByPk(equipmentId, { transaction: t, lock: t.LOCK.UPDATE });
             if (!newEq || newEq.status !== 'disponible') throw { status: 409, message: 'El nuevo equipo seleccionado no está disponible.' };
             await newEq.update({ status: 'asignado' }, { transaction: t });
         }
-        
         await assignment.update({ equipmentId, collaboratorId, assignmentDate, observations, accessories }, { transaction: t });
         return assignment;
     });
-
     res.json(result);
   } catch (e: any) {
     if (e?.status) return res.status(e.status).json({ message: e.message });
@@ -147,20 +135,15 @@ router.post('/:id/release', auth, async (req, res, next) => {
     const { releaseDate: releaseDateStr, observations, condition } = req.body;
     if (!condition) return res.status(400).json({ message: 'La condición del equipo es requerida.' });
     const releaseDate = releaseDateStr ? new Date(releaseDateStr) : new Date();
-
     const updatedAssignment = await sequelize.transaction(async (t) => {
         const assignment = await Assignment.findByPk(req.params.id, { transaction: t });
         if (!assignment) throw { status: 404, message: 'Asignación no encontrada' };
         if (assignment.status !== 'assigned') throw { status: 409, message: 'Esta asignación no se puede liberar.' };
-
         const eq = await Equipment.findByPk(assignment.equipmentId, { transaction: t, lock: t.LOCK.UPDATE });
         if (!eq) throw { status: 404, message: 'El equipo asociado ya no existe' };
-        
         const newEquipmentStatus = (condition === 'dañado' || condition === 'regular') ? 'mantenimiento' : 'disponible';
-        
         await assignment.update({ releaseDate, status: 'released', observations, }, { transaction: t });
         await eq.update({ status: newEquipmentStatus }, { transaction: t });
-        
         return assignment;
     });
     res.json(updatedAssignment);
@@ -182,13 +165,10 @@ router.post('/:id/donate', auth, async (req, res, next) => {
         const assignment = await Assignment.findByPk(req.params.id, { transaction: t });
         if (!assignment) throw { status: 404, message: 'Asignación no encontrada' };
         if (assignment.status !== 'assigned') throw { status: 409, message: 'Esta asignación no se puede donar porque no está activa.' };
-  
         const eq = await Equipment.findByPk(assignment.equipmentId, { transaction: t, lock: t.LOCK.UPDATE });
         if (!eq) throw { status: 404, message: 'El equipo asociado ya no existe' };
-  
         await assignment.update({ status: 'donated', releaseDate: new Date() }, { transaction: t });
         await eq.update({ status: 'donado' }, { transaction: t });
-  
         return assignment;
       });
       res.json(updatedAssignment);

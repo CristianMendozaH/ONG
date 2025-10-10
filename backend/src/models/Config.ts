@@ -4,13 +4,13 @@ import { Table, Column, Model, DataType, PrimaryKey } from 'sequelize-typescript
 export class Config extends Model {
   @PrimaryKey
   @Column(DataType.STRING)
-  key!: string;               // p.ej. "finePerDay", "reminderDays"
+  key!: string;
 
   @Column(DataType.TEXT)
-  value!: string;             // se guarda JSON.stringify(valor)
+  value!: string;
 
   @Column(DataType.STRING)
-  category?: string;          // opcional: "loans", "smtp", etc.
+  category?: string;
 }
 
 export default Config;

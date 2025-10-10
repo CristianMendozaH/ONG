@@ -1,8 +1,8 @@
 // src/routes/collaborators.routes.ts
 
 import { Router } from 'express';
-import { auth } from '../middleware/auth';
-import { Collaborator } from '../models/Collaborator';
+import { auth } from '../middleware/auth.js';
+import { Collaborator } from '../models/Collaborator.js';
 
 const router = Router();
 

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { login, me } from '../controllers/auth.controller'; // 👈 sin .js
-import { auth } from '../middleware/auth';                 // 👈 carpeta singular
+import { login, me } from '../controllers/auth.controller.js'; // 👈 sin .js
+import { auth } from '../middleware/auth.js';                 // 👈 carpeta singular
 
 const r = Router();
 

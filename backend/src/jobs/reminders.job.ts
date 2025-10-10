@@ -1,7 +1,7 @@
 import { Op } from 'sequelize';
-import { Maintenance } from '../models/Maintenance';
-import { Equipment } from '../models/Equipment';
-import { sendMail } from '../utils/mailer';
+import { Maintenance } from '../models/Maintenance.js';
+import { Equipment } from '../models/Equipment.js';
+//import { sendMail } from '../utils/mailer';
 
 const iso = (d: Date | string) => new Date(d).toISOString().slice(0,10);
 
@@ -24,7 +24,7 @@ async function maintDueSoon(days = 3) {
       <p>Equipo: <b>${plain.equipment?.code} - ${plain.equipment?.name}</b></p>
       <p>Técnico: ${plain.technician || '—'}</p>
       <p>Programado para: <b>${plain.scheduledDate}</b></p>`;
-    await sendMail({ to: toEmail, subject: 'Mantenimiento próximo', html });
+    //await sendMail({ to: toEmail, subject: 'Mantenimiento próximo', html });
   }
 }
 
@@ -46,6 +46,6 @@ async function maintOverdue() {
       <p>Equipo: <b>${plain.equipment?.code} - ${plain.equipment?.name}</b></p>
       <p>Técnico: ${plain.technician || '—'}</p>
       <p>Programado para: <b>${plain.scheduledDate}</b> (no completado)</p>`;
-    await sendMail({ to: toEmail, subject: 'Mantenimiento vencido', html });
+   // await sendMail({ to: toEmail, subject: 'Mantenimiento vencido', html });
   }
 }

@@ -1,0 +1,14 @@
+{
+  "apps": [
+    {
+      "name": "ong_backend",
+      "script": "dist/server.js",
+      "cwd": "C:/ONG/backend"
+    },
+    {
+      "name": "ong_frontend",
+      "script": "server.js",
+      "cwd": "C:/ONG/frontend"
+    }
+  ]
+}

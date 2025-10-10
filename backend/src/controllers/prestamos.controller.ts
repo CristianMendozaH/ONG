@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { Loan } from '../models/Loan';
-import { Equipment } from '../models/Equipment';
-import { Config } from '../models/Config'; // opcional para multa
-// import { Op } from 'sequelize'; // si luego filtras por fechas/estado
+import { Loan } from '../models/Loan.js';
+import { Equipment } from '../models/Equipment.js';
+import { Config } from '../models/Config.js';
 
 export async function listLoans(req: Request, res: Response) {
   const where: any = {};
@@ -12,13 +11,15 @@ export async function listLoans(req: Request, res: Response) {
   const items = await Loan.findAll({
     where,
     order: [['createdAt', 'DESC']],
-    include: [Equipment],
+    // CAMBIO: Se especificó el alias 'equipment' en la inclusión del modelo.
+    include: [{ model: Equipment, as: 'equipment' }],
   });
   res.json(items);
 }
 
 export async function getLoan(req: Request, res: Response) {
-  const loan = await Loan.findByPk(req.params.id, { include: [Equipment] });
+  // CAMBIO: Se especificó el alias 'equipment' en la inclusión del modelo.
+  const loan = await Loan.findByPk(req.params.id, { include: [{ model: Equipment, as: 'equipment' }] });
   if (!loan) return res.status(404).json({ message: 'Préstamo no encontrado' });
   res.json(loan);
 }
@@ -61,7 +62,6 @@ export async function returnLoan(req: Request, res: Response) {
   const diffDays = Math.ceil((rd.getTime() - due.getTime()) / (24 * 60 * 60 * 1000));
   const overdueDays = diffDays > 0 ? diffDays : 0;
 
-  // multa opcional (lee de Config si existe)
   let totalFine = 0;
   try {
     const cfg = await Config.findOne({ where: { key: 'fine_per_day' } });

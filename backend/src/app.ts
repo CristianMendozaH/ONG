@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import compression from 'compression';
 
 import routes from './routes/index.js';
-import { errorHandler, notFound } from './middleware/error';
+import { errorHandler, notFound } from './middleware/error.js';
 
 const app = express();
 

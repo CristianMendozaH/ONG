@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import bcryptjs from 'bcryptjs';
-import jwt from 'jsonwebtoken'; // <-- 1. LA IMPORTACIÓN CORRECTA
+import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 import { env } from '../config/env.js';
 
+// Interfaz para que TypeScript conozca la propiedad 'user' en el objeto 'req'
 interface AuthenticatedRequest extends Request {
   user?: { sub: string; role: string; iat: number; exp: number; }
 }
@@ -31,9 +32,12 @@ export async function login(req: Request, res: Response) {
       role: user.role,
     };
 
-    // 2. LA LLAMADA CORRECTA (usando el objeto 'jwt')
+    if (!env.jwtSecret) {
+      throw new Error('JWT_SECRET no está definida en el archivo .env');
+    }
+
     const token = jwt.sign(jwtPayload, env.jwtSecret, {
-      expiresIn: env.jwtExpiresIn || '8h',
+      expiresIn: env.jwtExpiresIn as any,
     });
 
     res.status(200).json({ token, user });
