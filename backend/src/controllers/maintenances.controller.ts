@@ -2,13 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { Maintenance } from '../models/Maintenance';
 import { Equipment } from '../models/Equipment';
 import { sequelize } from '../db/sequelize';
-import { Op } from 'sequelize'; // Importa Op de Sequelize
+import { Op } from 'sequelize';
 
 export async function list(req: Request, res: Response) {
-  // Obtenemos los filtros desde los query params de la URL
   const { status, type } = req.query;
-
-  // Creamos un objeto 'where' para la consulta
   const where: any = {};
 
   if (status && typeof status === 'string' && status.trim() !== '') {
@@ -19,7 +16,7 @@ export async function list(req: Request, res: Response) {
   }
 
   const rows = await Maintenance.findAll({
-    where, // Aplicamos el filtro aquí
+    where,
     include: [{ model: Equipment, as: 'equipment', attributes: ['id', 'code', 'name', 'type'] }],
     order: [['createdAt', 'DESC']]
   });
@@ -46,10 +43,10 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       equipmentId, scheduledDate, type, priority, technician, description, status: 'programado'
     }, { transaction: t });
 
-    await Equipment.update(
-      { status: 'programado' },
-      { where: { id: equipmentId }, transaction: t }
-    );
+    // --- ✅ CORRECCIÓN APLICADA ---
+    // Se elimina la actualización de estado del equipo aquí.
+    // Cuando un mantenimiento solo está 'programado', el equipo
+    // debe seguir 'disponible' hasta que el trabajo inicie.
 
     await t.commit();
     res.status(201).json(newMaintenance);
@@ -84,8 +81,11 @@ export async function start(req: Request, res: Response, next: NextFunction) {
     await maintenance.update({ status: 'en-proceso' }, { transaction: t });
 
     if (maintenance.equipmentId) {
+      // --- ✅ CORRECCIÓN APLICADA ---
+      // Se utiliza el estado 'mantenimiento', que es un valor válido
+      // en el ENUM del modelo Equipment.ts.
       await Equipment.update(
-        { status: 'en-proceso' },
+        { status: 'mantenimiento' },
         { where: { id: maintenance.equipmentId }, transaction: t }
       );
     }
@@ -120,6 +120,7 @@ export async function complete(req: Request, res: Response, next: NextFunction) 
     );
 
     if (maintenance.equipmentId) {
+      // Esta lógica ya era correcta: al completar, el equipo vuelve a estar disponible.
       await Equipment.update(
         { status: 'disponible' },
         { where: { id: maintenance.equipmentId }, transaction: t }
@@ -144,6 +145,7 @@ export async function cancel(req: Request, res: Response, next: NextFunction) {
     await maintenance.update({ status: 'cancelado' }, { transaction: t });
 
     if (maintenance.equipmentId) {
+      // Esta lógica ya era correcta: al cancelar, el equipo también vuelve a estar disponible.
       await Equipment.update(
         { status: 'disponible' },
         { where: { id: maintenance.equipmentId }, transaction: t }
