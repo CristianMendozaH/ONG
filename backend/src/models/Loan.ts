@@ -1,8 +1,8 @@
 // Archivo completo: src/models/Loan.ts (CORREGIDO)
 
 import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { Equipment } from './Equipment';
-import { User } from './User';
+import { Equipment } from './Equipment.js';
+import { User } from './User.js';
 
 export type LoanStatus = 'prestado' | 'devuelto' | 'atrasado';
 

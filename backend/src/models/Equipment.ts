@@ -8,7 +8,7 @@ import {
   ForeignKey,
   BelongsTo
 } from 'sequelize-typescript';
-import { User } from './User';
+import { User } from './User.js';
 
 // Este tipo se usa para asegurar el tipado en el código de TypeScript (backend y frontend).
 export type EquipmentStatus = 'disponible' | 'prestado' | 'mantenimiento' | 'dañado' | 'asignado';
