@@ -1,7 +1,7 @@
 import { Router } from 'express';
 // Se agrega `deleteUser` a la lista de importaciones del controlador
 import { listUsers, createUser, updateUser, changePassword, deleteUser } from '../controllers/users.controller.js';
-import { auth, requireRole } from '../middleware/auth';
+import { auth, requireRole } from '../middleware/auth.js';
 
 const r = Router();
 r.use(auth, requireRole('admin'));

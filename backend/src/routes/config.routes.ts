@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authMiddleware, requireRole } from '../middleware/auth';
-import { getAll, getKey, setKey } from '../controllers/config.controller';
+import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { getAll, getKey, setKey } from '../controllers/config.controller.js';
 
 const router = Router();
 router.use(authMiddleware);

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth';
-import { list, getById, create, update, remove, start, complete, cancel } from '../controllers/maintenances.controller';
+import { authMiddleware } from '../middleware/auth.js';
+import { list, getById, create, update, remove, start, complete, cancel } from '../controllers/maintenances.controller.js';
 
 const router = Router();
 router.use(authMiddleware);

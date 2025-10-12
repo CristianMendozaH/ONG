@@ -1,9 +1,9 @@
 import { Op } from 'sequelize';
 import { Request, Response } from 'express';
-import { Equipment } from '../models/Equipment';
-import { Loan } from '../models/Loan';
-import { Maintenance } from '../models/Maintenance';
-import { User } from '../models/User'; // Asegúrate de que el modelo User esté importado
+import { Equipment } from '../models/Equipment.js';
+import { Loan } from '../models/Loan.js';
+import { Maintenance } from '../models/Maintenance.js';
+import { User } from '../models/User.js'; // Asegúrate de que el modelo User esté importado
 
 // === FUNCIÓN UNIFICADA PARA KPIs DEL DASHBOARD ===
 

@@ -32,10 +32,11 @@ export async function login(req: Request, res: Response) {
     };
 
     // 2. LA LLAMADA CORRECTA (usando el objeto 'jwt')
-    const token = jwt.sign(jwtPayload, env.jwtSecret, {
-      expiresIn: env.jwtExpiresIn || '8h',
-    });
-
+    const token = jwt.sign(
+  jwtPayload,
+  env.jwtSecret as jwt.Secret,
+  { expiresIn: '2h' }
+  );
     res.status(200).json({ token, user });
 
   } catch (error) {

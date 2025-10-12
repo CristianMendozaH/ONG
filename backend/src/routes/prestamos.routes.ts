@@ -1,12 +1,12 @@
 // Archivo completo: src/routes/prestamos.routes.ts (CORREGIDO)
 
 import { Router } from 'express';
-import { Loan } from '../models/Loan';
-import { Equipment } from '../models/Equipment';
-import { Config } from '../models/Config';
-import { sequelize } from '../db/sequelize';
-import { auth } from '../middleware/auth';
-import { User } from '../models/User';
+import { Loan } from '../models/Loan.js';
+import { Equipment } from '../models/Equipment.js';
+import { Config } from '../models/Config.js';
+import { sequelize } from '../db/sequelize.js';
+import { auth } from '../middleware/auth.js';
+import { User } from '../models/User.js';
 
 const router = Router();
 

@@ -1,15 +1,38 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+// 👇 CORRECCIÓN: Importación correcta para express-validator v6+
 import { body, param, validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import QRCode from 'qrcode';
 
-import { Equipment } from '../models/Equipment';
-import { User } from '../models/User';
-import { auth } from '../middleware/auth'; // Asegúrate de que tu middleware de autenticación esté importado
+import { Equipment } from '../models/Equipment.js';
+import { User } from '../models/User.js';
+import { auth } from '../middleware/auth.js'; 
 
 const router = Router();
 
-// Aplica el middleware de autenticación a todas las rutas de este archivo
+// =======================================================================
+// INTERFACES PARA TIPADO (Mejora para TypeScript)
+// =======================================================================
+
+// Interfaz para las peticiones que incluyen parámetros en la URL (ej: /:id)
+interface RequestWithParams extends Request {
+  params: {
+    id: string;
+  };
+}
+
+// Interfaz para las peticiones autenticadas que incluyen el usuario
+interface AuthenticatedRequest extends Request {
+  user?: {
+    sub: string; // Asumiendo que 'sub' es el ID del usuario en el token JWT
+    [key: string]: any;
+  };
+}
+
+
+// =======================================================================
+// Middleware de autenticación
+// =======================================================================
 router.use(auth);
 
 // Tipos de equipos permitidos (basado en tu frontend)
@@ -21,7 +44,7 @@ const allowedTypes = [
 // =======================================================================
 // RUTA: Listar todos los equipos (GET /)
 // =======================================================================
-router.get('/', async (req, res, next) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { search, status, type } = req.query as { search?: string, status?: string, type?: string };
     const where: any = {};
@@ -69,7 +92,8 @@ router.post(
   body('serial').optional({ checkFalsy: true }).trim().isLength({ max: 100 }).withMessage('El número de serie no puede exceder los 100 caracteres.'),
   body('description').optional().trim().isLength({ max: 500 }).withMessage('La descripción no puede exceder los 500 caracteres.'),
 
-  async (req: any, res, next) => {
+  // 👇 CORRECCIÓN: Se aplica el tipo 'AuthenticatedRequest'
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -77,6 +101,11 @@ router.post(
 
     try {
       const { code, name, type, description, serial, status } = req.body;
+      
+      // TypeScript ahora sabe que req.user puede existir
+      if (!req.user || !req.user.sub) {
+        return res.status(401).json({ message: 'Token de autenticación inválido o ausente.' });
+      }
       const createdBy = req.user.sub;
 
       const existingCode = await Equipment.findOne({ where: { code: { [Op.iLike]: code } } });
@@ -105,13 +134,15 @@ router.post(
 router.get(
   '/:id',
   param('id').isUUID().withMessage('El ID proporcionado no es un UUID válido.'),
-  async (req, res, next) => {
+  // 👇 CORRECCIÓN: Se aplica el tipo 'RequestWithParams'
+  async (req: RequestWithParams, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
     try {
+      // TypeScript ya no marca error aquí
       const equipment = await Equipment.findByPk(req.params.id, {
         include: [{ model: User, as: 'creator', attributes: ['id', 'name'] }]
       });
@@ -136,7 +167,8 @@ router.put(
   body('status').optional().isIn(['disponible', 'prestado', 'mantenimiento', 'dañado', 'asignado']),
   body('serial').optional({ checkFalsy: true }).trim().isLength({ max: 100 }),
 
-  async (req, res, next) => {
+  // 👇 CORRECCIÓN: Se aplica el tipo 'RequestWithParams'
+  async (req: RequestWithParams, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -163,8 +195,6 @@ router.put(
       delete req.body.id;
       delete req.body.code;
       
-      // ✅ **SOLUCIÓN FINAL:** Si el serial viene como un string vacío, lo convertimos a null
-      // para no violar la restricción UNIQUE de la base de datos.
       if (req.body.serial !== undefined && req.body.serial.trim() === '') {
         req.body.serial = null;
       }
@@ -184,7 +214,8 @@ router.put(
 router.delete(
   '/:id',
   param('id').isUUID().withMessage('El ID proporcionado no es un UUID válido.'),
-  async (req, res, next) => {
+  // 👇 CORRECCIÓN: Se aplica el tipo 'RequestWithParams'
+  async (req: RequestWithParams, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -211,7 +242,8 @@ router.delete(
 router.get(
   '/:id/qr',
   param('id').isUUID().withMessage('El ID proporcionado no es un UUID válido.'),
-  async (req, res, next) => {
+  // 👇 CORRECCIÓN: Se aplica el tipo 'RequestWithParams'
+  async (req: RequestWithParams, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
