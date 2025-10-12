@@ -55,11 +55,6 @@ export const routes: Routes = [
         data: { roles: ['admin'] },
         loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
       },
-      {
-        path: 'config',
-        data: { roles: ['admin'] },
-        loadComponent: () => import('./features/config/config.component').then(m => m.ConfigComponent)
-      }
     ],
   },
   { path: '**', redirectTo: '' }
