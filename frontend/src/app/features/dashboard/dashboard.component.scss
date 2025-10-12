@@ -562,8 +562,13 @@
   &:last-child {
     border-bottom: none;
   }
-  &:hover {
-    background-color: #f8f9fa;
+
+  // --- NUEVA CLASE PARA ELEMENTOS CLICABLES ---
+  &.is-clickable {
+    cursor: pointer;
+    &:hover {
+      background-color: #f8f9fa;
+    }
   }
 }
 

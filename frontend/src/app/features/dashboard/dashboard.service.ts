@@ -35,6 +35,7 @@ export interface DashboardNotification {
   message: string;
   type: 'error' | 'warning' | 'info';
   createdAt: string;
+  link?: string; // Propiedad opcional para el enlace de navegación
 }
 
 
@@ -134,7 +135,6 @@ export class DashboardService {
     );
   }
 
-  // --- 👇 INICIO: NUEVA FUNCIÓN PARA OBTENER NOTIFICACIONES 👇 ---
   /**
    * Obtiene las notificaciones del sistema desde el backend.
    */
@@ -151,7 +151,6 @@ export class DashboardService {
       })
     );
   }
-  // --- 👆 FIN: NUEVA FUNCIÓN PARA OBTENER NOTIFICACIONES 👆 ---
 
   private normalizeActivityType(type: string): string {
     if (!type) return 'general';

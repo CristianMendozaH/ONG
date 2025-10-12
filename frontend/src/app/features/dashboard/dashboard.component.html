@@ -6,17 +6,20 @@
   <div class="header-right">
 
     <div class="notification-container">
-      <div class="notification-bell" (click)="toggleNotifications()">
+      <div class="notification-bell" #notificationBell (click)="toggleNotifications()">
         <i class="fas fa-bell"></i>
         <span class="notification-badge" *ngIf="notifications.length > 0">{{ notifications.length }}</span>
       </div>
 
-      <div class="notifications-panel" *ngIf="showNotifications">
+      <div class="notifications-panel" #notificationsPanel *ngIf="showNotifications">
         <div class="notifications-header">
           <h4>Notificaciones</h4>
         </div>
         <div class="notifications-list" *ngIf="notifications.length > 0; else noNotifications">
-          <div class="notification-item" *ngFor="let notification of notifications">
+          <div class="notification-item"
+               *ngFor="let notification of notifications"
+               (click)="handleNotificationClick(notification)"
+               [class.is-clickable]="notification.link">
             <div class="notification-icon" [ngClass]="'icon-' + notification.type">
               <i class="fas" [ngClass]="{'fa-exclamation-triangle': notification.type === 'error', 'fa-wrench': notification.type === 'warning', 'fa-info-circle': notification.type === 'info'}"></i>
             </div>

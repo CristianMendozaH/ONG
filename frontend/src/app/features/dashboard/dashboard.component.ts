@@ -1,6 +1,6 @@
 // dashboard.component.ts
 
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { DashboardService, DashboardKPIs, DashboardActivity, DashboardWeeklyActivity, DashboardNotification } from './dashboard.service';
@@ -8,6 +8,15 @@ import { UserStore } from '../../core/stores/user.store';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 Chart.register(...registerables);
+
+// --- TIPO ACTUALIZADO PARA LAS NOTIFICACIONES ---
+type NotificationViewModel = {
+  id: string;
+  message: string;
+  type: string;
+  time: string;
+  link?: string;
+};
 
 @Component({
   selector: 'app-dashboard',
@@ -17,9 +26,11 @@ Chart.register(...registerables);
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  // --- CORRECCIÓN: Se ha corregido @View-child a @ViewChild ---
+  // --- REFERENCIAS A ELEMENTOS DEL TEMPLATE ---
   @ViewChild('barChart') barChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('doughnutChart') doughnutChartRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('notificationsPanel') notificationsPanelRef!: ElementRef;
+  @ViewChild('notificationBell') notificationBellRef!: ElementRef;
 
   kpis: DashboardKPIs | null = null;
   recentActivity: DashboardActivity[] = [];
@@ -30,7 +41,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   public saludo: string = '¡Buen día,';
   public showUserMenu = false;
   public showNotifications = false;
-  public notifications: Array<{id: string, message: string, type: string, time: string}> = [];
+  public notifications: NotificationViewModel[] = [];
 
   private barChart: Chart | null = null;
   private doughnutChart: Chart | null = null;
@@ -40,6 +51,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     public userStore: UserStore,
     private router: Router
   ) {}
+
+  // --- NUEVO: LISTENER PARA CLICS FUERA DEL PANEL ---
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.showNotifications) {
+      const bellClicked = this.notificationBellRef?.nativeElement.contains(event.target as Node);
+      const panelClicked = this.notificationsPanelRef?.nativeElement.contains(event.target as Node);
+
+      if (!bellClicked && !panelClicked) {
+        this.showNotifications = false;
+      }
+    }
+  }
 
   ngOnInit(): void {
     console.log('🚀 Inicializando Dashboard...');
@@ -85,7 +109,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           id: notif.id,
           message: notif.message,
           type: notif.type,
-          time: this.getRelativeTime(notif.createdAt)
+          time: this.getRelativeTime(notif.createdAt),
+          link: notif.link // Mapeamos el nuevo campo link
         }));
         console.log('📋 Notificaciones dinámicas procesadas:', this.notifications);
       },
@@ -94,6 +119,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.notifications = [];
       }
     });
+  }
+
+  // --- NUEVO: FUNCIÓN PARA MANEJAR CLIC EN UNA NOTIFICACIÓN ---
+  handleNotificationClick(notification: NotificationViewModel): void {
+    if (notification.link) {
+      console.log(`Navegando a ${notification.link}...`);
+      this.router.navigateByUrl(notification.link);
+      this.showNotifications = false; // Ocultar el panel después de navegar
+    } else {
+      console.warn('La notificación no tiene una ruta de destino.');
+    }
   }
 
   logout(): void {
