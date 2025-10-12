@@ -607,6 +607,45 @@
 
 /* --- FIN DE NUEVOS ESTILOS --- */
 
+/* --- INICIO DE ESTILOS PARA BADGES DE ACTIVIDAD --- */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 12px;
+  text-transform: capitalize;
+}
+
+.status-prestamo {
+  color: #114495;
+  background-color: rgba(17, 68, 149, 0.1);
+  border: 1px solid rgba(17, 68, 149, 0.2);
+}
+
+.status-devolucion {
+  color: #2ECC71;
+  background-color: rgba(46, 204, 113, 0.1);
+  border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.status-mantenimiento {
+  color: #EE9D08;
+  background-color: rgba(238, 157, 8, 0.1);
+  border: 1px solid rgba(238, 157, 8, 0.2);
+}
+
+.status-general {
+  color: #6c757d;
+  background-color: rgba(108, 117, 125, 0.1);
+  border: 1px solid rgba(108, 117, 125, 0.2);
+}
+/* --- FIN DE ESTILOS PARA BADGES DE ACTIVIDAD --- */
+
 
 /* Responsive */
 @media (max-width: 1400px) {
