@@ -3,8 +3,9 @@ import { CommonModule, DatePipe, TitleCasePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { HttpErrorResponse } from '@angular/common/http';
 
-import { MantenimientoService, Mantenimiento, CrearMantDTO, AlertaPredictiva, UpdateMantDTO } from './mantenimiento.service';
+import { MantenimientoService, Mantenimiento, CrearMantDTO, AlertaPredictiva } from './mantenimiento.service';
 import { EquiposService, Equipo } from '../equipos/equipos.service';
 
 // Interfaz para la estructura del objeto Toast
@@ -38,18 +39,14 @@ export class MantenimientoComponent implements OnInit {
   private mantSvc = inject(MantenimientoService);
   private equiposSvc = inject(EquiposService);
 
-  // Arreglo para guardar los toasts activos
   toasts: Toast[] = [];
-
   mantenimientos: Mantenimiento[] = [];
   equipos: Equipo[] = [];
   availableEquipos: Equipo[] = [];
   alertas: AlertaPredictiva[] = [];
-
   loading = false;
   error = '';
   saving = false;
-
   showModal = false;
   showDetailsModal = false;
   showCompleteModal = false;
@@ -57,15 +54,9 @@ export class MantenimientoComponent implements OnInit {
   maintenanceToComplete: Mantenimiento | null = null;
   selectedMaintenanceDetails: Mantenimiento | null = null;
   selectedMaintenanceDisplayId: string | null = null;
-
   statusFilter = '';
   typeFilter = '';
-
-  get alertsCount(): number {
-    return this.alertas.length;
-  }
   selectedEquipment: Equipo | null = null;
-
   form: FormGroup;
   completeForm: FormGroup;
 
@@ -80,86 +71,87 @@ export class MantenimientoComponent implements OnInit {
 
     this.completeForm = this.fb.group({
       performedDate: ['', Validators.required],
-      completionNotes: ['']
+      notes: ['']
     });
   }
 
-  ngOnInit() {
-    this.load();
-    this.loadEquipos();
+  ngOnInit(): void {
+    this.loadAllData();
     this.setDefaultDate();
-
     this.form.get('equipmentId')?.valueChanges.subscribe(equipmentId => {
       this.selectedEquipment = this.equipos.find(e => e.id === equipmentId) || null;
     });
   }
 
-  // Métodos para gestionar los toasts
-  private showToast(message: string, type: 'success' | 'error') {
+  get alertsCount(): number {
+    return this.alertas.length;
+  }
+
+  private showToast(message: string, type: 'success' | 'error'): void {
     const id = Date.now();
     this.toasts.push({ id, message, type });
-    // El toast desaparece después de 5 segundos
     setTimeout(() => this.removeToast(id), 5000);
   }
 
-  removeToast(id: number) {
+  removeToast(id: number): void {
     this.toasts = this.toasts.filter(toast => toast.id !== id);
   }
 
-  private setDefaultDate() {
+  private setDefaultDate(): void {
     const today = new Date().toISOString().slice(0, 10);
     this.form.patchValue({ scheduledDate: today });
   }
 
-  private loadEquipos() {
+  loadAllData(): void {
+    this.loading = true;
+    this.error = '';
+    // Cargar equipos primero para que la lista esté disponible
     this.equiposSvc.list().subscribe({
       next: (equipos) => {
         this.equipos = equipos;
-        this.updateAvailableEquipmentList();
+        this.loadMaintenances(); // Cargar mantenimientos después
       },
-      error: (error) => this.showToast('No se pudieron cargar los equipos.', 'error')
-    });
-  }
-
-  load() {
-    this.loading = true;
-    this.error = '';
-    const currentFilters = { status: this.statusFilter, type: this.typeFilter };
-
-    this.mantSvc.list(currentFilters).subscribe({
-      next: (res) => {
-        const sortedByCreation = [...res].sort((a, b) =>
-          new Date(a.createdAt || a.scheduledDate).getTime() - new Date(b.createdAt || b.scheduledDate).getTime()
-        );
-
-        const withDisplayId = sortedByCreation.map((item, index) => ({
-          ...item,
-          displayId: `MA${(index + 1).toString().padStart(3, '0')}`
-        }));
-
-        this.mantenimientos = withDisplayId.sort((a, b) =>
-          new Date(b.createdAt || b.scheduledDate).getTime() - new Date(a.createdAt || a.scheduledDate).getTime()
-        );
-
-        this.generarAlertasDinamicas();
-        this.updateAvailableEquipmentList();
-        this.loading = false;
-      },
-      error: (e) => {
-        this.error = e?.error?.message || 'No se pudo cargar mantenimientos';
+      error: (e: HttpErrorResponse) => {
+        this.error = 'No se pudieron cargar los equipos.';
+        this.showToast(this.error, 'error');
         this.loading = false;
       }
     });
   }
 
-  private updateAvailableEquipmentList() {
+  loadMaintenances(): void {
+    const currentFilters = { status: this.statusFilter, type: this.typeFilter };
+    this.mantSvc.list(currentFilters).subscribe({
+      next: (res) => {
+        const sorted = res.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+        this.mantenimientos = sorted.map((item, index) => ({
+          ...item,
+          displayId: `MA-${String(index + 1).padStart(4, '0')}`
+        }));
+        this.generarAlertasDinamicas();
+        this.updateAvailableEquipmentList();
+        this.loading = false;
+      },
+      error: (e: HttpErrorResponse) => {
+        this.error = e?.error?.message || 'No se pudo cargar la lista de mantenimientos.';
+        this.showToast(this.error, 'error');
+        this.loading = false;
+      }
+    });
+  }
+
+  private updateAvailableEquipmentList(): void {
     const busyEquipmentIds = new Set(
       this.mantenimientos
         .filter(m => m.status === 'programado' || m.status === 'en-proceso')
         .map(m => m.equipmentId)
     );
 
-    this.availableEquipos = this.equipos.filter(eq => !busyEquipmentIds.has(eq.id));
+    this.availableEquipos = this.equipos.filter(eq => {
+      const isStateValid = eq.status === 'disponible' || eq.status === 'dañado';
+      const isNotBusy = !busyEquipmentIds.has(eq.id);
+      return isStateValid && isNotBusy;
+    });
 
     if (this.editingMaintenance) {
       const isEditingEquipmentInList = this.availableEquipos.some(eq => eq.id === this.editingMaintenance!.equipmentId);
@@ -172,8 +164,11 @@ export class MantenimientoComponent implements OnInit {
     }
   }
 
-  guardarMantenimiento() {
-    if (this.form.invalid) return;
+  guardarMantenimiento(): void {
+    if (this.form.invalid) {
+      this.showToast('Por favor, complete todos los campos requeridos.', 'error');
+      return;
+    }
     this.saving = true;
     const formValue = this.form.value as CrearMantDTO;
 
@@ -186,77 +181,78 @@ export class MantenimientoComponent implements OnInit {
         const message = this.editingMaintenance ? 'Mantenimiento actualizado' : 'Mantenimiento programado';
         this.showToast(`${message} exitosamente.`, 'success');
         this.closeModal();
-        this.load();
+        this.loadAllData();
       },
-      error: (e) => {
+      error: (e: HttpErrorResponse) => {
+        this.showToast(e?.error?.message || `No se pudo guardar el mantenimiento.`, 'error');
+      },
+      complete: () => {
         this.saving = false;
-        const message = this.editingMaintenance ? 'No se pudo actualizar' : 'No se pudo crear';
-        this.showToast(e?.error?.message || `${message} el mantenimiento.`, 'error');
       }
     });
   }
 
-  iniciarMantenimiento(m: Mantenimiento) {
+  iniciarMantenimiento(m: Mantenimiento): void {
     this.mantSvc.start(m.id).subscribe({
       next: () => {
         this.showToast('El mantenimiento ha iniciado.', 'success');
-        this.load();
+        this.loadAllData();
       },
-      error: (e) => this.showToast(e?.error?.message || 'No se pudo iniciar el mantenimiento.', 'error')
+      error: (e: HttpErrorResponse) => this.showToast(e?.error?.message || 'No se pudo iniciar el mantenimiento.', 'error')
     });
   }
 
-  submitCompletion() {
+  submitCompletion(): void {
     if (this.completeForm.invalid || !this.maintenanceToComplete) {
       return;
     }
-    const { performedDate, completionNotes } = this.completeForm.value;
-    this.mantSvc.complete(this.maintenanceToComplete.id, performedDate, completionNotes).subscribe({
+    const { performedDate, notes } = this.completeForm.value;
+    this.mantSvc.complete(this.maintenanceToComplete.id, performedDate, notes).subscribe({
       next: () => {
         this.showToast('Mantenimiento marcado como completado.', 'success');
         this.closeCompleteModal();
-        this.load();
+        this.loadAllData();
       },
-      error: (e) => this.showToast(e?.error?.message || 'No se pudo marcar como completado.', 'error')
+      error: (e: HttpErrorResponse) => this.showToast(e?.error?.message || 'No se pudo marcar como completado.', 'error')
     });
   }
 
-  openMaintenanceModal() {
+  openMaintenanceModal(): void {
     this.editingMaintenance = null;
     this.updateAvailableEquipmentList();
     this.resetForm();
     this.showModal = true;
   }
 
-  editMaintenance(maintenance: Mantenimiento) {
+  editMaintenance(maintenance: Mantenimiento): void {
     this.editingMaintenance = maintenance;
     this.updateAvailableEquipmentList();
     this.form.patchValue({
       equipmentId: maintenance.equipmentId,
       type: maintenance.type,
       priority: maintenance.priority || 'media',
-      scheduledDate: maintenance.scheduledDate.split('T')[0],
+      scheduledDate: new Date(maintenance.scheduledDate).toISOString().split('T')[0],
       description: maintenance.description || ''
     });
     this.showModal = true;
   }
 
-  viewMaintenance(maintenance: Mantenimiento) {
+  viewMaintenance(maintenance: Mantenimiento): void {
     this.selectedMaintenanceDetails = maintenance;
     this.selectedMaintenanceDisplayId = maintenance.displayId || null;
     this.showDetailsModal = true;
   }
 
-  openCompleteModal(m: Mantenimiento) {
+  openCompleteModal(m: Mantenimiento): void {
     this.maintenanceToComplete = m;
     this.completeForm.patchValue({
       performedDate: new Date().toISOString().slice(0, 10),
-      completionNotes: ''
+      notes: ''
     });
     this.showCompleteModal = true;
   }
 
-  closeCompleteModal(event?: Event) {
+  closeCompleteModal(event?: Event): void {
     if (event && (event.target as HTMLElement).classList.contains('modal-overlay')) {
       this.showCompleteModal = false;
     } else if (!event) {
@@ -265,7 +261,7 @@ export class MantenimientoComponent implements OnInit {
     this.maintenanceToComplete = null;
   }
 
-  closeModal(event?: Event) {
+  closeModal(event?: Event): void {
     if (event && (event.target as HTMLElement).classList.contains('modal-overlay')) {
       this.showModal = false;
     } else if (!event) {
@@ -273,7 +269,7 @@ export class MantenimientoComponent implements OnInit {
     }
   }
 
-  closeDetailsModal(event?: Event) {
+  closeDetailsModal(event?: Event): void {
     if (event && (event.target as HTMLElement).classList.contains('modal-overlay')) {
       this.showDetailsModal = false;
     } else if (!event) {
@@ -282,7 +278,7 @@ export class MantenimientoComponent implements OnInit {
     this.selectedMaintenanceDetails = null;
   }
 
-  private resetForm() {
+  private resetForm(): void {
     this.form.reset({ type: 'preventivo', priority: 'media' });
     this.setDefaultDate();
     this.saving = false;
@@ -294,19 +290,6 @@ export class MantenimientoComponent implements OnInit {
     return this.mantenimientos.filter(m => m.status === status).length;
   }
 
-  getPreventiveMaintenanceDue(): number {
-    const sevenDaysFromNow = new Date();
-    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return this.mantenimientos.filter(m => {
-      if (m.status !== 'programado' || m.type !== 'preventivo') return false;
-      const scheduledDate = new Date(m.scheduledDate);
-      return scheduledDate >= today && scheduledDate <= sevenDaysFromNow;
-    }).length;
-  }
-
   trackByMaintenanceId(index: number, maintenance: Mantenimiento): string {
     return maintenance.id;
   }
@@ -315,7 +298,8 @@ export class MantenimientoComponent implements OnInit {
     const statusClassMap: { [key: string]: string } = {
       'programado': 'status-programado',
       'en-proceso': 'status-en-proceso',
-      'completado': 'status-completado'
+      'completado': 'status-completado',
+      'cancelado': 'status-cancelado'
     };
     return `status-badge ${statusClassMap[status] || ''}`;
   }
@@ -328,43 +312,37 @@ export class MantenimientoComponent implements OnInit {
     const completedMaintenances = this.mantenimientos
       .filter(m => m.equipmentId === equipmentId && m.status === 'completado' && m.performedDate)
       .sort((a, b) => new Date(b.performedDate!).getTime() - new Date(a.performedDate!).getTime());
-
     return completedMaintenances.length > 0 ? completedMaintenances[0].performedDate! : null;
   }
 
-  generarAlertasDinamicas() {
-      this.alertas = [];
-      const preventivosProximos = this.getPreventiveMaintenanceDue();
-      if (preventivosProximos > 0) {
-        this.alertas.push({
-          tipo: 'warning',
-          titulo: 'Mantenimiento Preventivo Próximo',
-          descripcion: `${preventivosProximos} equipo${preventivosProximos > 1 ? 's' : ''} requieren mant. preventivo en los próximos 7 días.`,
-          meta: 'Actualizado ahora'
-        });
-      }
-      const urgentes = this.mantenimientos.filter(m => m.priority === 'alta' && m.status !== 'completado').length;
-      if (urgentes > 0) {
-        this.alertas.push({
-          tipo: 'critical',
-          titulo: 'Mantenimiento Urgente Requerido',
-          descripcion: `Hay ${urgentes} órden${urgentes > 1 ? 'es' : ''} de mantenimiento con prioridad alta.`,
-          meta: 'Requiere atención'
-        });
-      }
-      const completadosEsteMes = this.mantenimientos.filter(m => {
-          if (m.status !== 'completado' || !m.performedDate) return false;
-          const fechaRealizado = new Date(m.performedDate);
-          const hoy = new Date();
-          return fechaRealizado.getMonth() === hoy.getMonth() && fechaRealizado.getFullYear() === hoy.getFullYear();
-      }).length;
-      if (completadosEsteMes > 0) {
-         this.alertas.push({
-            tipo: 'info',
-            titulo: 'Mantenimientos Completados',
-            descripcion: `${completadosEsteMes} mantenimientos completados este mes. ¡Buen trabajo!`,
-            meta: 'Este mes'
-        });
-      }
+  generarAlertasDinamicas(): void {
+    this.alertas = [];
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+    const preventivosProximos = this.mantenimientos.filter(m => {
+      if (m.status !== 'programado' || m.type !== 'preventivo') return false;
+      const scheduledDate = new Date(m.scheduledDate);
+      return scheduledDate <= sevenDaysFromNow;
+    }).length;
+
+    if (preventivosProximos > 0) {
+      this.alertas.push({
+        tipo: 'warning',
+        titulo: 'Mantenimiento Preventivo Próximo',
+        descripcion: `${preventivosProximos} equipo(s) requieren mant. preventivo en los próximos 7 días.`,
+        meta: 'Actualizado ahora'
+      });
+    }
+
+    const urgentes = this.mantenimientos.filter(m => m.priority === 'alta' && m.status !== 'completado').length;
+    if (urgentes > 0) {
+      this.alertas.push({
+        tipo: 'critical',
+        titulo: 'Mantenimiento Urgente Requerido',
+        descripcion: `Hay ${urgentes} órden(es) de mantenimiento con prioridad alta.`,
+        meta: 'Requiere atención'
+      });
+    }
   }
 }
