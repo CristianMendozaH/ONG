@@ -259,6 +259,17 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     }
   }
 
+  public extendLoanFromScan() {
+    if (this.scannedEquipment) {
+      const prestamo = this.prestamos.find(p => p.equipmentId === this.scannedEquipment!.id && p.status !== 'devuelto');
+      if (prestamo) {
+        this.extendLoan(prestamo);
+      } else {
+        this.showToast('No se encontró un préstamo activo para este equipo.', 'error');
+      }
+    }
+  }
+
   public openLoanModal() {
     const returnDate = new Date();
     returnDate.setDate(returnDate.getDate() + 7);
@@ -417,6 +428,15 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     this.showReturnModal = true;
   }
 
+  // MÉTODO NUEVO
+  public processReturnFromOverdueModal(prestamo: Prestamo) {
+    this.closeModal('overdue');
+    // Pequeño timeout para asegurar que la transición entre modales sea fluida
+    setTimeout(() => {
+      this.returnLoan(prestamo);
+    }, 150);
+  }
+
   public extendLoan(prestamo: Prestamo) {
     this.selectedPrestamo = prestamo;
 
@@ -510,6 +530,12 @@ export class PrestamosComponent implements OnInit, OnDestroy {
     today.setHours(0, 0, 0, 0);
     due.setHours(0,0,0,0);
     return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  public getOverdueDays(prestamo: Prestamo): number {
+    if (prestamo.status === 'devuelto') return 0;
+    const days = this.calculateDaysLeft(prestamo.dueDate);
+    return days < 0 ? Math.abs(days) : 0;
   }
 
   public getDaysLeftText(prestamo: Prestamo): string {

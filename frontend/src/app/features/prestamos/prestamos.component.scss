@@ -1,5 +1,7 @@
 // Archivo completo: src/app/features/prestamos/prestamos.component.scss
 
+@use 'sass:color'; // <--- CAMBIO 1: MÓDULO DE COLOR AÑADIDO
+
 // Variables
 $primary-color: #114495;
 $secondary-color: #EE9D08;
@@ -537,3 +539,131 @@ $shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   // --- FIN: ESTILOS AÑADIDOS ---
 }
 /* FIN: Bloque de impresión actualizado */
+
+/* INICIO: Estilos para el modal de préstamos atrasados */
+.overdue-modal {
+  .modal-title {
+    color: $danger-color;
+    i {
+      margin-right: 10px;
+    }
+  }
+
+  .overdue-empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    i {
+      font-size: 3rem;
+      color: $success-color;
+      margin-bottom: 15px;
+    }
+    h4 {
+      font-size: 1.2rem;
+      color: $text-color;
+      margin-bottom: 5px;
+    }
+    p {
+      color: #666;
+    }
+  }
+
+  .overdue-intro-text {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+
+  .overdue-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .overdue-item {
+    display: flex;
+    flex-direction: column; // Cambiado para apilar el botón debajo
+    padding: 15px;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #fff8f8;
+  }
+
+  .overdue-item-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 12px; // Espacio entre info y botón
+  }
+
+  .overdue-item-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .overdue-equipment-name {
+    font-weight: 600;
+    color: $text-color;
+  }
+
+  .overdue-borrower {
+    font-size: 0.85rem;
+    color: #555;
+    margin-top: 4px;
+  }
+
+  .overdue-days-badge {
+    background-color: $danger-color;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-left: 15px;
+  }
+
+  .overdue-action-btn {
+    background-color: $secondary-color;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    &:hover {
+      // <--- CAMBIO 2: FUNCIÓN MODERNA DE SASS
+      background-color: color.scale($secondary-color, $lightness: -10%);
+    }
+  }
+
+  .overdue-footer-note {
+    margin-top: 25px;
+    padding: 15px;
+    background: $background-color;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: $text-color;
+    i {
+      color: $primary-color;
+      font-size: 1.2rem;
+    }
+    p {
+      margin: 0;
+    }
+  }
+}
+/* FIN: Estilos para el modal de préstamos atrasados */

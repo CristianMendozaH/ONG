@@ -72,6 +72,7 @@
         <div class="scan-result-actions">
           <button *ngIf="scannedEquipment.status === 'disponible'" class="btn-scan-action btn-loan-scan" (click)="createLoanFromScan()"><i class="fas fa-arrow-up"></i> Crear Préstamo</button>
           <button *ngIf="scannedEquipment.status === 'prestado'" class="btn-scan-action btn-return-scan" (click)="createReturnFromScan()"><i class="fas fa-arrow-down"></i> Devolver</button>
+          <button *ngIf="scannedEquipment.status === 'prestado'" class="btn-scan-action btn-loan-scan" (click)="extendLoanFromScan()"><i class="fas fa-calendar-plus"></i> Extender</button>
         </div>
       </div>
     </div>
@@ -299,12 +300,49 @@
 </div>
 
 <div class="modal-overlay" [class.show]="showOverdueLoansModal" (click)="closeModal('overdue')">
-  <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-header"><h3 class="modal-title">Préstamos Atrasados</h3><button class="modal-close" (click)="closeModal('overdue')"><i class="fas fa-times"></i></button></div>
-      <div class="modal-body"><div *ngIf="overdueLoans.length === 0"><p>No hay préstamos atrasados.</p></div><div *ngIf="overdueLoans.length > 0"><div *ngFor="let p of overdueLoans">{{ getEquipmentName(p) }}</div></div></div>
-      <div class="modal-footer"><button type="button" class="btn-cancel" (click)="closeModal('overdue')">Cerrar</button></div>
+  <div class="modal overdue-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Préstamos Atrasados</h3>
+        <button class="modal-close" (click)="closeModal('overdue')"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="overdueLoans.length === 0" class="overdue-empty-state">
+          <i class="fas fa-check-circle"></i>
+          <h4>¡Excelente!</h4>
+          <p>No hay préstamos con retraso en este momento.</p>
+        </div>
+        <div *ngIf="overdueLoans.length > 0">
+          <p class="overdue-intro-text">
+            Los siguientes equipos no han sido devueltos en la fecha límite.
+          </p>
+          <ul class="overdue-list">
+            <li *ngFor="let p of overdueLoans" class="overdue-item">
+              <div class="overdue-item-main">
+                <div class="overdue-item-info">
+                  <span class="overdue-equipment-name">{{ getEquipmentName(p) }}</span>
+                  <span class="overdue-borrower">Prestado a: <strong>{{ p.borrowerName }}</strong></span>
+                </div>
+                <div class="overdue-days-badge">
+                  {{ getOverdueDays(p) }} día(s) de retraso
+                </div>
+              </div>
+              <button class="overdue-action-btn" (click)="processReturnFromOverdueModal(p)">
+                <i class="fas fa-undo"></i> Procesar Devolución
+              </button>
+            </li>
+          </ul>
+          <div class="overdue-footer-note">
+            <i class="fas fa-info-circle"></i>
+            <p>Se recomienda contactar a los solicitantes para coordinar la devolución de los equipos.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeModal('overdue')">Cerrar</button>
+      </div>
   </div>
 </div>
+
 
 <div class="modal-overlay" [class.show]="showExtendModal" (click)="closeModal('extend')">
   <div class="modal" (click)="$event.stopPropagation()">
