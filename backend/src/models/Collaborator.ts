@@ -7,7 +7,7 @@ export class Collaborator extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  id!: string;
+  declare id: string;
 
   // CAMBIO: Mapeo a la columna snake_case 'full_name'
   @Column({ field: 'full_name', type: DataType.STRING })

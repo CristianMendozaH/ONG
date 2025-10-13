@@ -1,12 +1,12 @@
 // Archivo completo: src/routes/assignments.routes.ts (CORREGIDO)
 
 import { Router, Request } from 'express';
-import { sequelize } from '../db/sequelize';
-import { auth } from '../middleware/auth';
-import { Assignment } from '../models/Assignment';
-import { Equipment } from '../models/Equipment';
-import { Collaborator } from '../models/Collaborator';
-import { User } from '../models/User';
+import { sequelize } from '../db/sequelize.js';
+import { auth } from '../middleware/auth.js';
+import { Assignment } from '../models/Assignment.js';
+import { Equipment } from '../models/Equipment.js';
+import { Collaborator } from '../models/Collaborator.js';
+import { User } from '../models/User.js';
 
 interface AuthRequest extends Request {
   user?: {

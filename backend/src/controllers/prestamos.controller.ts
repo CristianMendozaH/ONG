@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Loan } from '../models/Loan';
-import { Equipment } from '../models/Equipment';
-import { Config } from '../models/Config'; // opcional para multa
+import { Loan } from '../models/Loan.js';
+import { Equipment } from '../models/Equipment.js';
+import { Config } from '../models/Config.js'; // opcional para multa
 // import { Op } from 'sequelize'; // si luego filtras por fechas/estado
 
 export async function listLoans(req: Request, res: Response) {

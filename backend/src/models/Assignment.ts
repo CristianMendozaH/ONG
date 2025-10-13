@@ -1,9 +1,9 @@
 // Archivo completo: src/models/Assignment.ts
 
 import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { Equipment } from './Equipment';
-import { Collaborator } from './Collaborator';
-import { User } from './User'; // <-- Asegúrate de importar tu modelo User
+import { Equipment } from './Equipment.js';
+import { Collaborator } from './Collaborator.js';
+import { User } from './User.js'; // <-- Asegúrate de importar tu modelo User
 
 // ✅ Tipo de estado actualizado para incluir 'donated'
 export type AssignmentStatus = 'assigned' | 'released' | 'donated';
@@ -13,7 +13,7 @@ export class Assignment extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  id!: string;
+  declare id: string;
 
   @ForeignKey(() => Equipment)
   @Column({ field: 'equipment_id', type: DataType.UUID })

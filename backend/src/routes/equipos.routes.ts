@@ -3,9 +3,9 @@ import { body, param, validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import QRCode from 'qrcode';
 
-import { Equipment } from '../models/Equipment';
-import { User } from '../models/User';
-import { auth } from '../middleware/auth';
+import { Equipment } from '../models/Equipment.js';
+import { User } from '../models/User.js';
+import { auth } from '../middleware/auth.js';
 
 const router = Router();
 

@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
-import { Maintenance } from '../models/Maintenance';
-import { Equipment } from '../models/Equipment';
+import { Maintenance } from '../models/Maintenance.js';
+import { Equipment } from '../models/Equipment.js';
 //import { sendMail } from '../utils/mailer';
 
 const iso = (d: Date | string) => new Date(d).toISOString().slice(0,10);

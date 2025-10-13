@@ -1,12 +1,12 @@
 import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { Equipment } from './Equipment';
+import { Equipment } from './Equipment.js';
 
 @Table({ tableName: 'maintenances', timestamps: true })
 export class Maintenance extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  id!: string;
+  declare id: string;
 
   @ForeignKey(() => Equipment)
   @Column(DataType.UUID)

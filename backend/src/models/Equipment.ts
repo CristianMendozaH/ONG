@@ -8,7 +8,7 @@ import {
   ForeignKey,
   BelongsTo
 } from 'sequelize-typescript';
-import { User } from './User';
+import { User } from './User.js';
 
 // Este tipo se usa para asegurar el tipado en el código de TypeScript (backend y frontend).
 export type EquipmentStatus = 'disponible' | 'prestado' | 'mantenimiento' | 'dañado' | 'asignado';
@@ -21,7 +21,7 @@ export class Equipment extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  id!: string;
+  declare id: string;
 
   @Column({
     type: DataType.STRING(50),  // Se define una longitud máxima para optimización.

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { Maintenance } from '../models/Maintenance';
-import { Equipment } from '../models/Equipment';
-import { sequelize } from '../db/sequelize';
+import { Maintenance } from '../models/Maintenance.js';
+import { Equipment } from '../models/Equipment.js';
+import { sequelize } from '../db/sequelize.js';
 import { Op } from 'sequelize';
 
 export async function list(req: Request, res: Response) {

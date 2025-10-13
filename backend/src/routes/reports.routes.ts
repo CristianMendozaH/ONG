@@ -6,9 +6,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import { Router } from 'express';
-import { sequelize } from '../db/sequelize';
+import { sequelize } from '../db/sequelize.js';
 import { QueryTypes } from 'sequelize';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware } from '../middleware/auth.js';
 import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
 

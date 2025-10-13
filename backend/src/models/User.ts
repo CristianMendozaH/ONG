@@ -1,6 +1,6 @@
 import { Table, Column, Model, DataType, Default, PrimaryKey, HasMany } from 'sequelize-typescript';
-import { Equipment } from './Equipment';
-import { Loan } from './Loan';
+import { Equipment } from './Equipment.js';
+import { Loan } from './Loan.js';
 
 type Role = 'admin' | 'tecnico' | 'user';
 
@@ -9,7 +9,7 @@ export class User extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  id!: string;
+  declare id: string;
 
   @Column(DataType.STRING)
   name!: string;
