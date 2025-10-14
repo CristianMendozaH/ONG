@@ -1,3 +1,5 @@
+// Archivo completo: src/app/features/equipos/equipos.component.scss
+
 /* ====== Layout / Header ====== */
 .header {
   background: #fff;
@@ -222,6 +224,7 @@
   &.status-asignado { background: #f3e8ff; color: #6d28d9; border-color: rgba(109,40,217,.25); }
   &.status-mantenimiento { background: #f1f5ff; color: #114495; border-color: rgba(17,68,149,.25); }
   &.status-danado     { background: #fde8e8; color: #991b1b; border-color: rgba(153,27,27,.25); }
+  &.status-donado     { background: #eef2f7; color: #475569; border-color: rgba(71,85,105,.25); } // ✅ CLASE AÑADIDA
 }
 
 /* ====== Empty state ====== */

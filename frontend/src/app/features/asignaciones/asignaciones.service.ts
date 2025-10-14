@@ -20,12 +20,12 @@ export interface Asignacion {
   collaboratorId: string;
   assignmentDate: string;
   releaseDate?: string | null;
-  status: 'assigned' | 'released' | 'donated';
+  status: 'assigned' | 'released' | 'donated'; // ✅ ESTADO ACTUALIZADO
   observations?: string;
   equipment?: Equipo;
   collaborator?: Colaborador;
   accessories?: string[];
-  creator?: { name: string }; // ✅ Estructura final para el creador
+  creator?: { name: string };
 }
 
 export interface CrearAsignacionDTO {
@@ -69,6 +69,7 @@ export class AsignacionesService {
     return this.http.post<Asignacion>(`${this.base}/${id}/release`, payload);
   }
 
+  // ✅ MÉTODO AÑADIDO
   donarAsignacion(id: string): Observable<Asignacion> {
     return this.http.post<Asignacion>(`${this.base}/${id}/donate`, {});
   }

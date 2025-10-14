@@ -137,7 +137,7 @@
         <div class="form-group">
           <label>Estado *</label>
           <select [(ngModel)]="equipmentForm.status" name="status" required>
-            <option *ngFor="let s of availableStatuses" [value]="s.value">{{ s.label }}</option>
+             <option *ngFor="let s of formStatuses" [value]="s.value">{{ s.label }}</option>
           </select>
         </div>
       </div>

@@ -1,3 +1,5 @@
+// Archivo completo: src/app/features/equipos/equipos.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -16,7 +18,7 @@ export interface Equipo {
   name: string;
   serial?: string;
   type: string;
-  status: 'disponible' | 'prestado' | 'mantenimiento' | 'dañado' | 'asignado';
+  status: 'disponible' | 'prestado' | 'mantenimiento' | 'dañado' | 'asignado' | 'donado'; // ✅ CAMBIO AQUÍ
   description?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -34,7 +36,7 @@ export interface EquiposQuery {
 
 @Injectable({ providedIn: 'root' })
 export class EquiposService {
-  private base = `${environment.apiUrl}/equipments`; // Corregido a 'equipments'
+  private base = `${environment.apiUrl}/equipments`;
 
   constructor(private http: HttpClient) {}
 

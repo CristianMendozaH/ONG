@@ -27,8 +27,8 @@ export class AsignacionesComponent implements OnInit {
   public toasts: Toast[] = [];
   public asignaciones: Asignacion[] = [];
   public filteredAsignaciones: Asignacion[] = [];
-  public todosLosEquipos: Equipo[] = []; // Almacena la lista completa de equipos
-  public equiposDisponiblesParaFormulario: Equipo[] = []; // Usada en el dropdown del formulario
+  public todosLosEquipos: Equipo[] = [];
+  public equiposDisponiblesParaFormulario: Equipo[] = [];
   public colaboradores: Colaborador[] = [];
   public loading = true;
   public error = '';
@@ -167,6 +167,7 @@ export class AsignacionesComponent implements OnInit {
     });
   }
 
+  // ✅ FUNCIÓN AÑADIDA
   public donarEquipo(asignacion: Asignacion) {
     const confirmacion = confirm(
       `¿Estás seguro de que deseas registrar el equipo "${this.getEquipoNombre(asignacion)}" como donado a ${this.getColaboradorNombre(asignacion)}? Esta acción es permanente y sacará al equipo del inventario.`
@@ -257,12 +258,14 @@ export class AsignacionesComponent implements OnInit {
   public getEquipoCodigo = (a: Asignacion) => a.equipment?.code || this.todosLosEquipos.find(e => e.id === a.equipmentId)?.code || '...';
   public getColaboradorNombre = (a: Asignacion) => a.collaborator?.fullName || this.colaboradores.find(c => c.id === a.collaboratorId)?.fullName || '...';
 
+  // ✅ FUNCIÓN ACTUALIZADA
   public getStatusClass = (status: string) => ({
     'status-prestado': status === 'assigned',
     'status-devuelto': status === 'released',
-    'status-atrasado': status === 'donated'
+    'status-donado': status === 'donated'
   });
 
+  // ✅ FUNCIÓN ACTUALIZADA
   public getStatusText = (status: string) => ({
     assigned: 'Asignado',
     released: 'Liberado',

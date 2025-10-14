@@ -1,3 +1,5 @@
+// Archivo completo: src/app/features/equipos/equipos.component.ts
+
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -54,8 +56,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
     description: ''
   };
 
-// src/app/features/equipos/equipos.component.ts
-
   availableTypes = [
     { value: 'Laptop', label: 'Laptop' },
     { value: 'PC / Gabinete', label: 'PC / Gabinete' },
@@ -69,13 +69,20 @@ export class EquiposComponent implements OnInit, OnDestroy {
     { value: 'Otro', label: 'Otro' }
   ];
 
+  // ✅ Lista para los filtros de la tabla (incluye todos los estados)
   availableStatuses = [
     { value: 'disponible', label: 'Disponible' },
     { value: 'prestado', label: 'Prestado' },
     { value: 'asignado', label: 'Asignado' },
     { value: 'mantenimiento', label: 'Mantenimiento' },
-    { value: 'dañado', label: 'Dañado' }
+    { value: 'dañado', label: 'Dañado' },
+    { value: 'donado', label: 'Donado' }
   ];
+
+  // ✅ Nueva lista, solo para el formulario (excluye estados automáticos)
+  formStatuses = this.availableStatuses.filter(s =>
+    ['disponible', 'mantenimiento', 'dañado'].includes(s.value)
+  );
 
   private searchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -121,7 +128,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
   load() {
     this.loading = true;
     this.error = '';
-    // ✅ **CORRECCIÓN:** El objeto de parámetros se construye con los valores actuales de las propiedades del componente.
     const params = { search: this.search.trim(), status: this.status, type: this.type };
     this.equiposSvc.list(params).subscribe({
       next: (data) => {
@@ -144,8 +150,6 @@ export class EquiposComponent implements OnInit, OnDestroy {
   }
 
   aplicarFiltros() {
-    // Esta función llama a load(), que ya utiliza los valores de this.status y this.type
-    // que fueron actualizados por el [(ngModel)] en el HTML.
     this.load();
   }
 
@@ -355,20 +359,24 @@ export class EquiposComponent implements OnInit, OnDestroy {
     return equipo.id;
   }
 
+  // ✅ FUNCIÓN ACTUALIZADA
   getStatusLabel(status: string): string {
     const statusMap: Record<string, string> = {
       'disponible': 'Disponible', 'prestado': 'Prestado', 'dañado': 'Dañado',
       'asignado': 'Asignado',
       'mantenimiento': 'Mantenimiento',
+      'donado': 'Donado',
     };
     return statusMap[status] || status;
   }
 
+  // ✅ FUNCIÓN ACTUALIZADA
   getStatusClass(status: string): string {
     const classMap: Record<string, string> = {
       'disponible': 'status-disponible', 'prestado': 'status-prestado', 'dañado': 'status-danado',
       'asignado': 'status-asignado',
       'mantenimiento': 'status-mantenimiento',
+      'donado': 'status-donado',
     };
     return classMap[status] || 'status-disponible';
   }
