@@ -1,16 +1,15 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-// Se calcula la ruta del directorio actual de una forma compatible con ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 import { Router } from 'express';
 import { sequelize } from '../db/sequelize.js';
 import { QueryTypes } from 'sequelize';
 import { authMiddleware } from '../middleware/auth.js';
 import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
+
+// ✅ Forma correcta de obtener __dirname en ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = Router();
 router.use(authMiddleware);
@@ -152,49 +151,39 @@ router.get('/weekly-activity', async (req, res, next) => {
   }
 });
 
-// --- 👇 SECCIÓN ACTUALIZADA 👇 ---
 router.get('/notifications', async (req, res, next) => {
   try {
     let notifications: any[] = [];
-    
-    // Query para préstamos atrasados, AÑADIENDO el campo 'link'
     const loansQuery = `
       SELECT 
         l.id,
         'La devolución del equipo "' || e.name || '" por "' || l."borrowerName" || '" está atrasada.' as message,
         'error' as type,
-        l."updatedAt" as "createdAt",
-        '/prestamos' as link
+        l."updatedAt" as "createdAt"
       FROM loans l
       JOIN equipments e ON l."equipmentId" = e.id
       WHERE l.status = 'atrasado'
     `;
     const atrasados = await sequelize.query(loansQuery, { type: QueryTypes.SELECT });
-
-    // Query para mantenimientos, AÑADIENDO el campo 'link'
     const maintenanceQuery = `
       SELECT 
         m.id,
         'El equipo "' || e.name || '" tiene un mantenimiento en estado: "' || m.status || '".' as message,
         'warning' as type,
-        m."createdAt",
-        '/mantenimiento' as link
+        m."createdAt"
       FROM maintenances m
       JOIN equipments e ON m."equipmentId" = e.id
       WHERE m.status IN ('en-proceso', 'programado')
     `;
     const mantenimientos = await sequelize.query(maintenanceQuery, { type: QueryTypes.SELECT });
-    
     notifications = [...atrasados, ...mantenimientos];
     notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
     res.json(notifications);
   } catch (error) {
     console.error('Error al generar notificaciones:', error);
     next(error);
   }
 });
-// --- 👆 FIN DE LA SECCIÓN ACTUALIZADA 👆 ---
 
 // ==========================================================
 // RUTAS PARA LA PÁGINA DE REPORTES

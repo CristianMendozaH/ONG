@@ -1,11 +1,5 @@
-// Archivo completo: src/models/Assignment.ts
+import { Table, Column, Model, DataType, Default, PrimaryKey } from 'sequelize-typescript';
 
-import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { Equipment } from './Equipment.js';
-import { Collaborator } from './Collaborator.js';
-import { User } from './User.js'; // <-- Asegúrate de importar tu modelo User
-
-// ✅ Tipo de estado actualizado para incluir 'donated'
 export type AssignmentStatus = 'assigned' | 'released' | 'donated';
 
 @Table({ tableName: 'assignments', timestamps: true })
@@ -13,13 +7,13 @@ export class Assignment extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  declare id: string;
+  id!: string;
 
-  @ForeignKey(() => Equipment)
+  // LIMPIEZA: Se eliminó el decorador @ForeignKey
   @Column({ field: 'equipment_id', type: DataType.UUID })
   equipmentId!: string;
 
-  @ForeignKey(() => Collaborator)
+  // LIMPIEZA: Se eliminó el decorador @ForeignKey
   @Column({ field: 'collaborator_id', type: DataType.UUID })
   collaboratorId!: string;
 
@@ -37,31 +31,19 @@ export class Assignment extends Model {
   @Column({ type: DataType.TEXT, allowNull: true })
   observations?: string;
 
-  // --- ✅ INICIO: CAMPOS ACTUALIZADOS Y AÑADIDOS ---
-
   @Column({ 
     type: DataType.ARRAY(DataType.TEXT), 
     allowNull: true 
   })
   accessories?: string[];
 
-  @ForeignKey(() => User) // <-- Enlace a la tabla de Usuarios
+  // LIMPIEZA: Se eliminó el decorador @ForeignKey
   @Column({ 
-    field: 'createdById', // <-- Guarda el ID del usuario
+    field: 'createdById',
     type: DataType.UUID, 
     allowNull: true 
   })
   createdById?: string;
-  
-  // --- FIN DE CAMPOS ---
 
-  // Relaciones
-  @BelongsTo(() => Equipment)
-  equipment?: Equipment;
-
-  @BelongsTo(() => Collaborator)
-  collaborator?: Collaborator;
-
-  @BelongsTo(() => User) // <-- Define la relación
-  creator?: User;
+  // LIMPIEZA: Todas las relaciones @BelongsTo y sus propiedades fueron eliminadas.
 }

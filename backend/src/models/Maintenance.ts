@@ -1,31 +1,29 @@
-import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { Equipment } from './Equipment.js';
+import { Table, Column, Model, DataType, Default, PrimaryKey } from 'sequelize-typescript';
 
 @Table({ tableName: 'maintenances', timestamps: true })
 export class Maintenance extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  declare id: string;
+  id!: string;
 
-  @ForeignKey(() => Equipment)
+  // LIMPIEZA: Se eliminó el decorador @ForeignKey
   @Column(DataType.UUID)
   equipmentId!: string;
 
   @Column(DataType.DATEONLY)
   scheduledDate!: string;
   
-  // ✅ CAMBIO: Añadir esta nueva columna
   @Column(DataType.DATEONLY)
   performedDate?: string;
 
-  @Column(DataType.STRING)   // preventivo/correctivo/predictivo/emergencia
+  @Column(DataType.STRING)
   type!: string;
 
-  @Column(DataType.STRING)   // alta/media/baja
+  @Column(DataType.STRING)
   priority!: string;
 
-  @Default('programado')     // programado/en-proceso/completado/cancelado
+  @Default('programado')
   @Column(DataType.STRING)
   status!: string;
 
@@ -35,7 +33,5 @@ export class Maintenance extends Model {
   @Column(DataType.TEXT)
   description?: string;
 
-  // 👇 para poder hacer include del equipo en consultas
-  @BelongsTo(() => Equipment, 'equipmentId')
-  equipment?: Equipment;
+  // LIMPIEZA: La relación @BelongsTo y la propiedad 'equipment' fueron eliminadas.
 }

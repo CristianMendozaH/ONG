@@ -7,7 +7,7 @@ import maintenancesRoutes from './maintenances.routes.js';
 import reportsRoutes from './reports.routes.js';
 import configRoutes from './config.routes.js';
 import healthRoutes from './health.routes.js';
-import assignmentsRoutes from './assignments.routes.js'; // ---> NUEVO
+import assignmentsRoutes from './assignments.routes.js';   // ---> NUEVO
 import collaboratorsRoutes from './collaborators.routes.js'; // ---> NUEVO
 
 const router = Router();

@@ -1,6 +1,7 @@
 import { Sequelize } from 'sequelize-typescript';
 import { env } from '../config/env.js';
 
+// Importación de todos los modelos de la aplicación
 import { User } from '../models/User.js';
 import { Equipment } from '../models/Equipment.js';
 import { Loan } from '../models/Loan.js';
@@ -9,6 +10,10 @@ import { Config } from '../models/Config.js';
 import { Assignment } from '../models/Assignment.js';
 import { Collaborator } from '../models/Collaborator.js';
 
+// 1. Se importa la nueva función que define todas las asociaciones
+import { defineAssociations } from './associations.js';
+
+// Creación de la instancia de Sequelize
 export const sequelize = new Sequelize({
   dialect: 'postgres',
   host: env.db.host,
@@ -16,8 +21,7 @@ export const sequelize = new Sequelize({
   database: env.db.name,
   username: env.db.user,
   password: env.db.pass,
-  logging: false,
-
+  logging: false, // Puedes ponerlo en `true` para ver las consultas SQL en la consola
   models: [
     User,
     Equipment,
@@ -26,26 +30,9 @@ export const sequelize = new Sequelize({
     Config,
     Assignment,
     Collaborator
-  ], 
+  ],
 });
 
-// =======================================================================
-// DEFINICIÓN DE RELACIONES
-// =======================================================================
-
-// -- ELIMINADO: Se quitaron las líneas de User <-> Equipment de aquí
-// porque ya están definidas en los modelos con los decoradores.
-
-// --- Relaciones de Equipos ---
-Equipment.hasMany(Loan, { foreignKey: 'equipmentId' });
-Loan.belongsTo(Equipment, { foreignKey: 'equipmentId' });
-
-Equipment.hasMany(Maintenance, { foreignKey: 'equipmentId' });
-Maintenance.belongsTo(Equipment, { foreignKey: 'equipmentId' });
-
-// --- Relaciones para Asignaciones ---
-Equipment.hasMany(Assignment, { foreignKey: 'equipmentId' });
-Assignment.belongsTo(Equipment, { foreignKey: 'equipmentId' });
-
-Collaborator.hasMany(Assignment, { foreignKey: 'collaboratorId' });
-Assignment.belongsTo(Collaborator, { foreignKey: 'collaboratorId' });
+// 2. Se llama a la función aquí para configurar todas las relaciones
+// Esto asegura que todos los modelos estén cargados antes de intentar crear las asociaciones.
+defineAssociations();

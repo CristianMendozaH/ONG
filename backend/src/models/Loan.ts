@@ -1,8 +1,4 @@
-// Archivo completo: src/models/Loan.ts (CORREGIDO)
-
-import { Table, Column, Model, DataType, Default, PrimaryKey, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { Equipment } from './Equipment.js';
-import { User } from './User.js';
+import { Table, Column, Model, DataType, Default, PrimaryKey } from 'sequelize-typescript';
 
 export type LoanStatus = 'prestado' | 'devuelto' | 'atrasado';
 
@@ -11,9 +7,9 @@ export class Loan extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  declare id: string;
+  id!: string;
 
-  @ForeignKey(() => Equipment)
+  // LIMPIEZA: Se eliminó el decorador @ForeignKey de aquí
   @Column(DataType.UUID)
   equipmentId!: string;
 
@@ -63,24 +59,18 @@ export class Loan extends Model {
   @Column(DataType.TEXT)
   observations?: string;
 
-  // --- PROPIEDAD AÑADIDA ---
   @Column({
     type: DataType.ARRAY(DataType.TEXT),
     allowNull: true,
   })
   accessories?: string[];
-  // -------------------------
 
   @Column({ type: DataType.STRING, allowNull: true })
   conditionOnReturn?: 'excelente' | 'bueno' | 'regular' | 'dañado';
 
-  @ForeignKey(() => User)
+  // LIMPIEZA: Se eliminó el decorador @ForeignKey de aquí
   @Column(DataType.UUID)
   registeredById!: string;
 
-  @BelongsTo(() => User, 'registeredById')
-  registrar?: User;
-
-  @BelongsTo(() => Equipment)
-  equipment?: Equipment;
+  // LIMPIEZA: Las relaciones @BelongsTo y las propiedades 'registrar' y 'equipment' fueron eliminadas.
 }

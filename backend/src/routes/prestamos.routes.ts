@@ -24,10 +24,9 @@ router.post('/', auth, async (req: any, res, next) => {
       borrowerContact,
       responsiblePartyName,
       dueDate,
-      accessories, // <-- 1. LEER accessories DE LA PETICIÓN
+      accessories,
     } = req.body;
 
-    // 1. Validaciones de campos requeridos
     if (!equipmentId || !borrowerName || !dueDate || !borrowerType) {
       return res.status(400).json({ message: 'Campos requeridos: equipmentId, borrowerName, borrowerType, dueDate' });
     }
@@ -38,7 +37,6 @@ router.post('/', auth, async (req: any, res, next) => {
       return res.status(400).json({ message: 'La fecha de devolución (dueDate) no es válida' });
     }
 
-    // 2. Transacción para garantizar la integridad de los datos
     const result = await sequelize.transaction(async (t) => {
       const eq = await Equipment.findByPk(equipmentId, { transaction: t, lock: t.LOCK.UPDATE });
       
@@ -49,7 +47,6 @@ router.post('/', auth, async (req: any, res, next) => {
         throw { status: 409, message: `El equipo no está disponible (estado actual: ${eq.status})` };
       }
 
-      // 3. Creación del registro del préstamo usando req.user.sub
       const loan = await Loan.create({
         equipmentId,
         borrowerName,
@@ -60,10 +57,9 @@ router.post('/', auth, async (req: any, res, next) => {
         dueDate,
         status: 'prestado',
         registeredById: req.user.sub,
-        accessories, // <-- 2. PASAR accessories AL MÉTODO create
+        accessories,
       }, { transaction: t });
 
-      // 4. Actualización del estado del equipo
       await eq.update({ status: 'prestado' }, { transaction: t });
 
       return loan;
@@ -76,10 +72,6 @@ router.post('/', auth, async (req: any, res, next) => {
     next(e);
   }
 });
-
-
-// --- EL RESTO DE LAS RUTAS PERMANECEN IGUAL ---
-
 
 /**
  * @route   POST /api/prestamos/:id/return
@@ -153,9 +145,10 @@ router.post('/:id/return', auth, async (req: any, res, next) => {
 router.get('/', auth, async (req, res, next) => {
   try {
     const loans = await Loan.findAll({
+      // CAMBIO: Se añadió el alias 'equipment' para el modelo Equipment
       include: [
-        { model: Equipment, attributes: ['name', 'code'] },
-        { model: User, as: 'registrar', attributes: ['id', 'name'] }
+        { model: Equipment, as: 'equipment', attributes: ['name', 'code'] },
+        { model: User, as: 'registeredBy', attributes: ['id', 'name'] }
       ],
       order: [['createdAt', 'DESC']],
     });
@@ -173,9 +166,10 @@ router.get('/', auth, async (req, res, next) => {
 router.get('/:id', auth, async (req, res, next) => {
   try {
     const loan = await Loan.findByPk(req.params.id, { 
+      // CAMBIO: Se añadió el alias 'equipment' para el modelo Equipment
       include: [
-        { model: Equipment },
-        { model: User, as: 'registrar', attributes: ['id', 'name'] }
+        { model: Equipment, as: 'equipment' },
+        { model: User, as: 'registeredBy', attributes: ['id', 'name'] }
       ] 
     });
     if (!loan) {
@@ -220,9 +214,6 @@ router.patch('/:id/extend', auth, async (req, res, next) => {
 
     await loan.update({ 
         dueDate,
-        // Opcional: Si tu modelo Loan tiene campos para guardar esto, descomenta las líneas.
-        // extensionReason: reason,
-        // extensionComments: comments,
     });
 
     res.json(loan);

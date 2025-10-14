@@ -46,6 +46,6 @@ async function maintOverdue() {
       <p>Equipo: <b>${plain.equipment?.code} - ${plain.equipment?.name}</b></p>
       <p>Técnico: ${plain.technician || '—'}</p>
       <p>Programado para: <b>${plain.scheduledDate}</b> (no completado)</p>`;
-    //await sendMail({ to: toEmail, subject: 'Mantenimiento vencido', html });
+   // await sendMail({ to: toEmail, subject: 'Mantenimiento vencido', html });
   }
 }
