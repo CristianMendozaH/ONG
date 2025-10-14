@@ -143,4 +143,4 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 ## 👨‍💻 Autor
 
 **Cristian Daniel Mendoza Hernández**
-- Email: cristian.mendoza@example.com
+- Email: cristian8mendoza8@gmail.com
