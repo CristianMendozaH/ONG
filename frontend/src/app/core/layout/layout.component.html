@@ -30,9 +30,9 @@
       <a *ngIf="userStore.isAdmin()" routerLink="/usuarios" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-users"></i><span>Usuarios</span>
       </a>
-      <a *ngIf="userStore.isAdmin()" routerLink="/config" routerLinkActive="active" class="menu-item">
+      <!-- <a *ngIf="userStore.isAdmin()" routerLink="/config" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-gear"></i><span>Configuración</span>
-      </a>
+      </a> -->
 
       <a (click)="logout()" class="menu-item">
         <i class="fa-solid fa-right-from-bracket"></i><span>Salir</span>
