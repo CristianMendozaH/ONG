@@ -1,4 +1,4 @@
-import { Router, Request } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { sequelize } from '../db/sequelize.js';
 import { auth } from '../middleware/auth.js';
 import { Assignment } from '../models/Assignment.js';
@@ -20,7 +20,7 @@ const router = Router();
  * @desc    Crear una nueva asignación de equipo
  * @access  Private
  */
-router.post('/', auth, async (req: AuthRequest, res, next) => {
+router.post('/', auth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { equipmentId, collaboratorId, assignmentDate, observations, accessories } = req.body;
     if (!equipmentId || !collaboratorId || !assignmentDate) {
@@ -57,13 +57,18 @@ router.post('/', auth, async (req: AuthRequest, res, next) => {
  * @desc    Listar todas las asignaciones
  * @access  Private
  */
-router.get('/', auth, async (req, res, next) => {
+router.get('/', auth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const assignments = await Assignment.findAll({
-      // CAMBIO: Se añadieron los alias para Equipment y Collaborator
       include: [
         { model: Equipment, as: 'assignedEquipment', attributes: ['name', 'code'] },
-        { model: Collaborator, as: 'collaborator', attributes: ['fullName', 'program'] },
+        // --- 👇 INICIO DE LA CORRECCIÓN 👇 ---
+        { 
+          model: Collaborator, 
+          as: 'collaborator', 
+          attributes: ['fullName', 'program', 'type'] // ✅ AÑADIMOS 'type' A LOS ATRIBUTOS
+        },
+        // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
         { model: User, as: 'creator', attributes: ['name'] }
       ],
       order: [['createdAt', 'DESC']],
@@ -79,13 +84,12 @@ router.get('/', auth, async (req, res, next) => {
  * @desc    Obtener una asignación por su ID
  * @access  Private
  */
-router.get('/:id', auth, async (req, res, next) => {
+router.get('/:id', auth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const assignment = await Assignment.findByPk(req.params.id, {
-        // CAMBIO: Se añadieron los alias para Equipment y Collaborator
         include: [
           { model: Equipment, as: 'assignedEquipment' },
-          { model: Collaborator, as: 'collaborator' },
+          { model: Collaborator, as: 'collaborator' }, // En la vista de detalle, traemos todo el colaborador
           { model: User, as: 'creator', attributes: ['name'] }
         ]
     });
@@ -101,7 +105,7 @@ router.get('/:id', auth, async (req, res, next) => {
  * @desc    Actualizar una asignación existente
  * @access  Private
  */
-router.patch('/:id', auth, async (req, res, next) => {
+router.patch('/:id', auth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { equipmentId, collaboratorId, assignmentDate, observations, accessories } = req.body;
     const result = await sequelize.transaction(async (t) => {
@@ -130,7 +134,7 @@ router.patch('/:id', auth, async (req, res, next) => {
  * @desc    Procesar la liberación de un equipo asignado
  * @access  Private
  */
-router.post('/:id/release', auth, async (req, res, next) => {
+router.post('/:id/release', auth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { releaseDate: releaseDateStr, observations, condition } = req.body;
     if (!condition) return res.status(400).json({ message: 'La condición del equipo es requerida.' });
@@ -159,7 +163,7 @@ router.post('/:id/release', auth, async (req, res, next) => {
  * @desc    Registrar la donación de un equipo asignado a un becado
  * @access  Private
  */
-router.post('/:id/donate', auth, async (req, res, next) => {
+router.post('/:id/donate', auth, async (req: Request, res: Response, next: NextFunction) => {
     try {
       const updatedAssignment = await sequelize.transaction(async (t) => {
         const assignment = await Assignment.findByPk(req.params.id, { transaction: t });

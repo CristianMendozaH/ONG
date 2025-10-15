@@ -158,7 +158,6 @@
             <p *ngIf="selectedAsignacion.creator?.name"><strong>Registrado por:</strong> {{ selectedAsignacion.creator?.name }}</p>
           </div>
         </div>
-
         <div class="details-section">
           <h4 class="details-title">Detalles del Equipo</h4>
           <div class="details-grid">
@@ -166,14 +165,12 @@
             <div class="detail-item"><span class="detail-label">Nombre</span><span class="detail-value">{{ getEquipoNombre(selectedAsignacion) }}</span></div>
           </div>
         </div>
-
         <div class="details-section" *ngIf="selectedAsignacion.accessories && selectedAsignacion.accessories.length > 0">
           <h4 class="details-title">Accesorios Incluidos</h4>
           <ul class="accessories-list">
             <li *ngFor="let acc of selectedAsignacion.accessories">{{ acc }}</li>
           </ul>
         </div>
-
         <div class="details-section">
           <h4 class="details-title">Información del Colaborador</h4>
           <div class="details-grid">
@@ -183,11 +180,9 @@
             <div class="detail-item"><span class="detail-label">Programa</span><span class="detail-value">{{ selectedAsignacion.collaborator?.program }}</span></div>
           </div>
         </div>
-
         <div class="summary-observations" *ngIf="selectedAsignacion.observations">
             <p><strong>Observaciones de Asignación:</strong> {{ selectedAsignacion.observations }}</p>
         </div>
-
         <div class="agreement-section">
           <p>
             Por este medio, yo, <strong>{{ getColaboradorNombre(selectedAsignacion) }}</strong>,
@@ -196,7 +191,6 @@
             para fines laborales y notificar cualquier desperfecto de manera inmediata.
           </p>
         </div>
-
         <div class="receipt-footer">
           <div class="signature-box">
             <p class="signature-title">Firma del Colaborador</p>
@@ -212,6 +206,27 @@
     <div class="modal-footer no-print">
       <button type="button" class="btn-cancel" (click)="closeModal('detalles')">Cancelar</button>
       <button type="button" class="btn-confirm btn-print" (click)="imprimirComprobante()"><i class="fas fa-print"></i> Imprimir / Descargar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" [class.show]="showDonacionModal" (click)="closeModal('donacion')">
+  <div class="modal confirmation" (click)="$event.stopPropagation()">
+    <div class="modal-body">
+        <div class="confirmation-icon warning">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="confirmation-title">Confirmar Donación</h3>
+        <p class="confirmation-text" *ngIf="selectedAsignacion">
+            ¿Estás seguro de que deseas registrar el equipo <strong>"{{ getEquipoNombre(selectedAsignacion) }}"</strong> como donado a <strong>{{ getColaboradorNombre(selectedAsignacion) }}</strong>?
+        </p>
+        <p class="confirmation-subtext">Esta acción es permanente y sacará al equipo del inventario.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeModal('donacion')">Cancelar</button>
+      <button type="button" class="btn-confirm donate-confirm" (click)="confirmarDonacion()">
+        <i class="fas fa-check"></i> Sí, Donar Equipo
+      </button>
     </div>
   </div>
 </div>
