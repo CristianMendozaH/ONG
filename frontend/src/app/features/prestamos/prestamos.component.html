@@ -117,7 +117,7 @@
           <td>{{ prestamo.dueDate | date:'dd/MM/yyyy' }}</td>
           <td><span class="status-badge" [ngClass]="getStatusClass(prestamo)">{{ getStatusText(prestamo.status) }}</span></td>
           <td>
-            {{ prestamo.registrar?.name || 'N/A' }}
+            {{ prestamo.registeredBy?.name || 'N/A' }}
           </td>
           <td><div class="actions-cell"><button class="action-btn btn-view" (click)="viewLoan(prestamo)"><i class="fas fa-eye"></i>Ver</button><button class="action-btn btn-return-action" *ngIf="prestamo.status !== 'devuelto'" (click)="returnLoan(prestamo)"><i class="fas fa-undo"></i>Devolver</button><button class="action-btn btn-extend" *ngIf="prestamo.status !== 'devuelto'" (click)="extendLoan(prestamo)"><i class="fas fa-calendar-plus"></i>Extender</button><button class="action-btn btn-qr" (click)="verQR(prestamo)"><i class="fas fa-qrcode"></i>QR</button></div></td>
         </tr>
@@ -257,13 +257,22 @@
 
       <div *ngIf="selectedPrestamo.status === 'devuelto'" class="details-section return-details">
         <h4 class="details-title">Detalles de la Devolución</h4>
-        <div class="return-observations" *ngIf="selectedPrestamo.observations">
+        <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Fecha de Devolución</span>
+              <span class="detail-value">{{ selectedPrestamo.returnDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+             <div class="detail-item">
+              <span class="detail-label">Condición del Equipo</span>
+              <span class="detail-value" style="text-transform: capitalize;">{{ selectedPrestamo.conditionOnReturn || 'N/A' }}</span>
+            </div>
+        </div>
+        <div class="return-observations" *ngIf="selectedPrestamo.observations" style="margin-top: 15px;">
           <p><strong>Observaciones de Devolución:</strong></p>
           <blockquote>"{{ selectedPrestamo.observations }}"</blockquote>
         </div>
-        <p *ngIf="!selectedPrestamo.observations">No se registraron observaciones.</p>
+        <p *ngIf="!selectedPrestamo.observations" style="margin-top: 15px;">No se registraron observaciones adicionales en la devolución.</p>
       </div>
-
       <div class="receipt-footer">
         <div class="signature-box">
           <p class="signature-line"></p>
@@ -279,7 +288,7 @@
 
         <div class="signature-box">
           <p class="signature-line"></p>
-          <p class="signature-name">{{ selectedPrestamo.registrar?.name || 'N/A' }}</p>
+          <p class="signature-name">{{ selectedPrestamo.registeredBy?.name || 'N/A' }}</p>
           <p class="signature-title">Firma del Encargado (ONG)</p>
         </div>
       </div>

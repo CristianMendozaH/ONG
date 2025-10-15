@@ -1,3 +1,5 @@
+// Archivo completo: src/app/features/prestamos/prestamos.service.ts (MODIFICADO)
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -23,7 +25,8 @@ export interface Prestamo {
   equipment?: Equipo;
   createdAt?: string;
   updatedAt?: string;
-  registrar?: User;
+  // 👇 CAMBIO AQUÍ: Se cambió 'registrar' por 'registeredBy' para coincidir con el backend
+  registeredBy?: User;
   accessories?: string[]; // Campo para los accesorios
 }
 

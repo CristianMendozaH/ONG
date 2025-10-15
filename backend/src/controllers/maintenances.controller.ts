@@ -41,10 +41,9 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     const newMaintenance = await Maintenance.create({
       equipmentId, scheduledDate, type, priority, technician, description, status: 'programado'
     }, { transaction: t });
-    await Equipment.update(
-      { status: 'programado' },
-      { where: { id: equipmentId }, transaction: t }
-    );
+
+    // ----- ACTUALIZACIÓN: Se eliminó la actualización del estado del equipo -----
+
     await t.commit();
     res.status(201).json(newMaintenance);
   } catch (error) {
@@ -53,19 +52,20 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-// ... (El resto de las funciones create, update, remove, etc., no cambian)
 export async function update(req: Request, res: Response) {
   const row = await Maintenance.findByPk(req.params.id);
   if (!row) return res.status(404).json({ message: 'No encontrado' });
   await row.update(req.body);
   res.json(row);
 }
+
 export async function remove(req: Request, res: Response) {
   const row = await Maintenance.findByPk(req.params.id);
   if (!row) return res.status(404).json({ message: 'No encontrado' });
   await row.destroy();
   res.json({ ok: true });
 }
+
 export async function start(req: Request, res: Response, next: NextFunction) {
   const t = await sequelize.transaction();
   try {
@@ -76,8 +76,9 @@ export async function start(req: Request, res: Response, next: NextFunction) {
     }
     await maintenance.update({ status: 'en-proceso' }, { transaction: t });
     if (maintenance.equipmentId) {
+      // ----- ACTUALIZACIÓN: Se cambió el estado del equipo a 'en mantenimiento' -----
       await Equipment.update(
-        { status: 'en-proceso' },
+        { status: 'mantenimiento' },
         { where: { id: maintenance.equipmentId }, transaction: t }
       );
     }
@@ -88,6 +89,7 @@ export async function start(req: Request, res: Response, next: NextFunction) {
     next(error);
   }
 }
+
 export async function complete(req: Request, res: Response, next: NextFunction) {
   const t = await sequelize.transaction();
   try {
@@ -111,6 +113,7 @@ export async function complete(req: Request, res: Response, next: NextFunction) 
     next(error);
   }
 }
+
 export async function cancel(req: Request, res: Response, next: NextFunction) {
   const t = await sequelize.transaction();
   try {

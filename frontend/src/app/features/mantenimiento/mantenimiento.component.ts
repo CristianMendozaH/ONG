@@ -123,11 +123,24 @@ export class MantenimientoComponent implements OnInit {
     const currentFilters = { status: this.statusFilter, type: this.typeFilter };
     this.mantSvc.list(currentFilters).subscribe({
       next: (res) => {
-        const sorted = res.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+        // 1. Creamos un mapa para buscar equipos de forma eficiente por su ID.
+        const equiposMap = new Map(this.equipos.map(e => [e.id, e]));
+
+        // 2. Usamos .map() para crear un nuevo arreglo de mantenimientos.
+        //    Para cada mantenimiento, buscamos su equipo en el mapa y lo adjuntamos.
+        const maintenancesWithEquipment = res.map(mant => ({
+          ...mant,
+          equipment: equiposMap.get(mant.equipmentId) // Aquí adjuntamos el objeto equipo
+        }));
+
+        // Ahora trabajamos con el arreglo que ya tiene los datos combinados
+        const sorted = maintenancesWithEquipment.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+
         this.mantenimientos = sorted.map((item, index) => ({
           ...item,
           displayId: `MA-${String(index + 1).padStart(4, '0')}`
         }));
+
         this.generarAlertasDinamicas();
         this.updateAvailableEquipmentList();
         this.loading = false;
