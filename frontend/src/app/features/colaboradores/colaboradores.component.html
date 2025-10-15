@@ -1,0 +1,162 @@
+<header class="header">
+  <div class="header-left">
+    <h1>Gestión de Colaboradores</h1>
+    <div class="breadcrumb">
+      <a routerLink="/dashboard">Dashboard</a>
+      <i class="fas fa-chevron-right"></i>
+      <span>Colaboradores</span>
+    </div>
+  </div>
+</header>
+
+<div class="page-content">
+  <!-- SECCIÓN DE FILTROS -->
+  <div class="filters-card">
+    <div class="filters-row" style="grid-template-columns: 1fr 200px auto;">
+      <div class="filter">
+        <label>Buscar por Nombre, Puesto o Programa</label>
+        <input
+          type="text"
+          placeholder="Escribe para buscar..."
+          [(ngModel)]="search"
+          (ngModelChange)="onSearchChange()" />
+      </div>
+      <div class="filter">
+        <label>Filtrar por Tipo</label>
+        <select [(ngModel)]="typeFilter" (change)="onFilterChange()">
+          <option value="">Todos los Tipos</option>
+          <option value="Colaborador">Colaborador</option>
+          <option value="Becado">Becado</option>
+        </select>
+      </div>
+      <div class="filters-actions">
+        <button class="btn-secondary" type="button" (click)="clearFilters()">
+          <i class="fas fa-eraser"></i> Limpiar
+        </button>
+        <button class="btn-primary" type="button" (click)="abrirModalNuevo()">
+          <i class="fas fa-plus"></i> Nuevo Colaborador
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTADOS DE CARGA Y ERROR -->
+  <div class="state" *ngIf="loading"><i class="fas fa-spinner fa-spin"></i> Cargando colaboradores...</div>
+  <div class="state error" *ngIf="!loading && error">{{ error }}</div>
+
+  <!-- TABLA DE COLABORADORES -->
+  <div class="table-card" *ngIf="!loading && !error">
+    <table class="equipos-table" *ngIf="colaboradores.length > 0; else emptyList">
+      <thead>
+        <tr>
+          <th>Nombre Completo</th>
+          <th style="width: 160px;">Tipo</th>
+          <th>Puesto / Programa</th>
+          <th style="width: 180px;">Registrado Por</th>
+          <th style="width: 160px;">Estado</th>
+          <th style="width: 120px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let colaborador of colaboradores">
+          <td>
+            <div class="name">{{ colaborador.fullName }}</div>
+            <div class="muted" *ngIf="colaborador.contact">{{ colaborador.contact }}</div>
+          </td>
+          <td>{{ colaborador.type }}</td>
+          <td>
+            <div class="name">{{ colaborador.position || 'N/A' }}</div>
+            <div class="muted" *ngIf="colaborador.program">Programa: {{ colaborador.program }}</div>
+          </td>
+          <td>{{ colaborador.creator?.name || 'No registrado' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="colaborador.isActive ? 'status-disponible' : 'status-danado'">
+              {{ colaborador.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="actions">
+            <button class="btn-warning" (click)="abrirModalEditar(colaborador)" title="Editar Colaborador">
+              <i class="fas fa-edit"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #emptyList>
+      <div class="empty">
+        <i class="fas fa-users"></i>
+        <p>No se encontraron colaboradores.</p>
+        <p *ngIf="search || typeFilter">Intenta ajustar los filtros o límpialos para ver todos los registros.</p>
+        <p *ngIf="!search && !typeFilter">Haz clic en "Nuevo Colaborador" para empezar.</p>
+      </div>
+    </ng-template>
+  </div>
+</div>
+
+<!-- MODAL PARA CREAR/EDITAR -->
+<div class="modal-overlay" *ngIf="showModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ modalTitle }}</h3>
+      <button class="modal-close" (click)="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <form class="modal-body" (ngSubmit)="guardarCambios()">
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label>Nombre Completo *</label>
+        <input type="text" [(ngModel)]="formModel.fullName" name="fullName" required placeholder="Ej: Ana María García">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo *</label>
+          <select [(ngModel)]="formModel.type" name="type" required>
+            <option value="Colaborador">Colaborador</option>
+            <option value="Becado">Becado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Puesto</label>
+          <input type="text" [(ngModel)]="formModel.position" name="position" placeholder="Ej: Coordinador de Proyectos">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Programa</label>
+          <select [(ngModel)]="formModel.program" name="program">
+            <option [ngValue]="undefined">Seleccione un programa...</option>
+            <option *ngFor="let programa of programasDisponibles" [value]="programa">{{ programa }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Contacto (Opcional)</label>
+          <input type="text" [(ngModel)]="formModel.contact" name="contact" placeholder="Ej: Teléfono o Email">
+        </div>
+      </div>
+      <div class="form-group" *ngIf="isEditMode">
+        <label>
+          <input type="checkbox" [(ngModel)]="formModel.isActive" name="isActive"> Usuario Activo
+        </label>
+        <small class="muted" style="display: block;">(Desmarca esta casilla para desactivar al colaborador)</small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
+        <button type="submit" class="btn-primary">
+          <i class="fas fa-save"></i> {{ isEditMode ? 'Actualizar Cambios' : 'Guardar Colaborador' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- CONTENEDOR DE NOTIFICACIONES -->
+<div class="toast-container">
+  <div *ngFor="let toast of toasts" class="toast {{ toast.type }}">
+    <div class="toast-icon">
+      <i *ngIf="toast.type === 'success'" class="fas fa-check-circle"></i>
+      <i *ngIf="toast.type === 'error'" class="fas fa-exclamation-circle"></i>
+    </div>
+    <div class="toast-message">{{ toast.message }}</div>
+    <button class="toast-close" (click)="removeToast(toast.id)"><i class="fas fa-times"></i></button>
+  </div>
+</div>
+

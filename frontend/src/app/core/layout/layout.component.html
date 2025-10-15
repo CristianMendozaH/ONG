@@ -30,6 +30,12 @@
       <a *ngIf="userStore.isAdmin()" routerLink="/usuarios" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-users"></i><span>Usuarios</span>
       </a>
+
+      <!-- Enlace añadido para el nuevo módulo -->
+      <a *ngIf="userStore.isAdmin()" routerLink="/colaboradores" routerLinkActive="active" class="menu-item">
+        <i class="fa-solid fa-address-book"></i><span>Colaboradores</span>
+      </a>
+
       <!-- <a *ngIf="userStore.isAdmin()" routerLink="/config" routerLinkActive="active" class="menu-item">
         <i class="fa-solid fa-gear"></i><span>Configuración</span>
       </a> -->
@@ -48,3 +54,4 @@
     <i class="fa-solid fa-bars"></i>
   </button>
 </div>
+

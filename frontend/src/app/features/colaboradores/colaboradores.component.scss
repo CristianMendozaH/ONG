@@ -1,0 +1,428 @@
+// Archivo completo: src/app/features/colaboradores/colaboradores.component.scss
+
+/* Este archivo reutiliza los estilos globales definidos en otros módulos
+  para mantener una apariencia consistente en toda la aplicación.
+  Las clases como .header, .page-content, .btn-primary, .table-card,
+  .modal-overlay, etc., son tomadas del diseño existente.
+*/
+
+/* ====== Layout / Header ====== */
+.header {
+  background: #fff;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eef2f7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .header-left {
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #33475b;
+      margin: 0 0 6px;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #6b7280;
+      font-size: 0.9rem;
+
+      a {
+        color: #114495;
+        text-decoration: none;
+
+        &:hover { text-decoration: underline; }
+      }
+
+      i { color: #c0c7d1; }
+    }
+  }
+}
+
+/* ====== Page content ====== */
+.page-content {
+  padding: 24px;
+}
+
+/* ====== Filters card ====== */
+.filters-card {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 20px rgba(17, 68, 149, 0.06);
+
+  .filters-row {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    justify-content: space-between;
+
+    .filter {
+      label {
+        display: block;
+        font-size: .85rem;
+        color: #33475b;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+
+      input, select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #d8dee6;
+        background: #fff;
+        outline: none;
+        transition: box-shadow .2s, border-color .2s;
+        font-size: .95rem;
+
+        &:focus {
+          border-color: #114495;
+          box-shadow: 0 0 0 3px rgba(17,68,149,.12);
+        }
+      }
+    }
+  }
+}
+
+/* ====== Buttons ====== */
+.btn-primary,
+.btn-secondary,
+.btn-warning,
+.btn-danger,
+.btn-info,
+.btn-ghost {
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform .05s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
+
+  i { font-size: .95rem; }
+
+  &:active { transform: translateY(1px); }
+}
+
+.btn-primary {
+  background: #114495; color: #fff;
+  box-shadow: 0 6px 14px rgba(17,68,149,.2);
+  &:hover { background: #0f3f88; }
+}
+.btn-secondary {
+  background: #eef2f7; color: #33475b;
+  &:hover { background: #e5ebf4; }
+}
+.btn-warning {
+  background: #EE9D08; color: #fff;
+  box-shadow: 0 6px 14px rgba(238,157,8,.25);
+  &:hover { background: #d8890a; }
+}
+.btn-danger {
+  background: #E6331B; color: #fff;
+  box-shadow: 0 6px 14px rgba(230,51,27,.25);
+  &:hover { background: #cf2c17; }
+}
+.btn-info {
+  background: #00a2c7; color: #fff;
+  box-shadow: 0 6px 14px rgba(0,162,199,.25);
+  &:hover { background: #0093b5; }
+}
+.btn-ghost {
+  background: transparent; color: #114495;
+  border: 1px solid #d8dee6;
+  &:hover { background: #f4f7fb; }
+}
+
+/* ====== States ====== */
+.state {
+  margin: 8px 0 16px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &.error { color: #b91c1c; }
+}
+
+/* ====== Table card ====== */
+.table-card {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(0,0,0,.06);
+}
+
+.equipos-table { // Reutilizamos la clase para no duplicar código
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background: #eaf2ff;
+    th {
+      color: #114495;
+      font-weight: 700;
+      letter-spacing: .2px;
+      border-bottom: 2px solid #114495;
+    }
+  }
+
+  th, td {
+    padding: 14px 16px;
+    text-align: left;
+    font-size: .95rem;
+    border-bottom: 1px solid #f0f3f7;
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background .12s;
+    &:hover { background: #f8fbff; }
+  }
+
+  .name { font-weight: 600; color: #33475b; }
+  .muted { color: #6b7280; font-size: .88rem; margin-top: 3px; }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .btn-warning { // Adaptado para el botón de editar
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      justify-content: center;
+
+      i {
+        font-size: 1rem;
+        margin: 0;
+      }
+    }
+  }
+}
+
+/* ====== Status badges ====== */
+/* Usamos las clases existentes de equipos.component.scss
+   para los estados 'Activo' (status-disponible)
+   e 'Inactivo' (status-danado) para mantener la consistencia.
+   No es necesario redefinir .status-badge aquí si los estilos
+   son globales o importados.
+*/
+.status-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .2px;
+  border: 1px solid transparent;
+
+  &.status-disponible { background: #e7f6ef; color: #166534; border-color: rgba(22,101,52,.25); }
+  &.status-danado { background: #fde8e8; color: #991b1b; border-color: rgba(153,27,27,.25); }
+}
+
+/* ====== Empty state ====== */
+.empty {
+  text-align: center;
+  color: #6b7280;
+  padding: 48px 16px;
+
+  i {
+    font-size: 2rem;
+    color: #c7d2fe;
+    margin-bottom: 10px;
+  }
+
+  p { margin: 0; }
+}
+
+/* ====== Modals ====== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 60;
+}
+
+.modal {
+  width: 100%;
+  max-width: 720px;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0,0,0,.28);
+  display: flex;
+  flex-direction: column;
+
+  .modal-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #eef2f7;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .modal-title {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #33475b;
+    }
+
+    .modal-close {
+      border: 0;
+      background: transparent;
+      color: #6b7280;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+
+      &:hover { background: #f4f7fb; color: #33475b; }
+    }
+  }
+
+  .modal-body {
+    padding: 18px 20px;
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .form-group {
+      label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        color: #33475b;
+        font-weight: 600;
+        font-size: .92rem;
+      }
+
+      input[type="text"], input[type="email"], select {
+        width: 100%;
+        border: 1px solid #d8dee6;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: #fff;
+        outline: none;
+        transition: border-color .2s, box-shadow .2s;
+
+        &:focus {
+          border-color: #114495;
+          box-shadow: 0 0 0 3px rgba(17,68,149,.12);
+        }
+      }
+
+      input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #eef2f7;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+}
+
+/* ================================== */
+/* ESTILOS PARA NOTIFICACIONES */
+/* ================================== */
+$success-color: #2ECC71;
+$danger-color: #E6331B;
+$text-color: #33475b;
+$text-muted: #6c757d;
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  width: 320px;
+  background: white;
+  color: $text-color;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  animation: slideInRight 0.5s ease forwards;
+  border-left: 5px solid;
+
+  .toast-icon {
+    font-size: 1.5rem;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .toast-message {
+    flex-grow: 1;
+    font-size: 0.9rem;
+    padding-right: 10px;
+  }
+
+  .toast-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: $text-muted;
+    cursor: pointer;
+    padding: 5px;
+    flex-shrink: 0;
+    &:hover {
+      color: $text-color;
+    }
+  }
+
+  &.success {
+    border-color: $success-color;
+    .toast-icon {
+      color: $success-color;
+    }
+  }
+
+  &.error {
+    border-color: $danger-color;
+    .toast-icon {
+      color: $danger-color;
+    }
+  }
+}

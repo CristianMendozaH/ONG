@@ -31,13 +31,11 @@ export const routes: Routes = [
         data: { roles: ['admin', 'tecnico'] },
         loadComponent: () => import('./features/prestamos/prestamos.component').then(m => m.PrestamosComponent)
       },
-      // 👇 AÑADE ESTA NUEVA RUTA AQUÍ 👇
       {
         path: 'asignaciones',
         data: { roles: ['admin', 'tecnico'] },
         loadComponent: () => import('./features/asignaciones/asignaciones.component').then(m => m.AsignacionesComponent)
       },
-      // ---------------------------------
       {
         path: 'mantenimiento',
         data: { roles: ['admin', 'tecnico'] },
@@ -54,6 +52,12 @@ export const routes: Routes = [
         path: 'usuarios',
         data: { roles: ['admin'] },
         loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
+      },
+      // ✅ RUTA AÑADIDA PARA EL NUEVO MÓDULO
+      {
+        path: 'colaboradores',
+        data: { roles: ['admin'] }, // Solo los admins pueden gestionar colaboradores
+        loadChildren: () => import('./features/colaboradores/colaboradores.routes').then(m => m.COLABORADORES_ROUTES)
       },
       // {
       //   path: 'config',

@@ -6,18 +6,20 @@ import { Assignment } from '../models/Assignment.js';
 import { Collaborator } from '../models/Collaborator.js';
 
 export function defineAssociations() {
-  // --- Relaciones de User ---
-  User.hasMany(Equipment, { foreignKey: 'createdBy', as: 'equipments' });
-  Equipment.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
-
+  // --- Relaciones que EMPIEZAN en User (hasMany) ---
+  // Cada una de estas relaciones necesita un alias único para que User sepa
+  // a qué lista de "hijos" se refiere.
+  User.hasMany(Equipment, { foreignKey: 'createdBy', as: 'equipmentsCreated' });
   User.hasMany(Loan, { foreignKey: 'registeredById', as: 'loansRegistered' });
-  Loan.belongsTo(User, { foreignKey: 'registeredById', as: 'registeredBy' });
+  User.hasMany(Assignment, { foreignKey: 'createdById', as: 'assignmentsCreated' });
+  User.hasMany(Collaborator, { foreignKey: 'createdById', as: 'collaboratorsCreated' });
 
-  // 👇 --- INICIO DE LA CORRECCIÓN --- 👇
-  // Un Usuario crea muchas Asignaciones
-  User.hasMany(Assignment, { foreignKey: 'createdById', as: 'createdAssignments' });
+  // --- Relaciones que LLEGAN a User (belongsTo) ---
+  // Aquí el alias 'creator' puede ser reutilizado porque el modelo de origen es diferente.
+  Equipment.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+  Loan.belongsTo(User, { foreignKey: 'registeredById', as: 'registeredBy' });
   Assignment.belongsTo(User, { foreignKey: 'createdById', as: 'creator' });
-  // 👆 --- FIN DE LA CORRECCIÓN --- 👆
+  Collaborator.belongsTo(User, { foreignKey: 'createdById', as: 'creator' });
 
 
   // --- Relaciones de Equipment ---
