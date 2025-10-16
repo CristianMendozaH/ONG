@@ -12,6 +12,15 @@ export interface AlertaPredictiva {
   meta: string;
 }
 
+// Interfaz para el nuevo DTO de Mantenimiento Predictivo
+export interface PredictiveMaintenance {
+  id: string;
+  name: string;
+  lastMaintenance: string | null;
+  daysSince: number;
+  status: string;
+}
+
 export interface Mantenimiento {
   id: string;
   displayId?: string;
@@ -56,6 +65,15 @@ export class MantenimientoService {
     }
 
     return this.http.get<Mantenimiento[]>(this.base, { params });
+  }
+
+  // --- NUEVA FUNCIÓN AÑADIDA ---
+  /**
+   * Obtiene la lista de equipos con su estado de mantenimiento predictivo.
+   * @returns Un Observable con un arreglo de objetos PredictiveMaintenance.
+   */
+  getPredictiveMaintenance(): Observable<PredictiveMaintenance[]> {
+    return this.http.get<PredictiveMaintenance[]>(`${this.base}/predictive`);
   }
 
   create(payload: CrearMantDTO): Observable<Mantenimiento> {

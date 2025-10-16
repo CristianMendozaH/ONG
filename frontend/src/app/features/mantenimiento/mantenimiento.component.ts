@@ -5,7 +5,8 @@ import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { MantenimientoService, Mantenimiento, CrearMantDTO, AlertaPredictiva } from './mantenimiento.service';
+// Se importa la nueva interfaz
+import { MantenimientoService, Mantenimiento, CrearMantDTO, AlertaPredictiva, PredictiveMaintenance } from './mantenimiento.service';
 import { EquiposService, Equipo } from '../equipos/equipos.service';
 
 // Interfaz para la estructura del objeto Toast
@@ -44,6 +45,13 @@ export class MantenimientoComponent implements OnInit {
   equipos: Equipo[] = [];
   availableEquipos: Equipo[] = [];
   alertas: AlertaPredictiva[] = [];
+
+  // --- NUEVAS VARIABLES AÑADIDAS ---
+  predictiveList: PredictiveMaintenance[] = [];
+  predictiveLoading = false;
+  predictiveError = '';
+  // ---
+
   loading = false;
   error = '';
   saving = false;
@@ -77,11 +85,32 @@ export class MantenimientoComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadAllData();
+    // --- LLAMADA A LA NUEVA FUNCIÓN ---
+    this.loadPredictiveData();
+    // ---
     this.setDefaultDate();
     this.form.get('equipmentId')?.valueChanges.subscribe(equipmentId => {
       this.selectedEquipment = this.equipos.find(e => e.id === equipmentId) || null;
     });
   }
+
+  // --- NUEVA FUNCIÓN PARA CARGAR DATOS PREDICTIVOS ---
+  loadPredictiveData(): void {
+    this.predictiveLoading = true;
+    this.predictiveError = '';
+    this.mantSvc.getPredictiveMaintenance().subscribe({
+      next: (data) => {
+        this.predictiveList = data;
+        this.predictiveLoading = false;
+      },
+      error: (e: HttpErrorResponse) => {
+        this.predictiveError = 'No se pudo cargar el análisis predictivo.';
+        this.showToast(this.predictiveError, 'error');
+        this.predictiveLoading = false;
+      }
+    });
+  }
+  // ---
 
   get alertsCount(): number {
     return this.alertas.length;
@@ -123,24 +152,16 @@ export class MantenimientoComponent implements OnInit {
     const currentFilters = { status: this.statusFilter, type: this.typeFilter };
     this.mantSvc.list(currentFilters).subscribe({
       next: (res) => {
-        // 1. Creamos un mapa para buscar equipos de forma eficiente por su ID.
         const equiposMap = new Map(this.equipos.map(e => [e.id, e]));
-
-        // 2. Usamos .map() para crear un nuevo arreglo de mantenimientos.
-        //    Para cada mantenimiento, buscamos su equipo en el mapa y lo adjuntamos.
         const maintenancesWithEquipment = res.map(mant => ({
           ...mant,
-          equipment: equiposMap.get(mant.equipmentId) // Aquí adjuntamos el objeto equipo
+          equipment: equiposMap.get(mant.equipmentId)
         }));
-
-        // Ahora trabajamos con el arreglo que ya tiene los datos combinados
         const sorted = maintenancesWithEquipment.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
-
         this.mantenimientos = sorted.map((item, index) => ({
           ...item,
           displayId: `MA-${String(index + 1).padStart(4, '0')}`
         }));
-
         this.generarAlertasDinamicas();
         this.updateAvailableEquipmentList();
         this.loading = false;
@@ -159,13 +180,11 @@ export class MantenimientoComponent implements OnInit {
         .filter(m => m.status === 'programado' || m.status === 'en-proceso')
         .map(m => m.equipmentId)
     );
-
     this.availableEquipos = this.equipos.filter(eq => {
       const isStateValid = eq.status === 'disponible' || eq.status === 'dañado';
       const isNotBusy = !busyEquipmentIds.has(eq.id);
       return isStateValid && isNotBusy;
     });
-
     if (this.editingMaintenance) {
       const isEditingEquipmentInList = this.availableEquipos.some(eq => eq.id === this.editingMaintenance!.equipmentId);
       if (!isEditingEquipmentInList) {
@@ -184,11 +203,9 @@ export class MantenimientoComponent implements OnInit {
     }
     this.saving = true;
     const formValue = this.form.value as CrearMantDTO;
-
     const operation = this.editingMaintenance
       ? this.mantSvc.update(this.editingMaintenance.id, formValue)
       : this.mantSvc.create(formValue);
-
     operation.subscribe({
       next: () => {
         const message = this.editingMaintenance ? 'Mantenimiento actualizado' : 'Mantenimiento programado';
@@ -332,13 +349,11 @@ export class MantenimientoComponent implements OnInit {
     this.alertas = [];
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-
     const preventivosProximos = this.mantenimientos.filter(m => {
       if (m.status !== 'programado' || m.type !== 'preventivo') return false;
       const scheduledDate = new Date(m.scheduledDate);
       return scheduledDate <= sevenDaysFromNow;
     }).length;
-
     if (preventivosProximos > 0) {
       this.alertas.push({
         tipo: 'warning',
@@ -347,7 +362,6 @@ export class MantenimientoComponent implements OnInit {
         meta: 'Actualizado ahora'
       });
     }
-
     const urgentes = this.mantenimientos.filter(m => m.priority === 'alta' && m.status !== 'completado').length;
     if (urgentes > 0) {
       this.alertas.push({

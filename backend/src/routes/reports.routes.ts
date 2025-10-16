@@ -37,7 +37,8 @@ router.get('/kpis', async (req, res, next) => {
     const queries = {
       disponibles: `SELECT COUNT(*) as count FROM equipments WHERE LOWER(status) = 'disponible'`,
       prestados: `SELECT COUNT(*) as count FROM loans WHERE status = 'prestado'`,
-      enMantenimiento: `SELECT COUNT(*) as count FROM equipments WHERE LOWER(status) IN ('en-proceso', 'programado')`,
+      // --- ✅ ACTUALIZACIÓN: Se corrigió la consulta para contar desde la tabla 'maintenances' ---
+      enMantenimiento: `SELECT COUNT(*) as count FROM maintenances WHERE status IN ('en-proceso', 'programado')`,
       atrasados: `SELECT COUNT(*) as count FROM loans WHERE status = 'atrasado'`,
       totalEquipos: `SELECT COUNT(*) as count FROM equipments`
     };
@@ -79,17 +80,17 @@ router.get('/activity', async (req, res, next) => {
         fecha,
         tipo
       FROM (
-        SELECT 
+        SELECT
           l.id,
           'Préstamo de ' || e.name || ' a ' || l."borrowerName" as descripcion,
           l."loanDate" as fecha,
           'prestamo' as tipo
         FROM loans l
         JOIN equipments e ON e.id = l."equipmentId"
-        
+
         UNION ALL
-        
-        SELECT 
+
+        SELECT
           m.id,
           'Mantenimiento (' || m.type || ') para ' || e.name as descripcion,
           m."scheduledDate" as fecha,
@@ -139,7 +140,7 @@ router.get('/weekly-activity', async (req, res, next) => {
     `;
 
     const result = await sequelize.query(query, { type: QueryTypes.SELECT });
-    
+
     const labels = (result as any[]).map(r => r.label);
     const prestamos = (result as any[]).map(r => r.prestamos);
     const devoluciones = (result as any[]).map(r => r.devoluciones);
@@ -154,36 +155,44 @@ router.get('/weekly-activity', async (req, res, next) => {
 router.get('/notifications', async (req, res, next) => {
   try {
     let notifications: any[] = [];
+    // --- ✅ ACTUALIZACIÓN: Se añade la columna 'link' para la navegación ---
     const loansQuery = `
-      SELECT 
+      SELECT
         l.id,
         'La devolución del equipo "' || e.name || '" por "' || l."borrowerName" || '" está atrasada.' as message,
         'error' as type,
-        l."updatedAt" as "createdAt"
+        l."updatedAt" as "createdAt",
+        '/prestamos' as link
       FROM loans l
       JOIN equipments e ON l."equipmentId" = e.id
       WHERE l.status = 'atrasado'
     `;
     const atrasados = await sequelize.query(loansQuery, { type: QueryTypes.SELECT });
+
+    // --- ✅ ACTUALIZACIÓN: Se añade la columna 'link' con el ID del mantenimiento ---
     const maintenanceQuery = `
-      SELECT 
+      SELECT
         m.id,
         'El equipo "' || e.name || '" tiene un mantenimiento en estado: "' || m.status || '".' as message,
         'warning' as type,
-        m."createdAt"
+        m."createdAt",
+        '/mantenimiento' as link
       FROM maintenances m
       JOIN equipments e ON m."equipmentId" = e.id
       WHERE m.status IN ('en-proceso', 'programado')
     `;
     const mantenimientos = await sequelize.query(maintenanceQuery, { type: QueryTypes.SELECT });
+
     notifications = [...atrasados, ...mantenimientos];
     notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
     res.json(notifications);
   } catch (error) {
     console.error('Error al generar notificaciones:', error);
     next(error);
   }
 });
+
 
 // ==========================================================
 // RUTAS PARA LA PÁGINA DE REPORTES
@@ -260,10 +269,10 @@ router.get('/tipos', (req, res) => {
 
 router.get('/dynamic', async (req, res, next) => {
   try {
-    const { 
-      page = 1, 
-      limit = 50, 
-      fecha_inicio, 
+    const {
+      page = 1,
+      limit = 50,
+      fecha_inicio,
       fecha_fin,
       estado,
       borrowerType,
@@ -369,7 +378,7 @@ router.get('/dynamic', async (req, res, next) => {
           LIMIT :limit OFFSET :offset
         `;
         countQuery = `
-          SELECT COUNT(*) as total FROM vista_reportes_prestamos v 
+          SELECT COUNT(*) as total FROM vista_reportes_prestamos v
           INNER JOIN loans l ON v.id::uuid = l.id
           ${prestamosWhereClause}`;
         break;
@@ -389,8 +398,8 @@ router.get('/dynamic', async (req, res, next) => {
 });
 
 async function getReportData(filtros: any) {
-  const { 
-    fecha_inicio, 
+  const {
+    fecha_inicio,
     fecha_fin,
     estado,
     borrowerType,
@@ -438,7 +447,7 @@ async function getReportData(filtros: any) {
           GROUP BY e.id, e.name, e.type ORDER BY total_usos DESC
       `;
       break;
-    
+
     case 'user_activity':
       query = `
           SELECT l."borrowerName" as usuario, l."borrowerType" as tipo_usuario, COUNT(l.id) as total_prestamos
@@ -487,7 +496,7 @@ function generatePdfHeader(doc: PDFKit.PDFDocument, title: string) {
     doc.fontSize(18).font('Helvetica-Bold').text(infoONG.nombre, 0, 55, { align: 'center' });
     doc.fontSize(14).font('Helvetica').text(title, { align: 'center' });
     doc.fontSize(10).text(`Fecha: ${infoONG.fechaReporte}`, { align: 'center' });
-    
+
     const textBottomY = doc.y;
 
     doc.y = Math.max(logoBottomY, textBottomY) + 20;
@@ -528,9 +537,9 @@ function generatePdfTable(doc: PDFKit.PDFDocument, headers: any[], data: any[]) 
       doc.text(cellText, currentX, rowY, { width: header.width, align: 'left' });
       currentX += header.width;
     });
-    
+
     doc.y = rowY + rowHeight + rowSpacing;
-    
+
     if (doc.y > doc.page.height - doc.page.margins.bottom) {
         doc.addPage();
     }
@@ -542,10 +551,10 @@ router.post('/export/pdf', async (req, res, next) => {
     const { filtros } = req.body;
     const data = await getReportData(filtros);
     const { tipoReporte = 'prestamos' } = filtros;
-    
+
     let title = '';
     let headers: any[] = [];
-    
+
     switch(tipoReporte) {
       case 'mantenimiento':
         title = 'Reporte de Mantenimiento';
@@ -588,10 +597,10 @@ router.post('/export/pdf', async (req, res, next) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=${title.replace(/ /g, '_')}.pdf`);
-    
+
     const doc = new PDFDocument({ margin: 30, size: 'A4' });
     doc.pipe(res);
-    
+
     generatePdfHeader(doc, title);
     generatePdfTable(doc, headers, data as any[]);
 
@@ -610,7 +619,7 @@ router.post('/export/excel', async (req, res, next) => {
 
     const workbook = new ExcelJS.Workbook();
     let title = '';
-    
+
     switch(tipoReporte) {
       case 'mantenimiento':
         title = 'Reporte de Mantenimiento';
@@ -648,7 +657,7 @@ router.post('/export/excel', async (req, res, next) => {
         ];
         usersSheet.addRows(data);
         break;
-        
+
       case 'prestamos':
       default:
         title = 'Reporte de Préstamos';
@@ -667,7 +676,7 @@ router.post('/export/excel', async (req, res, next) => {
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=${title.replace(/ /g, '_')}.xlsx`);
-    
+
     await workbook.xlsx.write(res);
     res.end();
 
