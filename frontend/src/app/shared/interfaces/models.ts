@@ -5,7 +5,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'tech' | 'user';
+  // --- ACTUALIZADO: Se añade el rol 'tecnico' ---
+  role: 'admin' | 'tecnico' | 'user';
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -112,7 +113,7 @@ export interface UpdateMaintenanceDto {
   description?: string;
 }
 
-// Auth
+// Auth (sin cambios)
 export interface LoginDto {
   email: string;
   password: string;
@@ -122,6 +123,28 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+
+// --- NUEVAS INTERFACES AÑADIDAS AL FINAL ---
+
+/**
+ * DTO para el formulario de registro.
+ * Coincide con lo que espera el backend.
+ */
+export interface RegisterDto {
+  nombre: string;
+  email: string;
+  password: string;
+}
+
+/**
+ * DTO para el formulario de restablecer contraseña.
+ * Coincide con lo que espera el backend.
+ */
+export interface ResetPasswordDto {
+  email: string;
+  nuevaContrasena: string;
+}
+
 
 // API Response genérica
 export interface ApiResponse<T = any> {

@@ -15,23 +15,42 @@
 <main class="main-container">
   <div class="login-card">
     <div class="welcome-text">
-      <h2 class="welcome-title">¡Bienvenido!</h2>
-      <p class="welcome-subtitle">Ingresa tus credenciales para acceder al sistema</p>
+      <h2 class="welcome-title">Crear Cuenta</h2>
+      <p class="welcome-subtitle">Ingresa tus datos para registrarte</p>
     </div>
 
     <form [formGroup]="form" (ngSubmit)="submit()">
+
       <div class="form-group">
-        <label for="email" class="form-label">Usuario o Email</label>
+        <label for="nombre" class="form-label">Nombre Completo</label>
+        <div class="input-container">
+          <input
+            id="nombre"
+            type="text"
+            class="form-input"
+            placeholder="Ingresa tu nombre completo"
+            formControlName="nombre"
+            [ngClass]="{ 'error': isInvalid('nombre'), 'success': isValid('nombre') }"
+          />
+          <i class="fas fa-id-card input-icon"></i>
+        </div>
+        <div *ngIf="isInvalid('nombre')" class="error-message">
+          <span *ngIf="form.get('nombre')?.errors?.['required']">El nombre es obligatorio.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">Email</label>
         <div class="input-container">
           <input
             id="email"
             type="email"
             class="form-input"
-            placeholder="Ingresa tu usuario o email"
+            placeholder="Ingresa tu email"
             formControlName="email"
             [ngClass]="{ 'error': isInvalid('email'), 'success': isValid('email') }"
           />
-          <i class="fas fa-user input-icon"></i>
+          <i class="fas fa-at input-icon"></i>
         </div>
         <div *ngIf="isInvalid('email')" class="error-message">
           <span *ngIf="form.get('email')?.errors?.['required']">El email es obligatorio.</span>
@@ -46,7 +65,7 @@
             id="password"
             [type]="passwordFieldType"
             class="form-input"
-            placeholder="Ingresa tu contraseña"
+            placeholder="Crea tu contraseña"
             formControlName="password"
             [ngClass]="{ 'error': isInvalid('password'), 'success': isValid('password') }"
           />
@@ -57,8 +76,9 @@
             (click)="togglePasswordVisibility()"
           ></i>
         </div>
-        <div *ngIf="isInvalid('password') && form.get('password')?.errors?.['required']" class="error-message">
-          <span>La contraseña es obligatoria.</span>
+        <div *ngIf="isInvalid('password')" class="error-message">
+          <span *ngIf="form.get('password')?.errors?.['required']">La contraseña es obligatoria.</span>
+          <span *ngIf="form.get('password')?.errors?.['minlength']">Debe tener al menos 6 caracteres.</span>
         </div>
       </div>
 
@@ -66,28 +86,34 @@
         {{ apiError }}
       </div>
 
-      <button type="submit" class="login-button" [disabled]="loading">
+      <div *ngIf="successMessage" class="success-notification">
+        <i class="fas fa-check-circle icon"></i>
+        <span class="message">{{ successMessage }}</span>
+      </div>
+
+      <button
+        type="submit"
+        class="login-button"
+        [disabled]="loading || form.disabled">
         <ng-container *ngIf="!loading; else loadingState">
-          <span>Iniciar Sesión</span>
+          <span>Registrarme</span>
         </ng-container>
         <ng-template #loadingState>
           <div class="loading-spinner"></div>
-          <span>Iniciando sesión...</span>
+          <span>Registrando...</span>
         </ng-template>
       </button>
 
       <div class="forgot-password">
-        <a [routerLink]="['/forgot-password']" class="forgot-link">¿Olvidó su contraseña?</a>
+        <a
+          [routerLink]="['/login']"
+          class="forgot-link"
+        >
+          ¿Ya tienes cuenta? Inicia sesión
+        </a>
       </div>
-    </form>
 
-    <div style="text-align: center; margin-top: 1.5rem; border-top: 1px solid #e9ecef; padding-top: 1.5rem;">
-      <span style="color: #6c757d; font-size: 0.9rem;">¿No tienes una cuenta? </span>
-      <a [routerLink]="['/register']"
-         class="forgot-link"
-         style="font-weight: 600; color: #114495; text-decoration: none;"> Regístrate aquí
-      </a>
-    </div>
+    </form>
 
   </div>
 </main>

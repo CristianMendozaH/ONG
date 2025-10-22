@@ -7,7 +7,9 @@ import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { TokenService } from './token.service';
 import { UserStore } from '../stores/user.store';
-import { LoginDto, AuthResponse, User } from '../../shared/interfaces/models';
+
+// --- IMPORTANTE: Se añaden las interfaces/DTOs para los nuevos métodos ---
+import { LoginDto, AuthResponse, User, RegisterDto, ResetPasswordDto } from '../../shared/interfaces/models';
 
 @Injectable({
   providedIn: 'root'
@@ -19,11 +21,10 @@ export class AuthService {
   private router = inject(Router);
 
   constructor() {
-    // Tu método para verificar al cargar la app ya es correcto.
-    // Llama a 'me()' si hay un token válido.
     this.checkAuthStatusOnLoad();
   }
 
+  // --- Tu método de login (sin cambios) ---
   login(credentials: LoginDto): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, credentials).pipe(
       tap(response => {
@@ -35,6 +36,28 @@ export class AuthService {
     );
   }
 
+  // --- MÉTODO NUEVO AÑADIDO ---
+  /**
+   * Envía los datos de un nuevo usuario al backend para su registro.
+   * No inicia sesión, solo crea el usuario.
+   * @param data - Los datos del usuario a registrar (nombre, email, contraseña).
+   */
+  register(data: RegisterDto): Observable<any> {
+    // Apunta al endpoint que DEBERÁS crear en tu backend
+    return this.http.post<any>(`${environment.apiUrl}/auth/register`, data);
+  }
+
+  // --- MÉTODO NUEVO AÑADIDO ---
+  /**
+   * Envía un correo y una nueva contraseña al backend para restablecerla.
+   * @param data - El correo del usuario y la nueva contraseña.
+   */
+  resetPassword(data: ResetPasswordDto): Observable<any> {
+    // Apunta al endpoint que DEBERÁS crear en tu backend
+    return this.http.post<any>(`${environment.apiUrl}/auth/reset-password`, data);
+  }
+
+
   logout(): void {
     this.tokenService.removeToken();
     this.userStore.clearUser();
@@ -42,19 +65,14 @@ export class AuthService {
   }
 
   /**
-   * MÉTODO CLAVE (AHORA PÚBLICO)
    * Obtiene los datos del usuario actual desde el backend usando el token guardado.
-   * Si tiene éxito, actualiza el store. Si falla (ej. token expirado), limpia la sesión.
    */
   fetchAndSetUser(): Observable<User | null> {
     return this.http.get<User>(`${environment.apiUrl}/auth/me`).pipe(
       tap(user => {
-        // Si el backend devuelve un usuario, lo guardamos en el store.
         this.userStore.setUser(user);
       }),
       catchError(() => {
-        // Si hay un error (ej. 401 Unauthorized), significa que el token no es válido.
-        // Limpiamos la sesión y devolvemos null.
         this.logout();
         return of(null);
       })
@@ -62,16 +80,12 @@ export class AuthService {
   }
 
   /**
-   * Este método se ejecuta solo una vez cuando el servicio es instanciado.
+   * Se ejecuta solo una vez cuando el servicio es instanciado.
    */
   private checkAuthStatusOnLoad(): void {
     if (this.tokenService.isTokenValid()) {
-      // Intentamos obtener los datos del usuario al cargar la app.
-      // No necesitamos hacer nada con la suscripción aquí, el guardián se encargará
-      // del resto si el usuario intenta navegar a una ruta protegida.
       this.fetchAndSetUser().subscribe();
     } else {
-      // Si el token no es válido o no existe, nos aseguramos de que el store esté limpio.
       this.userStore.clearUser();
     }
   }

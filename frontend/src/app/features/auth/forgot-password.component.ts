@@ -1,34 +1,34 @@
-// src/app/features/auth/login.component.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-// --- ACTUALIZACIÓN: Importar Router y RouterLink ---
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
-import { LoginDto } from '../../shared/interfaces/models';
+import { ResetPasswordDto } from '../../shared/interfaces/models';
 
 @Component({
+  selector: 'app-forgot-password',
   standalone: true,
-  // --- ACTUALIZACIÓN: Añadir RouterLink a los imports ---
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  templateUrl: './forgot-password.component.html',
+  styleUrl: './login.component.scss' // Reutilizando estilos
 })
-export class LoginComponent {
+export class ForgotPasswordComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // --- Lógica completa para el formulario (sin cambios) ---
   loading = false;
   submitted = false;
   apiError = '';
   passwordFieldType: 'password' | 'text' = 'password';
 
+  // --- Propiedad para el mensaje de éxito ---
+  successMessage = '';
+
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required]]
+    nuevaContraseña: ['', [Validators.required, Validators.minLength(6)]]
   });
 
   submit(): void {
@@ -40,29 +40,43 @@ export class LoginComponent {
     }
 
     this.loading = true;
-    const credentials = this.form.value as LoginDto;
 
-    this.authService.login(credentials).subscribe({
-      next: () => this.router.navigateByUrl('/dashboard'),
+    const credentials = {
+      email: this.form.value.email!,
+      nuevaContrasena: this.form.value.nuevaContraseña!
+    } as ResetPasswordDto;
+
+    this.authService.resetPassword(credentials).subscribe({
+      next: () => {
+        // --- Lógica de éxito con notificación ---
+        this.loading = false;
+        this.form.disable(); // Deshabilitar el formulario
+        this.successMessage = '¡Contraseña actualizada! Serás redirigido al login en 3 segundos...';
+
+        // Redirigir después de 3 segundos
+        setTimeout(() => {
+          this.router.navigateByUrl('/login');
+        }, 3000);
+      },
       error: (e: HttpErrorResponse) => {
-        this.apiError = e.error?.message || 'Credenciales inválidas o error de conexión.';
+        this.apiError = e.error?.message || 'Error al restablecer. Verifica el email.';
         this.loading = false;
       }
     });
   }
 
-  // --- Funciones para el template HTML (sin cambios) ---
+  // --- Funciones para el template HTML ---
 
   togglePasswordVisibility(): void {
     this.passwordFieldType = this.passwordFieldType === 'password' ? 'text' : 'password';
   }
 
-  isInvalid(controlName: 'email' | 'password'): boolean {
+  isInvalid(controlName: 'email' | 'nuevaContraseña'): boolean {
     const control = this.form.get(controlName);
     return !!control && control.invalid && (control.touched || this.submitted);
   }
 
-  isValid(controlName: 'email' | 'password'): boolean {
+  isValid(controlName: 'email' | 'nuevaContraseña'): boolean {
     const control = this.form.get(controlName);
     return !!control && control.valid && (control.touched || this.submitted);
   }

@@ -4,13 +4,26 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+  // Rutas públicas de autenticación
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
   },
+  // --- RUTAS NUEVAS AÑADIDAS ---
+  {
+    path: 'register',
+    loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent)
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () => import('./features/auth/forgot-password.component').then(m => m.ForgotPasswordComponent)
+  },
+  // --- FIN DE RUTAS NUEVAS ---
+
+  // Ruta principal del Layout que contiene las vistas protegidas
   {
     path: '',
-    canActivate: [authGuard],
+    canActivate: [authGuard], // Este guard protege todas las rutas hijas
     loadComponent: () => import('./core/layout/layout.component').then(m => m.LayoutComponent),
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -53,7 +66,6 @@ export const routes: Routes = [
         data: { roles: ['admin'] },
         loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
       },
-      // ✅ RUTA AÑADIDA PARA EL NUEVO MÓDULO
       {
         path: 'colaboradores',
         data: { roles: ['admin'] }, // Solo los admins pueden gestionar colaboradores
@@ -66,5 +78,7 @@ export const routes: Routes = [
       // }
     ],
   },
+
+  // Ruta wildcard para cualquier otra URL, redirige a la ruta principal
   { path: '**', redirectTo: '' }
 ];

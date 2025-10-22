@@ -10,8 +10,6 @@ $text-secondary: #6c757d;
 $background-light: #f8f9fa;
 $border-color: #e9ecef;
 
-
-
 // MODIFICACIÓN PRINCIPAL: Hacer que el host tenga display flex y altura completa
 :host {
   display: flex;
@@ -271,6 +269,43 @@ $border-color: #e9ecef;
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+// === CÓDIGO NUEVO AÑADIDO PARA LA NOTIFICACIÓN ===
+.success-notification {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem; // Espacio antes del botón
+  border-radius: 8px;
+  background-color: color.adjust($success-color, $alpha: -0.9); // Verde claro
+  border: 1px solid color.adjust($success-color, $alpha: -0.5);
+  color: #1b5e20; // Verde oscuro para el texto
+  font-weight: 500;
+  animation: fadeIn 0.5s ease-out;
+
+  .icon {
+    font-size: 1.25rem;
+    color: $success-color;
+  }
+
+  .message {
+    flex: 1;
+    font-size: 0.95rem;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+// === FIN DEL CÓDIGO NUEVO ===
 
 // MODIFICACIÓN: Footer ahora tiene flex-shrink: 0 y margin-top: auto para pegarse abajo
 .footer {

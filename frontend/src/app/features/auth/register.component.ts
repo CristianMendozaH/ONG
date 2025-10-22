@@ -1,34 +1,35 @@
-// src/app/features/auth/login.component.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-// --- ACTUALIZACIÓN: Importar Router y RouterLink ---
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
-import { LoginDto } from '../../shared/interfaces/models';
+import { RegisterDto } from '../../shared/interfaces/models';
 
 @Component({
+  selector: 'app-register',
   standalone: true,
-  // --- ACTUALIZACIÓN: Añadir RouterLink a los imports ---
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  templateUrl: './register.component.html',
+  styleUrl: './login.component.scss' // Reutilizando estilos
 })
-export class LoginComponent {
+export class RegisterComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // --- Lógica completa para el formulario (sin cambios) ---
   loading = false;
   submitted = false;
   apiError = '';
   passwordFieldType: 'password' | 'text' = 'password';
 
+  // --- NUEVA PROPIEDAD PARA EL MENSAJE DE ÉXITO ---
+  successMessage = '';
+
   form = this.fb.group({
+    nombre: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required]]
+    password: ['', [Validators.required, Validators.minLength(6)]]
   });
 
   submit(): void {
@@ -40,29 +41,39 @@ export class LoginComponent {
     }
 
     this.loading = true;
-    const credentials = this.form.value as LoginDto;
+    const credentials = this.form.value as RegisterDto;
 
-    this.authService.login(credentials).subscribe({
-      next: () => this.router.navigateByUrl('/dashboard'),
+    this.authService.register(credentials).subscribe({
+      next: () => {
+        // --- LÓGICA ACTUALIZADA: YA NO USAMOS alert() ---
+        this.loading = false;
+        this.form.disable(); // Deshabilitar el formulario para evitar re-envíos
+        this.successMessage = '¡Registro exitoso! Serás redirigido al login en 3 segundos...';
+
+        // Redirigir después de 3 segundos
+        setTimeout(() => {
+          this.router.navigateByUrl('/login');
+        }, 3000);
+      },
       error: (e: HttpErrorResponse) => {
-        this.apiError = e.error?.message || 'Credenciales inválidas o error de conexión.';
+        this.apiError = e.error?.message || 'Error en el registro. Intenta con otro email.';
         this.loading = false;
       }
     });
   }
 
-  // --- Funciones para el template HTML (sin cambios) ---
+  // --- Funciones para el template HTML ---
 
   togglePasswordVisibility(): void {
     this.passwordFieldType = this.passwordFieldType === 'password' ? 'text' : 'password';
   }
 
-  isInvalid(controlName: 'email' | 'password'): boolean {
+  isInvalid(controlName: 'nombre' | 'email' | 'password'): boolean {
     const control = this.form.get(controlName);
     return !!control && control.invalid && (control.touched || this.submitted);
   }
 
-  isValid(controlName: 'email' | 'password'): boolean {
+  isValid(controlName: 'nombre' | 'email' | 'password'): boolean {
     const control = this.form.get(controlName);
     return !!control && control.valid && (control.touched || this.submitted);
   }
